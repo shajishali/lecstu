@@ -13,6 +13,8 @@ import TimetableManagement from '@pages/admin/TimetableManagement';
 import GroupManagement from '@pages/admin/GroupManagement';
 import HallManagement from '@pages/admin/HallManagement';
 import OfficeManagement from '@pages/admin/OfficeManagement';
+import BuildingManagement from '@pages/admin/BuildingManagement';
+import MarkerManagement from '@pages/admin/MarkerManagement';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -107,6 +109,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute roles={['ADMIN']}>
               <OfficeManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/buildings"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <BuildingManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/markers"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <MarkerManagement />
             </ProtectedRoute>
           }
         />

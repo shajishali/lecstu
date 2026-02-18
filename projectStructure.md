@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 3.3)
+# Last Updated : 2026-02-18 (After Sub-Phase 3.4)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -63,7 +63,10 @@ lecstu/
 │       │       ├── 📄 TimetableBulkImport.tsx ← CSV file upload, preview, validation, import
 │       │       ├── 📄 GroupManagement.tsx     ← Student group CRUD, member list, assign/remove students
 │       │       ├── 📄 HallManagement.tsx      ← Lecture hall CRUD with equipment tags, active status
-│       │       └── 📄 OfficeManagement.tsx    ← Lecturer office CRUD with lecturer linking
+│       │       ├── 📄 OfficeManagement.tsx    ← Lecturer office CRUD with lecturer linking
+│       │       ├── 📄 BuildingManagement.tsx  ← Building CRUD with coordinates, floor plan upload/delete
+│       │       ├── 📄 MarkerManagement.tsx    ← Map marker CRUD with entity linking, type filters
+│       │       └── 📄 MapPreview.tsx          ← Leaflet map preview showing all markers with popups
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
@@ -113,8 +116,10 @@ lecstu/
 │       │   ├── 📄 adminController.ts   ← getDashboardStats (aggregated counts for admin panel)
 │       │   ├── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport
 │       │   ├── 📄 groupController.ts    ← CRUD + assignStudents, removeStudent, bulkAssign, availableStudents
-│       │   ├── 📄 hallController.ts     ← CRUD + getBuildings (distinct building names)
-│       │   └── 📄 officeController.ts   ← CRUD + getAvailableLecturers
+│       │   ├── 📄 hallController.ts      ← CRUD + getBuildings (distinct building names)
+│       │   ├── 📄 officeController.ts   ← CRUD + getAvailableLecturers
+│       │   ├── 📄 buildingController.ts ← CRUD + uploadFloorPlan + deleteFloorPlan
+│       │   └── 📄 markerController.ts   ← CRUD + getMarkerDropdowns (buildings, halls, offices)
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
@@ -127,7 +132,9 @@ lecstu/
 │       │   ├── 📄 timetable.ts      ← Timetable routes: CRUD + dropdowns + bulk-import (ADMIN guard)
 │       │   ├── 📄 groups.ts         ← Group routes: CRUD + student assign/remove/bulk (ADMIN guard)
 │       │   ├── 📄 halls.ts          ← Hall routes: CRUD + buildings list (ADMIN guard)
-│       │   └── 📄 offices.ts        ← Office routes: CRUD + available lecturers (ADMIN guard)
+│       │   ├── 📄 offices.ts        ← Office routes: CRUD + available lecturers (ADMIN guard)
+│       │   ├── 📄 buildings.ts      ← Building routes: CRUD + floor plan upload/delete (ADMIN guard)
+│       │   └── 📄 markers.ts        ← Marker routes: CRUD + dropdowns (ADMIN guard)
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -273,6 +280,19 @@ lecstu/
 | POST | `/api/admin/offices` | Create/assign office | JWT + ADMIN | No |
 | PATCH | `/api/admin/offices/:id` | Update office | JWT + ADMIN | No |
 | DELETE | `/api/admin/offices/:id` | Delete office | JWT + ADMIN | No |
+| GET | `/api/admin/buildings` | List buildings with floor plans | JWT + ADMIN | No |
+| GET | `/api/admin/buildings/:id` | Get building with markers | JWT + ADMIN | No |
+| POST | `/api/admin/buildings` | Create building (name, code, lat/lng, floors) | JWT + ADMIN | No |
+| PATCH | `/api/admin/buildings/:id` | Update building | JWT + ADMIN | No |
+| DELETE | `/api/admin/buildings/:id` | Delete building (cascades markers+plans) | JWT + ADMIN | No |
+| POST | `/api/admin/buildings/:id/floorplan` | Upload floor plan image (multipart) | JWT + ADMIN | No |
+| DELETE | `/api/admin/buildings/:id/floorplan/:planId` | Delete floor plan | JWT + ADMIN | No |
+| GET | `/api/admin/markers` | List markers (filter by building/type) | JWT + ADMIN | No |
+| GET | `/api/admin/markers/dropdowns` | Buildings, halls, offices for forms | JWT + ADMIN | No |
+| GET | `/api/admin/markers/:id` | Get single marker | JWT + ADMIN | No |
+| POST | `/api/admin/markers` | Create marker with entity linking | JWT + ADMIN | No |
+| PATCH | `/api/admin/markers/:id` | Update marker | JWT + ADMIN | No |
+| DELETE | `/api/admin/markers/:id` | Delete marker | JWT + ADMIN | No |
 
 
 ---
@@ -357,6 +377,7 @@ lecstu/
 | 2026-02-18 | **3.1** | Admin dashboard shell: admin stats API (GET /api/admin/stats), AdminDashboard page (stat cards, quick actions, academic summary), admin route guard (ADMIN-only /admin/*), reusable components (DataTable, Modal, ConfirmDialog, Toast), admin sidebar nav links, global Toast container |
 | 2026-02-18 | **3.2** | Master timetable management: CRUD API with paginated/filtered listing, conflict detection service (hall/lecturer/group overlap), CSV bulk import with validation, dropdown data endpoint, frontend TimetableManagement (table/calendar/import views), TimetableForm (create/edit with conflict display), TimetableCalendar (weekly grid, color-coded), TimetableBulkImport (upload, preview, error display) |
 | 2026-02-18 | **3.3** | Student Group, Hall & Office management: Group CRUD with student assignment (individual + bulk CSV), member list with add/remove UI; Hall CRUD with equipment tags, capacity, active status; Office CRUD with lecturer linking (1:1), available lecturers endpoint; Audit logging service for all admin actions; Admin sidebar updated with Groups/Halls/Offices links |
+| 2026-02-18 | **3.4** | Faculty map data management: Building CRUD (name, code, lat/lng, floors), floor plan image upload/delete per building per floor; Marker CRUD with type (HALL/OFFICE/LAB/AMENITY/ENTRANCE) and entity linking (hallId/officeId); Leaflet map preview with color-coded markers, popups, auto-bounds; Admin sidebar with Buildings/Markers links |
 
 
 ---

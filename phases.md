@@ -411,17 +411,17 @@ efficiency barriers in multilingual university environments.
 
 ---
 
-### Sub-Phase 3.4 — Faculty Map Data Management (Admin)
+### Sub-Phase 3.4 — Faculty Map Data Management (Admin) ✅
 **Type**: Engineering | **Effort**: ~1 day
 
-- [ ] Map data APIs:
+- [x] Map data APIs:
   - `POST/GET/PATCH/DELETE /api/admin/buildings` — building CRUD
   - `POST/GET/PATCH/DELETE /api/admin/markers` — marker CRUD
   - `POST /api/admin/buildings/:id/floorplan` — upload floor plan image
-- [ ] Link map markers to database entities:
+- [x] Link map markers to database entities:
   - Marker type: `HALL`, `OFFICE`, `LAB`, `AMENITY`, `ENTRANCE`
   - Each marker references an entityId (hallId or officeId)
-- [ ] Frontend admin map tools:
+- [x] Frontend admin map tools:
   - Building list with coordinate entry (lat/lng)
   - Floor plan image upload per building per floor
   - Marker list with entity linking dropdowns

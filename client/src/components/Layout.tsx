@@ -15,6 +15,7 @@ import {
   Building,
   Layers,
   DoorOpen,
+  MapPin,
   Menu,
   X,
 } from 'lucide-react';
@@ -29,6 +30,8 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
     { label: 'Groups', path: '/admin/groups', icon: <Layers size={18} /> },
     { label: 'Halls', path: '/admin/halls', icon: <Building size={18} /> },
     { label: 'Offices', path: '/admin/offices', icon: <DoorOpen size={18} /> },
+    { label: 'Buildings', path: '/admin/buildings', icon: <Building size={18} /> },
+    { label: 'Markers', path: '/admin/markers', icon: <MapPin size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
     { label: 'My Profile', path: '/profile', icon: <User size={18} /> },

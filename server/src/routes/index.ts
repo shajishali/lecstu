@@ -6,6 +6,8 @@ import timetableRoutes from './timetable';
 import groupRoutes from './groups';
 import hallRoutes from './halls';
 import officeRoutes from './offices';
+import buildingRoutes from './buildings';
+import markerRoutes from './markers';
 
 const router = Router();
 
@@ -24,5 +26,7 @@ router.use('/admin/timetable', timetableRoutes);
 router.use('/admin/groups', groupRoutes);
 router.use('/admin/halls', hallRoutes);
 router.use('/admin/offices', officeRoutes);
+router.use('/admin/buildings', buildingRoutes);
+router.use('/admin/markers', markerRoutes);
 
 export default router;
