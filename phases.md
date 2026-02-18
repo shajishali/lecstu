@@ -452,24 +452,25 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 4.1 — Student Timetable Generation Engine
 **Type**: Engineering | **Effort**: ~1.5 days
 
-- [ ] Build timetable generation service (`/server/src/services/timetableService.js`):
+- [x] Build timetable generation service (`/server/src/services/timetableService.ts`):
   - Input: studentId → find group(s) → query master timetable for those groups
   - Output: structured weekly timetable (array of day → slots)
   - Handle edge cases: student in multiple groups, elective courses
-- [ ] API endpoints:
+- [x] API endpoints:
   - `GET /api/timetable/my` — current user's timetable (student or lecturer)
   - `GET /api/timetable/student/:id` — specific student (admin only)
   - `GET /api/timetable/lecturer/:id` — specific lecturer schedule
-- [ ] Caching layer:
-  - Cache generated timetables (Redis or in-memory)
-  - Invalidate when master timetable changes
-  - Cache-Control headers for frontend
-- [ ] Frontend student timetable view:
+  - `POST /api/timetable/cache/invalidate` — admin-only cache flush
+- [x] Caching layer:
+  - In-memory cache with 5-minute TTL
+  - Invalidate when master timetable changes (create/update/delete/bulk-import)
+  - X-Cache response header (HIT/MISS)
+- [x] Frontend student timetable view:
   - Weekly grid layout (Monday–Friday, time slots)
   - Color-coded by course
-  - Click slot → show details (hall, lecturer, room)
-  - Current time indicator line
-  - Print/export option
+  - Click slot → show details (hall, lecturer, room, group, capacity)
+  - Current time indicator line (red, updates every minute)
+  - Print/export CSV option
 
 ---
 

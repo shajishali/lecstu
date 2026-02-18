@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 3.4)
+# Last Updated : 2026-02-18 (After Sub-Phase 4.1)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -54,6 +54,7 @@ lecstu/
 │       │   ├── 📄 Register.tsx      ← Name, email, role selector, password with strength rules
 │       │   ├── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
 │       │   ├── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
+│       │   ├── 📄 MyTimetable.tsx   ← Weekly timetable grid (color-coded, current time line, slot details, CSV export)
 │       │   │
 │       │   └── 📁 admin/            ← Admin-only pages
 │       │       ├── 📄 AdminDashboard.tsx     ← Admin stats, quick-action buttons, academic summary
@@ -119,7 +120,8 @@ lecstu/
 │       │   ├── 📄 hallController.ts      ← CRUD + getBuildings (distinct building names)
 │       │   ├── 📄 officeController.ts   ← CRUD + getAvailableLecturers
 │       │   ├── 📄 buildingController.ts ← CRUD + uploadFloorPlan + deleteFloorPlan
-│       │   └── 📄 markerController.ts   ← CRUD + getMarkerDropdowns (buildings, halls, offices)
+│       │   ├── 📄 markerController.ts   ← CRUD + getMarkerDropdowns (buildings, halls, offices)
+│       │   └── 📄 userTimetableController.ts ← /timetable/my, /student/:id, /lecturer/:id, cache invalidate
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
@@ -134,7 +136,8 @@ lecstu/
 │       │   ├── 📄 halls.ts          ← Hall routes: CRUD + buildings list (ADMIN guard)
 │       │   ├── 📄 offices.ts        ← Office routes: CRUD + available lecturers (ADMIN guard)
 │       │   ├── 📄 buildings.ts      ← Building routes: CRUD + floor plan upload/delete (ADMIN guard)
-│       │   └── 📄 markers.ts        ← Marker routes: CRUD + dropdowns (ADMIN guard)
+│       │   ├── 📄 markers.ts        ← Marker routes: CRUD + dropdowns (ADMIN guard)
+│       │   └── 📄 userTimetable.ts  ← User timetable routes: /my, /student/:id, /lecturer/:id, cache
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -145,7 +148,9 @@ lecstu/
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
 │       │   ├── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
-│       │   └── 📄 auditLogger.ts     ← Audit log service (logs admin actions to AuditLog table)
+│       │   ├── 📄 auditLogger.ts     ← Audit log service (logs admin actions to AuditLog table)
+│       │   ├── 📄 timetableService.ts ← Timetable generation (student groups → weekly grid, lecturer schedule)
+│       │   └── 📄 timetableCache.ts  ← In-memory cache (5-min TTL, invalidate on master timetable changes)
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
@@ -293,6 +298,10 @@ lecstu/
 | POST | `/api/admin/markers` | Create marker with entity linking | JWT + ADMIN | No |
 | PATCH | `/api/admin/markers/:id` | Update marker | JWT + ADMIN | No |
 | DELETE | `/api/admin/markers/:id` | Delete marker | JWT + ADMIN | No |
+| GET | `/api/timetable/my` | Current user's weekly timetable | JWT | No |
+| GET | `/api/timetable/student/:id` | Specific student timetable | JWT + ADMIN | No |
+| GET | `/api/timetable/lecturer/:id` | Specific lecturer schedule | JWT | No |
+| POST | `/api/timetable/cache/invalidate` | Flush timetable cache | JWT + ADMIN | No |
 
 
 ---
@@ -378,6 +387,7 @@ lecstu/
 | 2026-02-18 | **3.2** | Master timetable management: CRUD API with paginated/filtered listing, conflict detection service (hall/lecturer/group overlap), CSV bulk import with validation, dropdown data endpoint, frontend TimetableManagement (table/calendar/import views), TimetableForm (create/edit with conflict display), TimetableCalendar (weekly grid, color-coded), TimetableBulkImport (upload, preview, error display) |
 | 2026-02-18 | **3.3** | Student Group, Hall & Office management: Group CRUD with student assignment (individual + bulk CSV), member list with add/remove UI; Hall CRUD with equipment tags, capacity, active status; Office CRUD with lecturer linking (1:1), available lecturers endpoint; Audit logging service for all admin actions; Admin sidebar updated with Groups/Halls/Offices links |
 | 2026-02-18 | **3.4** | Faculty map data management: Building CRUD (name, code, lat/lng, floors), floor plan image upload/delete per building per floor; Marker CRUD with type (HALL/OFFICE/LAB/AMENITY/ENTRANCE) and entity linking (hallId/officeId); Leaflet map preview with color-coded markers, popups, auto-bounds; Admin sidebar with Buildings/Markers links |
+| 2026-02-18 | **4.1** | Student timetable generation engine: timetableService (student groups → weekly grid, lecturer schedule), in-memory cache (5-min TTL, invalidated on master timetable CRUD + bulk import), user timetable API (GET /my, /student/:id, /lecturer/:id, POST cache/invalidate), MyTimetable frontend (weekly grid Mon–Fri 08–18, color-coded courses, current time red indicator, click-to-detail modal, print + CSV export) |
 
 
 ---

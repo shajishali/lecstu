@@ -2134,3 +2134,280 @@ a:hover {
     overflow-x: auto;
   }
 }
+
+/* ============ MY TIMETABLE (Phase 4.1) ============ */
+.timetable-page {
+  padding: 0;
+}
+
+.tt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tt-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.tt-subtitle {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.tt-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tt-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--gray-500);
+}
+
+.tt-empty h3 {
+  font-size: 1.15rem;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+/* Grid wrapper */
+.tt-grid-wrapper {
+  overflow-x: auto;
+}
+
+.tt-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(5, 1fr);
+  min-width: 700px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* Time column */
+.tt-time-col {
+  border-right: 1px solid var(--gray-200);
+}
+
+.tt-corner {
+  height: 44px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.tt-time-label {
+  height: 60px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 8px 0 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--gray-400);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+/* Day columns */
+.tt-day-col {
+  border-right: 1px solid var(--gray-100);
+}
+
+.tt-day-col:last-child {
+  border-right: none;
+}
+
+.tt-day-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.tt-day-header.active {
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.05);
+}
+
+.tt-today-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.tt-day-body {
+  position: relative;
+  height: 660px; /* 11 slots * 60px */
+}
+
+.tt-today .tt-day-body {
+  background: rgba(79, 70, 229, 0.02);
+}
+
+/* Slots */
+.tt-slot {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tt-slot:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+}
+
+.tt-slot-code {
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-slot-name {
+  font-size: 0.65rem;
+  color: var(--gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-slot-meta {
+  font-size: 0.6rem;
+  color: var(--gray-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Current time indicator */
+.tt-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ef4444;
+  z-index: 5;
+}
+
+.tt-now-dot {
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+/* Legend */
+.tt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.tt-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--gray-600);
+}
+
+.tt-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Detail modal */
+.tt-detail-modal {
+  max-width: 480px;
+}
+
+.tt-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tt-detail-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.tt-detail-row label {
+  width: 110px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+.tt-detail-row span {
+  font-size: 0.85rem;
+  color: var(--gray-800);
+}
+
+/* Print styles */
+@media print {
+  .tt-header .tt-actions,
+  .sidebar,
+  .navbar,
+  .tt-legend {
+    display: none !important;
+  }
+
+  .timetable-page {
+    padding: 0;
+  }
+
+  .tt-grid {
+    min-width: unset;
+    border: 1px solid #ddd;
+  }
+}
+
+@media (max-width: 768px) {
+  .tt-header {
+    flex-direction: column;
+  }
+
+  .tt-grid {
+    min-width: 600px;
+  }
+
+  .tt-time-label {
+    font-size: 0.6rem;
+    padding-right: 4px;
+  }
+}

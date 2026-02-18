@@ -4,6 +4,7 @@ import csvParser from 'csv-parser';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { detectConflicts } from '../services/conflictDetector';
+import { invalidateAll as invalidateTimetableCache } from '../services/timetableCache';
 
 const INCLUDE_RELATIONS = {
   course: { select: { id: true, name: true, code: true } },
@@ -105,6 +106,7 @@ export async function createTimetableEntry(req: Request, res: Response, next: Ne
       include: INCLUDE_RELATIONS,
     });
 
+    invalidateTimetableCache();
     res.status(201).json({ success: true, data: entry });
   } catch (err) {
     next(err);
@@ -140,6 +142,7 @@ export async function updateTimetableEntry(req: Request, res: Response, next: Ne
       include: INCLUDE_RELATIONS,
     });
 
+    invalidateTimetableCache();
     res.json({ success: true, data: entry });
   } catch (err) {
     next(err);
@@ -153,6 +156,7 @@ export async function deleteTimetableEntry(req: Request, res: Response, next: Ne
     if (!existing) throw new AppError('Timetable entry not found', 404);
 
     await prisma.masterTimetable.delete({ where: { id } });
+    invalidateTimetableCache();
     res.json({ success: true, message: 'Timetable entry deleted' });
   } catch (err) {
     next(err);
@@ -296,6 +300,7 @@ export async function bulkImport(req: Request, res: Response, next: NextFunction
       data: validEntries.map(({ _rowNum, ...e }) => e),
     });
 
+    invalidateTimetableCache();
     res.status(201).json({
       success: true,
       message: `Successfully imported ${created.count} timetable entries`,

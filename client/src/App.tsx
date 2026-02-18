@@ -15,6 +15,7 @@ import HallManagement from '@pages/admin/HallManagement';
 import OfficeManagement from '@pages/admin/OfficeManagement';
 import BuildingManagement from '@pages/admin/BuildingManagement';
 import MarkerManagement from '@pages/admin/MarkerManagement';
+import MyTimetable from '@pages/MyTimetable';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -129,8 +130,8 @@ function AppRoutes() {
           }
         />
 
-        {/* Placeholder routes — to be built in later phases */}
-        <Route path="/timetable" element={<PlaceholderPage title="Timetable" phase="3" />} />
+        {/* User-facing timetable */}
+        <Route path="/timetable" element={<MyTimetable />} />
         <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="4" />} />
         <Route path="/assistant" element={<PlaceholderPage title="AI Assistant" phase="8" />} />
         <Route path="/map" element={<PlaceholderPage title="Campus Map" phase="5" />} />
