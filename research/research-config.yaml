@@ -1,0 +1,95 @@
+# ════════════════════════════════════════════════════════════════
+# LECSTU — Research Configuration
+# ════════════════════════════════════════════════════════════════
+# This file pins all experiment settings for reproducibility.
+# Every experiment script MUST load this config before running.
+# ════════════════════════════════════════════════════════════════
+
+# ─── Reproducibility ───
+random_seeds: [42, 123, 456]        # 3 runs per experiment for variance measurement
+num_repetitions: 3
+
+# ─── ASR Benchmark (RO-1 / Phase 7) ───
+asr:
+  engines:
+    whisper:
+      model_sizes: ["tiny", "base", "small", "medium"]
+      version: "openai/whisper (latest)"
+      device: "auto"                 # auto-detects GPU/CPU
+    google_speech:
+      api_version: "v1"
+      # credentials: set GOOGLE_APPLICATION_CREDENTIALS env var
+  languages: ["en", "ta", "si"]      # English, Tamil, Sinhala
+  audio_format: "wav"
+  sample_rate: 16000
+  dataset_path: "datasets/asr/"
+  min_utterances_per_language: 50
+
+# ─── NLP Chatbot Evaluation (RO-2 / Phase 8) ───
+nlp:
+  framework: "rasa"
+  rasa_version: "3.x"
+  pipeline: "DIETClassifier"
+  cross_validation_folds: 5
+  train_test_split: 0.8              # 80% train / 20% test
+  confidence_thresholds: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  min_examples_per_intent: 30
+  dataset_path: "datasets/nlp/"
+
+# ─── Translation Evaluation (RO-3 / Phase 9) ───
+translation:
+  engines:
+    cloud:
+      provider: "google_translate"    # or "azure_translator"
+      # api_key: set GOOGLE_TRANSLATE_API_KEY env var
+    transformer:
+      model: "Helsinki-NLP/opus-mt"   # or "facebook/mbart-large-50"
+      device: "auto"
+  language_pairs:
+    - source: "en"
+      target: "ta"
+    - source: "en"
+      target: "si"
+    - source: "ta"
+      target: "si"
+    - source: "ta"
+      target: "en"
+    - source: "si"
+      target: "en"
+    - source: "si"
+      target: "ta"
+  embedding_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+  min_sentence_pairs_per_language: 100
+  dataset_path: "datasets/translation/"
+  human_eval:
+    min_evaluators: 5
+    rubric_scales: [1, 2, 3, 4, 5]   # Likert scale for fluency, adequacy, overall
+    inter_rater_method: "krippendorff_alpha"
+
+# ─── Usability Study (RO-4 / Phase 10) ───
+usability:
+  min_participants: 20
+  study_design: "within-subjects"     # Each participant does both AI and manual
+  counterbalance: true                # Randomize task order to avoid learning effects
+  session_duration_minutes: 45
+  instruments:
+    sus: true                         # System Usability Scale (10-item)
+    ai_trust: true                    # Custom 5-item AI trust scale
+    satisfaction: true                # Post-task Likert rating
+  statistical_tests:
+    - "paired_t_test"
+    - "wilcoxon_signed_rank"
+    - "one_way_anova"
+    - "spearman_correlation"
+    - "cohens_d"
+  dataset_path: "usability-study/"
+
+# ─── Paths (relative to /research/) ───
+paths:
+  logs: "logs/"
+  reports: "reports/"
+  datasets: "datasets/"
+  asr_results: "asr-benchmark/results/"
+  nlp_results: "nlp-evaluation/results/"
+  translation_results: "translation-eval/results/"
+  usability_data: "usability-study/raw-data/"

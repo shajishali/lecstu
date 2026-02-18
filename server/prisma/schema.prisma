@@ -1,0 +1,396 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  LECTURER
+  STUDENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  APPOINTMENT_REQUEST
+  APPOINTMENT_ACCEPTED
+  APPOINTMENT_REJECTED
+  APPOINTMENT_CANCELLED
+  TIMETABLE_CHANGE
+  ANNOUNCEMENT
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum MapMarkerType {
+  HALL
+  OFFICE
+  LAB
+  AMENITY
+  ENTRANCE
+}
+
+// ─────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  role         UserRole
+  firstName    String
+  lastName     String
+  profileImage String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  // Student relations
+  studentGroupMemberships StudentGroupMember[]
+  studentAppointments     Appointment[]        @relation("StudentAppointments")
+
+  // Lecturer relations
+  lecturerOffice        LecturerOffice?
+  lecturerAppointments  Appointment[]    @relation("LecturerAppointments")
+  timetableEntries      MasterTimetable[]
+
+  // General
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([departmentId])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// FACULTY & DEPARTMENT
+// ─────────────────────────────────────────
+
+model Faculty {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departments Department[]
+
+  @@map("faculties")
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  users         User[]
+  courses       Course[]
+  studentGroups StudentGroup[]
+
+  @@index([facultyId])
+  @@map("departments")
+}
+
+// ─────────────────────────────────────────
+// COURSE
+// ─────────────────────────────────────────
+
+model Course {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  credits     Int      @default(3)
+  description String?
+  semester    Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  timetableEntries MasterTimetable[]
+
+  @@index([departmentId])
+  @@map("courses")
+}
+
+// ─────────────────────────────────────────
+// STUDENT GROUP
+// ─────────────────────────────────────────
+
+model StudentGroup {
+  id        String   @id @default(uuid())
+  name      String
+  batchYear Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  members          StudentGroupMember[]
+  timetableEntries MasterTimetable[]
+
+  @@unique([name, departmentId])
+  @@index([departmentId])
+  @@map("student_groups")
+}
+
+model StudentGroupMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  studentId String
+  student   User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  groupId String
+  group   StudentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, groupId])
+  @@index([groupId])
+  @@map("student_group_members")
+}
+
+// ─────────────────────────────────────────
+// LECTURE HALL
+// ─────────────────────────────────────────
+
+model LectureHall {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  building  String
+  floor     Int      @default(0)
+  capacity  Int
+  equipment String[] @default([])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  timetableEntries MasterTimetable[]
+  mapMarkers       MapMarker[]       @relation("HallMarkers")
+
+  @@index([building])
+  @@map("lecture_halls")
+}
+
+// ─────────────────────────────────────────
+// LECTURER OFFICE
+// ─────────────────────────────────────────
+
+model LecturerOffice {
+  id         String   @id @default(uuid())
+  roomNumber String
+  building   String
+  floor      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lecturerId String @unique
+  lecturer   User   @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  mapMarkers MapMarker[] @relation("OfficeMarkers")
+
+  @@index([building])
+  @@map("lecturer_offices")
+}
+
+// ─────────────────────────────────────────
+// MASTER TIMETABLE
+// ─────────────────────────────────────────
+
+model MasterTimetable {
+  id        String    @id @default(uuid())
+  dayOfWeek DayOfWeek
+  startTime String    // "08:00" format (HH:mm)
+  endTime   String    // "09:00" format (HH:mm)
+  semester  Int       @default(1)
+  year      Int       @default(2026)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  lecturerId String
+  lecturer   User @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  hallId String
+  hall   LectureHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+
+  groupId String
+  group   StudentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Performance indexes for conflict detection & availability queries
+  @@index([dayOfWeek, startTime, hallId], name: "idx_timetable_hall_slot")
+  @@index([dayOfWeek, startTime, lecturerId], name: "idx_timetable_lecturer_slot")
+  @@index([groupId, dayOfWeek], name: "idx_timetable_group_day")
+  @@index([lecturerId, dayOfWeek])
+  @@index([hallId, dayOfWeek])
+  @@map("master_timetable")
+}
+
+// ─────────────────────────────────────────
+// APPOINTMENT
+// ─────────────────────────────────────────
+
+model Appointment {
+  id        String            @id @default(uuid())
+  dateTime  DateTime
+  duration  Int               @default(30) // minutes
+  status    AppointmentStatus @default(PENDING)
+  reason    String?
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  studentId String
+  student   User @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
+
+  lecturerId String
+  lecturer   User @relation("LecturerAppointments", fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  // Performance indexes for availability & booking queries
+  @@index([lecturerId, dateTime], name: "idx_appointment_lecturer_time")
+  @@index([studentId, dateTime])
+  @@index([status])
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Performance index for notification queries
+  @@index([userId, isRead], name: "idx_notification_user_read")
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────
+// MAP: BUILDINGS & MARKERS
+// ─────────────────────────────────────────
+
+model MapBuilding {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  latitude  Float
+  longitude Float
+  floors    Int      @default(1)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  markers    MapMarker[]
+  floorPlans FloorPlan[]
+
+  @@map("map_buildings")
+}
+
+model FloorPlan {
+  id        String   @id @default(uuid())
+  floor     Int
+  imagePath String
+  bounds    Json?
+  createdAt DateTime @default(now())
+
+  buildingId String
+  building   MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  @@unique([buildingId, floor])
+  @@map("floor_plans")
+}
+
+model MapMarker {
+  id       String        @id @default(uuid())
+  floor    Int           @default(0)
+  type     MapMarkerType
+  label    String
+  x        Float
+  y        Float
+  metadata Json?
+
+  buildingId String
+  building   MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  // Optional links to actual entities
+  hallId   String?
+  hall     LectureHall?   @relation("HallMarkers", fields: [hallId], references: [id], onDelete: SetNull)
+
+  officeId String?
+  office   LecturerOffice? @relation("OfficeMarkers", fields: [officeId], references: [id], onDelete: SetNull)
+
+  @@index([buildingId, floor])
+  @@index([type])
+  @@map("map_markers")
+}
+
+// ─────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

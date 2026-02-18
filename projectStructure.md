@@ -1,0 +1,279 @@
+# ════════════════════════════════════════════════════════════════
+# LECSTU — Project Structure Reference
+# ════════════════════════════════════════════════════════════════
+# Last Updated : 2026-02-18 (After Sub-Phase 1.3)
+# Update Rule  : This file MUST be updated whenever files/folders
+#                are added, moved, or removed from the project.
+# ════════════════════════════════════════════════════════════════
+
+
+---
+
+## Full Directory Tree
+
+```
+lecstu/
+│
+├── 📄 package.json                  ← Root scripts (dev, build, lint — runs both client & server)
+├── 📄 .prettierrc                   ← Shared code formatting rules
+├── 📄 .gitignore                    ← Git ignore rules (node_modules, .env, uploads, large files)
+├── 📄 phases.md                     ← Research & development phases reference (DO NOT MODIFY)
+├── 📄 projectStructure.md           ← THIS FILE — project structure reference
+│
+│
+├── 📁 client/                       ← FRONTEND — Vite + React + TypeScript
+│   ├── 📄 package.json              ← Client dependencies & scripts
+│   ├── 📄 tsconfig.json             ← TypeScript config (jsx: react-jsx, path aliases)
+│   ├── 📄 vite.config.ts            ← Vite config (React plugin, proxy to :5000, path aliases)
+│   ├── 📄 index.html                ← HTML entry (mounts #root)
+│   ├── 📄 .env                      ← Client env vars (VITE_API_BASE_URL)
+│   ├── 📄 .env.example              ← Env template for other developers
+│   │
+│   ├── 📁 public/
+│   │   └── 📄 vite.svg              ← Favicon
+│   │
+│   └── 📁 src/
+│       ├── 📄 main.tsx              ← React entry point (renders <App /> into #root)
+│       ├── 📄 App.tsx               ← Root component (BrowserRouter + Routes)
+│       ├── 📄 index.css             ← Global CSS reset & base styles
+│       ├── 📄 vite-env.d.ts         ← Vite client type declarations
+│       │
+│       ├── 📁 components/           ← Reusable UI components (buttons, modals, tables, etc.)
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 pages/                ← Page-level components (one per route)
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 hooks/                ← Custom React hooks
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 store/                ← Zustand state management stores
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 services/             ← API service layer
+│       │   └── 📄 api.ts            ← Axios instance (baseURL: /api, credentials, 401 refresh interceptor)
+│       │
+│       └── 📁 utils/                ← Utility/helper functions
+│           └── .gitkeep
+│
+│
+├── 📁 server/                       ← BACKEND — Node.js + Express + TypeScript (MVC)
+│   ├── 📄 package.json              ← Server dependencies & scripts (dev, db:migrate, db:seed, db:studio)
+│   ├── 📄 tsconfig.json             ← TypeScript config (commonjs, path aliases)
+│   ├── 📄 prisma.config.ts          ← Prisma config (datasource URL from env)
+│   ├── 📄 .env                      ← Server env vars (PORT, DB, JWT secrets)
+│   ├── 📄 .env.example              ← Env template for other developers
+│   │
+│   ├── 📁 prisma/                   ← DATABASE — Prisma ORM
+│   │   ├── 📄 schema.prisma         ← Database schema (14 models, enums, indexes)
+│   │   ├── 📄 seed.ts               ← Seed script (3 faculties, 6 depts, 122 users, 15 courses, etc.)
+│   │   └── 📁 migrations/           ← Auto-generated SQL migrations
+│   │       └── 📁 20260218_init/    ← Initial migration
+│   │
+│   ├── 📁 uploads/                  ← File upload storage (profile images, CSVs)
+│   │   └── .gitkeep
+│   │
+│   └── 📁 src/
+│       ├── 📄 server.ts             ← Entry point — starts Express on configured port
+│       ├── 📄 app.ts                ← Express app setup (CORS, JSON, cookies, static files, routes, error handler)
+│       │
+│       ├── 📁 config/
+│       │   ├── 📄 index.ts          ← Centralized config (reads .env: port, db, jwt, upload settings)
+│       │   └── 📄 database.ts       ← Prisma client instance (PG adapter, singleton)
+│       │
+│       ├── 📁 generated/prisma/     ← Auto-generated Prisma client (DO NOT EDIT)
+│       │   ├── 📄 client.ts         ← PrismaClient class + model types + enums
+│       │   ├── 📄 enums.ts          ← UserRole, DayOfWeek, AppointmentStatus, etc.
+│       │   └── 📄 ...               ← Other generated files
+│       │
+│       ├── 📁 controllers/          ← Request handlers (one file per resource)
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
+│       │   └── .gitkeep
+│       │
+│       ├── 📁 routes/
+│       │   └── 📄 index.ts          ← API router (currently: GET /api/health)
+│       │
+│       ├── 📁 middleware/
+│       │   └── 📄 errorHandler.ts   ← AppError class + global error handler middleware
+│       │
+│       ├── 📁 services/             ← Business logic layer (one file per domain)
+│       │   └── .gitkeep
+│       │
+│       └── 📁 utils/                ← Utility/helper functions
+│           └── .gitkeep
+│
+│
+├── 📁 shared/                       ← SHARED — Types & constants used by both client and server
+│   └── 📁 types/
+│       └── 📄 index.ts              ← Shared enums: UserRole, AppointmentStatus, NotificationType,
+│                                       DayOfWeek, MapMarkerType + ApiResponse, PaginatedResponse interfaces
+│
+│
+├── 📁 ai-services/                  ← AI MODULES — Implemented in Phases 7–9
+│   ├── 📁 asr/                      ← Phase 7: ASR (Whisper + Google Speech)
+│   ├── 📁 chatbot/                  ← Phase 8: NLP Chatbot (Rasa)
+│   └── 📁 translation/              ← Phase 9: Translation (MarianMT + Cloud API)
+│
+│
+└── 📁 research/                     ← RESEARCH — Experiments, datasets, reports
+    ├── 📄 research-config.yaml      ← Master experiment config (seeds, models, dataset paths, thresholds)
+    │
+    ├── 📁 lib/                      ← Research utility modules
+    │   ├── 📄 logger.js             ← Experiment logger (structured JSON, auto-IDs, hardware info, summaries)
+    │   ├── 📄 latency_profiler.js   ← Latency measurement (single/batch, p95/p99, stats)
+    │   ├── 📄 wer_calculator.py     ← Word Error Rate + Character Error Rate (edit distance, batch stats)
+    │   ├── 📄 classification_metrics.py ← Precision/Recall/F1, confusion matrix, per-class reports
+    │   └── 📄 bleu_calculator.py    ← BLEU score (n-gram precision, brevity penalty, corpus-level)
+    │
+    ├── 📁 templates/                ← Report templates
+    │   ├── 📄 experiment_report_template.md   ← Standard experiment report (methodology, results, stats)
+    │   └── 📄 usability_report_template.md    ← Usability study report (SUS, tasks, qualitative themes)
+    │
+    ├── 📁 asr-benchmark/            ← RO-1: ASR evaluation
+    │   ├── 📁 scripts/              ← Experiment runner scripts
+    │   └── 📁 results/              ← Raw benchmark output
+    │
+    ├── 📁 nlp-evaluation/           ← RO-2: Chatbot evaluation
+    │   ├── 📁 scripts/
+    │   └── 📁 results/
+    │
+    ├── 📁 translation-eval/         ← RO-3: Translation evaluation
+    │   ├── 📁 scripts/
+    │   └── 📁 results/
+    │
+    ├── 📁 usability-study/          ← RO-4: Usability study
+    │   ├── 📁 instruments/          ← Questionnaires, consent forms, rubrics
+    │   │   └── 📄 ethics_plan.md    ← Data collection ethics plan (consent, PII, risks, approval)
+    │   └── 📁 raw-data/             ← Collected participant data
+    │
+    ├── 📁 datasets/                 ← Shared test datasets
+    │   ├── 📁 asr/                  ← Audio files + ground truth transcriptions
+    │   ├── 📁 nlp/                  ← Intent/entity training & test data
+    │   └── 📁 translation/          ← Parallel corpus + human evaluation scores
+    │
+    ├── 📁 logs/                     ← Structured experiment logs (JSON, auto-generated by logger.js)
+    └── 📁 reports/                  ← Generated evaluation reports (Markdown)
+```
+
+
+---
+
+## Key Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `package.json` (root) | Monorepo scripts: `npm run dev` starts client + server via concurrently |
+| `client/package.json` | Frontend deps: react, react-dom, react-router-dom, axios, zustand |
+| `server/package.json` | Backend deps: express, cors, cookie-parser, dotenv, prisma, pg, bcrypt; dev: tsx watch |
+| `server/prisma/schema.prisma` | Database schema: 14 models, 6 enums, composite indexes for performance |
+| `server/prisma/seed.ts` | Seed script: 122 users, 15 courses, 30 timetable entries, map data |
+| `server/prisma.config.ts` | Prisma config: datasource URL, migration path |
+| `server/src/config/database.ts` | Prisma client singleton with PG adapter |
+| `client/vite.config.ts` | React plugin, `/api` proxy to `:5000`, path aliases (`@components`, etc.) |
+| `client/tsconfig.json` | JSX: react-jsx, path aliases, strict mode |
+| `server/tsconfig.json` | CommonJS output, path aliases (`@controllers`, etc.), strict mode |
+| `.prettierrc` | Shared formatting: single quotes, trailing commas, 90 char width |
+| `.gitignore` | Ignores: node_modules, .env, uploads, large audio/model files |
+| `research/research-config.yaml` | Master experiment config: random seeds, model versions, dataset paths, evaluation thresholds |
+| `research/lib/logger.js` | Experiment logging: structured JSON, auto experiment IDs, hardware capture, summary stats |
+| `research/lib/wer_calculator.py` | WER/CER computation for ASR benchmarks (RO-1) |
+| `research/lib/classification_metrics.py` | Precision/Recall/F1 for chatbot intent classification (RO-2) |
+| `research/lib/bleu_calculator.py` | BLEU score for translation evaluation (RO-3) |
+| `research/lib/latency_profiler.js` | Response latency measurement with percentile stats |
+| `research/usability-study/instruments/ethics_plan.md` | Data collection ethics plan (consent, PII handling, risk assessment) |
+
+
+---
+
+## API Endpoints (Current)
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET | `/api/health` | Server health check | None |
+
+
+---
+
+## Database Schema (14 Models)
+
+| Model | Table Name | Key Fields | Relations |
+|-------|-----------|------------|-----------|
+| User | `users` | email, password, role (ADMIN/LECTURER/STUDENT), firstName, lastName | → Department, ← Appointments, ← Notifications |
+| Faculty | `faculties` | name, code | ← Departments |
+| Department | `departments` | name, code | → Faculty, ← Users, ← Courses, ← StudentGroups |
+| Course | `courses` | name, code, credits, semester | → Department, ← MasterTimetable |
+| StudentGroup | `student_groups` | name, batchYear | → Department, ← Members, ← MasterTimetable |
+| StudentGroupMember | `student_group_members` | studentId, groupId | → User, → StudentGroup |
+| LectureHall | `lecture_halls` | name, building, floor, capacity, equipment[] | ← MasterTimetable, ← MapMarkers |
+| LecturerOffice | `lecturer_offices` | roomNumber, building, floor | → User (1:1), ← MapMarkers |
+| MasterTimetable | `master_timetable` | dayOfWeek, startTime, endTime, semester | → Course, → User, → Hall, → Group |
+| Appointment | `appointments` | dateTime, duration, status, reason | → Student, → Lecturer |
+| Notification | `notifications` | type, title, message, isRead | → User |
+| MapBuilding | `map_buildings` | name, code, latitude, longitude, floors | ← Markers, ← FloorPlans |
+| FloorPlan | `floor_plans` | floor, imagePath, bounds | → MapBuilding |
+| MapMarker | `map_markers` | floor, type, label, x, y | → Building, →? Hall, →? Office |
+| AuditLog | `audit_logs` | action, entity, entityId, details | → User |
+
+### Seed Data Summary
+
+| Entity | Count | Details |
+|--------|-------|---------|
+| Users | 122 | 2 admins + 20 lecturers + 100 students |
+| Faculties | 3 | Computing, Engineering, Science |
+| Departments | 6 | CS, IT, EE, ME, Math, Physics |
+| Courses | 15 | Across all 6 departments |
+| Student Groups | 5 | CS-2024-A/B, IT-2024-A, EE-2024-A, MATH-2024-A |
+| Lecture Halls | 10 | Halls A/B/C, Labs 1/2/3, Seminar Rooms, Auditorium, Workshop |
+| Timetable Entries | 30 | Mon–Fri, 6 slots per day |
+| Map Buildings | 4 | Main, Computing, Science, Engineering blocks |
+| Map Markers | 8 | Hall markers, entrances, amenities |
+| Default Password | — | All users: `lecstu123` / Admin: `admin@lecstu.edu` |
+
+
+---
+
+## Dev Commands
+
+| Command | Where | What It Does |
+|---------|-------|--------------|
+| `npm run dev` | Root (`lecstu/`) | Starts BOTH client and server concurrently |
+| `npm run dev` | `client/` | Starts Vite dev server on `:5173` |
+| `npm run dev` | `server/` | Starts Express via tsx watch on `:5000` |
+| `npm run build` | `client/` | TypeScript check + Vite production build |
+| `npm run build` | `server/` | TypeScript compile to `dist/` |
+| `npm run db:migrate` | `server/` | Run Prisma migrations |
+| `npm run db:seed` | `server/` | Seed database with sample data |
+| `npm run db:reset` | `server/` | Reset database (drop + migrate + seed) |
+| `npm run db:studio` | `server/` | Open Prisma Studio (visual DB browser) |
+
+
+---
+
+## Port Allocation
+
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend (Vite) | 5173 | http://localhost:5173 |
+| Backend (Express) | 5000 | http://localhost:5000 |
+| PostgreSQL | 5432 | localhost:5432 (database: `lecstu`) |
+| Prisma Studio | 5555 | http://localhost:5555 (run `npm run db:studio`) |
+
+
+---
+
+## Change Log
+
+| Date | Sub-Phase | Changes |
+|------|-----------|---------|
+| 2026-02-18 | **1.1** | Initial monorepo setup: client (Vite+React+TS), server (Express+TS MVC), shared types, ai-services scaffold, research directory structure, root concurrently scripts, .env configs, Prettier config, .gitignore |
+| 2026-02-18 | **1.2** | Prisma ORM + PostgreSQL: 14-model schema (User, Faculty, Department, Course, StudentGroup, LectureHall, LecturerOffice, MasterTimetable, Appointment, Notification, MapBuilding, FloorPlan, MapMarker, AuditLog), composite indexes, PG adapter, seed script (122 users, 15 courses, 30 timetable entries, map data), database.ts client singleton |
+| 2026-02-18 | **1.3** | Research environment: experiment logger (logger.js), latency profiler, research-config.yaml (seeds, model versions, thresholds), metric calculators (WER, F1/precision/recall, BLEU), experiment & usability report templates, data collection ethics plan |
+
+
+---
+
+# ════════════════════════════════════════════════════════════════
+# END OF PROJECT STRUCTURE REFERENCE
+# ════════════════════════════════════════════════════════════════
