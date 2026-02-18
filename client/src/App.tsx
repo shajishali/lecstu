@@ -1,45 +1,79 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuthStore } from '@store/authStore';
+import Layout from '@components/Layout';
+import ProtectedRoute from '@components/ProtectedRoute';
+import Login from '@pages/Login';
+import Register from '@pages/Register';
+import Dashboard from '@pages/Dashboard';
 
-function Home() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-      color: '#f8fafc',
-    }}>
-      <h1 style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-        LECSTU
-      </h1>
-      <p style={{ fontSize: '1.2rem', color: '#94a3b8', marginBottom: '2rem' }}>
-        AI-Integrated Academic Platform
-      </p>
-      <div style={{
-        padding: '1rem 2rem',
-        background: 'rgba(34, 197, 94, 0.15)',
-        border: '1px solid rgba(34, 197, 94, 0.3)',
-        borderRadius: '0.5rem',
-        color: '#4ade80',
-        fontSize: '0.9rem',
-      }}>
-        Phase 1.1 Complete — Dev Environment Running
+function AppRoutes() {
+  const { isAuthenticated, isLoading, getMe } = useAuthStore();
+
+  useEffect(() => {
+    getMe();
+  }, [getMe]);
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" />
+        <p>Loading LECSTU...</p>
       </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
+      />
+      <Route
+        path="/register"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
+      />
+
+      {/* Protected routes inside Layout */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Placeholder routes — to be built in later phases */}
+        <Route path="/timetable" element={<PlaceholderPage title="Timetable" phase="3" />} />
+        <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="4" />} />
+        <Route path="/assistant" element={<PlaceholderPage title="AI Assistant" phase="8" />} />
+        <Route path="/map" element={<PlaceholderPage title="Campus Map" phase="5" />} />
+        <Route path="/notifications" element={<PlaceholderPage title="Notifications" phase="6" />} />
+        <Route path="/users" element={<PlaceholderPage title="User Management" phase="2.3" />} />
+        <Route path="/settings" element={<PlaceholderPage title="Settings" phase="6" />} />
+      </Route>
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
+
+function PlaceholderPage({ title, phase }: { title: string; phase: string }) {
+  return (
+    <div className="placeholder-page">
+      <h2>{title}</h2>
+      <p>This feature will be implemented in Phase {phase}.</p>
     </div>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
-
-export default App;

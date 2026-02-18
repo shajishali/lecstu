@@ -8,12 +8,19 @@ const api = axios.create({
   },
 });
 
+const SKIP_REFRESH = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/me'];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestPath = originalRequest?.url || '';
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const shouldSkip =
+      originalRequest._retry ||
+      SKIP_REFRESH.some((p) => requestPath.includes(p));
+
+    if (error.response?.status === 401 && !shouldSkip) {
       originalRequest._retry = true;
       try {
         await api.post('/auth/refresh');

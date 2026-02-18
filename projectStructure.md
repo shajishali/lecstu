@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 2.1)
+# Last Updated : 2026-02-18 (After Sub-Phase 2.2)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -38,20 +38,26 @@ lecstu/
 │       ├── 📄 index.css             ← Global CSS reset & base styles
 │       ├── 📄 vite-env.d.ts         ← Vite client type declarations
 │       │
-│       ├── 📁 components/           ← Reusable UI components (buttons, modals, tables, etc.)
-│       │   └── .gitkeep
+│       ├── 📁 types/
+│       │   └── 📄 auth.ts           ← User, LoginRequest, RegisterRequest, AuthResponse types
+│       │
+│       ├── 📁 components/           ← Reusable UI components
+│       │   ├── 📄 Layout.tsx        ← App shell: sidebar (role-aware nav) + top navbar + <Outlet/>
+│       │   └── 📄 ProtectedRoute.tsx ← Auth guard: redirect to /login if not authenticated, 403 for wrong role
 │       │
 │       ├── 📁 pages/                ← Page-level components (one per route)
-│       │   └── .gitkeep
+│       │   ├── 📄 Login.tsx         ← Email/password form, validation, error display, show/hide password
+│       │   ├── 📄 Register.tsx      ← Name, email, role selector, password with strength rules
+│       │   └── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 store/                ← Zustand state management stores
-│       │   └── .gitkeep
+│       │   └── 📄 authStore.ts      ← Auth state: user, isAuthenticated, login, register, logout, getMe
 │       │
 │       ├── 📁 services/             ← API service layer
-│       │   └── 📄 api.ts            ← Axios instance (baseURL: /api, credentials, 401 refresh interceptor)
+│       │   └── 📄 api.ts            ← Axios instance (baseURL: /api, credentials, smart 401 refresh interceptor)
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           └── .gitkeep
@@ -284,6 +290,7 @@ lecstu/
 | 2026-02-18 | **1.2** | Prisma ORM + PostgreSQL: 14-model schema (User, Faculty, Department, Course, StudentGroup, LectureHall, LecturerOffice, MasterTimetable, Appointment, Notification, MapBuilding, FloorPlan, MapMarker, AuditLog), composite indexes, PG adapter, seed script (122 users, 15 courses, 30 timetable entries, map data), database.ts client singleton |
 | 2026-02-18 | **1.3** | Research environment: experiment logger (logger.js), latency profiler, research-config.yaml (seeds, model versions, thresholds), metric calculators (WER, F1/precision/recall, BLEU), experiment & usability report templates, data collection ethics plan |
 | 2026-02-18 | **2.1** | Backend auth system: JWT access/refresh tokens (15min/7d), bcrypt password hashing (salt:12), auth controller (register/login/refresh/logout/getMe), authenticate + authorize(roles) middleware, express-validator rules, rate limiting (20/15min on auth), auth routes wired to /api/auth/* |
+| 2026-02-18 | **2.2** | Frontend auth UI: Zustand auth store, Login page, Register page (role selector), ProtectedRoute guard, Layout (sidebar+navbar), Dashboard (role-aware cards+profile), routing, global CSS, lucide-react icons |
 
 
 ---

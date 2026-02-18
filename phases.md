@@ -69,7 +69,7 @@ efficiency barriers in multilingual university environments.
 | **1.2** | Database Schema Design & Migration | Engineering | RO-5 | ⬜ |
 | **1.3** | Research Environment & Experiment Framework | Research | RO-5 | ✅ |
 | **2.1** | Backend Auth System (JWT + RBAC) | Engineering | RO-5 | ✅ |
-| **2.2** | Frontend Auth UI & State Management | Engineering | RO-5 | ⬜ |
+| **2.2** | Frontend Auth UI & State Management | Engineering | RO-5 | ✅ |
 | **2.3** | User Profile & File Upload | Engineering | RO-5 | ⬜ |
 | **3.1** | Admin Dashboard Shell & Layout | Engineering | RO-5 | ⬜ |
 | **3.2** | Master Timetable Management | Engineering | RO-5 | ⬜ |
@@ -283,24 +283,24 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 2.2 — Frontend Auth UI & State Management
 **Type**: Engineering | **Effort**: ~1 day
 
-- [ ] Install frontend dependencies: axios, react-router-dom, zustand (or React Context)
-- [ ] Create auth state management (store/context):
+- [x] Install frontend dependencies: axios, react-router-dom, zustand (or React Context)
+- [x] Create auth state management (store/context):
   - State: user, isAuthenticated, isLoading, role
   - Actions: login, register, logout, refreshToken, getMe
-- [ ] Create API client with interceptors:
+- [x] Create API client with interceptors:
   - Attach access token to requests
   - Auto-refresh on 401 response
   - Redirect to login on auth failure
-- [ ] Build auth pages:
+- [x] Build auth pages:
   - **Login page** — email/password form, validation, error display
   - **Register page** — name, email, password, role selection, validation
-- [ ] Build `ProtectedRoute` wrapper component:
+- [x] Build `ProtectedRoute` wrapper component:
   - Redirect to login if not authenticated
   - Role-based access check (show 403 for unauthorized roles)
-- [ ] Build app shell layout:
+- [x] Build app shell layout:
   - Top navbar with user info and logout
   - Role-aware sidebar navigation
-- [ ] Wire up routing:
+- [x] Wire up routing:
   - Public: `/login`, `/register`
   - Protected: `/dashboard` (role-redirected)
 
