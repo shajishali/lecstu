@@ -57,7 +57,8 @@ export default function GroupManagement() {
   const fetchDepartments = useCallback(async () => {
     try {
       const res = await api.get('/profile/departments');
-      setDepartments(res.data.data);
+      const data = res.data.data;
+      setDepartments(Array.isArray(data) ? data : data.departments || []);
     } catch { /* ignore */ }
   }, []);
 
