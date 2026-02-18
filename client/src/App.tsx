@@ -9,6 +9,7 @@ import Register from '@pages/Register';
 import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
 import AdminDashboard from '@pages/admin/AdminDashboard';
+import TimetableManagement from '@pages/admin/TimetableManagement';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -70,7 +71,7 @@ function AppRoutes() {
           path="/admin/timetable"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <PlaceholderPage title="Timetable Management" phase="3.2" />
+              <TimetableManagement />
             </ProtectedRoute>
           }
         />

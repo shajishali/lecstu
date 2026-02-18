@@ -364,23 +364,23 @@ efficiency barriers in multilingual university environments.
 
 ---
 
-### Sub-Phase 3.2 — Master Timetable Management
+### Sub-Phase 3.2 — Master Timetable Management ✅
 **Type**: Engineering | **Effort**: ~2 days
 
-- [ ] Build timetable controller (`/server/src/controllers/timetableController.js`):
+- [x] Build timetable controller (`/server/src/controllers/timetableController.ts`):
   - `POST /api/admin/timetable` — create entry
   - `GET /api/admin/timetable` — list all (paginated, filtered)
   - `GET /api/admin/timetable/:id` — get single
   - `PATCH /api/admin/timetable/:id` — update entry
   - `DELETE /api/admin/timetable/:id` — delete entry
-  - `POST /api/admin/timetable/bulk-import` — CSV/Excel upload
-- [ ] Timetable conflict detection service:
+  - `POST /api/admin/timetable/bulk-import` — CSV upload
+- [x] Timetable conflict detection service:
   - Hall conflict: same hall, same day, overlapping time
   - Lecturer conflict: same lecturer, same day, overlapping time
   - Group conflict: same group, same day, overlapping time
   - Return detailed conflict info on creation/update
-- [ ] CSV/Excel parser for bulk import (Multer + csv-parser or xlsx)
-- [ ] Frontend timetable management:
+- [x] CSV parser for bulk import (Multer memory storage + csv-parser)
+- [x] Frontend timetable management:
   - Data table view (filterable by day, lecturer, hall, group)
   - Weekly calendar grid view (visual timetable)
   - Create/edit form with dropdown selectors (courses, lecturers, halls, groups)

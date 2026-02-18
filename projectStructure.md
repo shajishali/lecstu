@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 3.1)
+# Last Updated : 2026-02-18 (After Sub-Phase 3.2)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -56,7 +56,11 @@ lecstu/
 │       │   ├── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
 │       │   │
 │       │   └── 📁 admin/            ← Admin-only pages
-│       │       └── 📄 AdminDashboard.tsx ← Admin stats (users, halls, courses, groups), quick-action buttons
+│       │       ├── 📄 AdminDashboard.tsx     ← Admin stats, quick-action buttons, academic summary
+│       │       ├── 📄 TimetableManagement.tsx ← Master timetable CRUD: table/calendar/import views, filters
+│       │       ├── 📄 TimetableForm.tsx       ← Create/edit form modal with conflict display
+│       │       ├── 📄 TimetableCalendar.tsx   ← Weekly calendar grid view (Mon–Fri, color-coded courses)
+│       │       └── 📄 TimetableBulkImport.tsx ← CSV file upload, preview, validation, import
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
@@ -102,17 +106,19 @@ lecstu/
 │       │
 │       ├── 📁 controllers/          ← Request handlers (one file per resource)
 │       │   ├── 📄 authController.ts ← register, login, refresh, logout, getMe
-│       │   ├── 📄 profileController.ts ← getProfile, updateProfile, uploadAvatar, getDepartments
-│       │   └── 📄 adminController.ts ← getDashboardStats (aggregated counts for admin panel)
+│       │   ├── 📄 profileController.ts  ← getProfile, updateProfile, uploadAvatar, getDepartments
+│       │   ├── 📄 adminController.ts   ← getDashboardStats (aggregated counts for admin panel)
+│       │   └── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 routes/
-│       │   ├── 📄 index.ts          ← API router (health + auth + profile + admin routes)
+│       │   ├── 📄 index.ts          ← API router (health + auth + profile + admin + timetable)
 │       │   ├── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
 │       │   ├── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
-│       │   └── 📄 admin.ts          ← Admin routes: GET stats (ADMIN role guard)
+│       │   ├── 📄 admin.ts          ← Admin routes: GET stats (ADMIN role guard)
+│       │   └── 📄 timetable.ts      ← Timetable routes: CRUD + dropdowns + bulk-import (ADMIN guard)
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -122,7 +128,7 @@ lecstu/
 │       │   └── 📄 rateLimiter.ts    ← Rate limiting: authLimiter (20/15min), generalLimiter (200/15min)
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
-│       │   └── .gitkeep
+│       │   └── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
@@ -229,6 +235,13 @@ lecstu/
 | POST | `/api/profile/avatar` | Upload profile image (multipart) | JWT | No |
 | GET | `/api/profile/departments` | List all departments | JWT | No |
 | GET | `/api/admin/stats` | Admin dashboard statistics (aggregated counts) | JWT + ADMIN | No |
+| GET | `/api/admin/timetable` | List timetable entries (paginated, filtered) | JWT | No |
+| GET | `/api/admin/timetable/dropdowns` | Get courses, lecturers, halls, groups for forms | JWT + ADMIN | No |
+| GET | `/api/admin/timetable/:id` | Get single timetable entry | JWT | No |
+| POST | `/api/admin/timetable` | Create timetable entry (conflict check) | JWT + ADMIN | No |
+| PATCH | `/api/admin/timetable/:id` | Update timetable entry (conflict check) | JWT + ADMIN | No |
+| DELETE | `/api/admin/timetable/:id` | Delete timetable entry | JWT + ADMIN | No |
+| POST | `/api/admin/timetable/bulk-import` | Bulk import timetable via CSV (multipart) | JWT + ADMIN | No |
 
 
 ---
@@ -311,6 +324,7 @@ lecstu/
 | 2026-02-18 | **2.2** | Frontend auth UI: Zustand auth store, Login page, Register page (role selector), ProtectedRoute guard, Layout (sidebar+navbar), Dashboard (role-aware cards+profile), routing, global CSS, lucide-react icons |
 | 2026-02-18 | **2.3** | User profile and file upload: Multer (disk storage, JPEG/PNG/WebP, 5MB), profileController (get/update/avatar/departments), Profile page (edit form, avatar upload, department dropdown), sidebar My Profile link |
 | 2026-02-18 | **3.1** | Admin dashboard shell: admin stats API (GET /api/admin/stats), AdminDashboard page (stat cards, quick actions, academic summary), admin route guard (ADMIN-only /admin/*), reusable components (DataTable, Modal, ConfirmDialog, Toast), admin sidebar nav links, global Toast container |
+| 2026-02-18 | **3.2** | Master timetable management: CRUD API with paginated/filtered listing, conflict detection service (hall/lecturer/group overlap), CSV bulk import with validation, dropdown data endpoint, frontend TimetableManagement (table/calendar/import views), TimetableForm (create/edit with conflict display), TimetableCalendar (weekly grid, color-coded), TimetableBulkImport (upload, preview, error display) |
 
 
 ---

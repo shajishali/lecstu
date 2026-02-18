@@ -32,3 +32,15 @@ export const uploadAvatar = multer({
   fileFilter,
   limits: { fileSize: config.upload.maxFileSize },
 }).single('avatar');
+
+export const uploadCsv = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new AppError('Only CSV files are allowed', 400));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single('file');

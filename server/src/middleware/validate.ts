@@ -83,3 +83,79 @@ export const profileUpdateRules = [
     .withMessage('Department ID must be a valid UUID'),
   handleValidationErrors,
 ];
+
+const VALID_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const TIME_REGEX = /^\d{2}:\d{2}$/;
+
+export const timetableCreateRules = [
+  body('dayOfWeek')
+    .isIn(VALID_DAYS)
+    .withMessage(`Day must be one of: ${VALID_DAYS.join(', ')}`),
+  body('startTime')
+    .matches(TIME_REGEX)
+    .withMessage('Start time must be in HH:mm format'),
+  body('endTime')
+    .matches(TIME_REGEX)
+    .withMessage('End time must be in HH:mm format'),
+  body('courseId')
+    .isUUID()
+    .withMessage('Course ID must be a valid UUID'),
+  body('lecturerId')
+    .isUUID()
+    .withMessage('Lecturer ID must be a valid UUID'),
+  body('hallId')
+    .isUUID()
+    .withMessage('Hall ID must be a valid UUID'),
+  body('groupId')
+    .isUUID()
+    .withMessage('Group ID must be a valid UUID'),
+  body('semester')
+    .optional()
+    .isInt({ min: 1, max: 2 })
+    .withMessage('Semester must be 1 or 2'),
+  body('year')
+    .optional()
+    .isInt({ min: 2020, max: 2100 })
+    .withMessage('Year must be between 2020 and 2100'),
+  handleValidationErrors,
+];
+
+export const timetableUpdateRules = [
+  body('dayOfWeek')
+    .optional()
+    .isIn(VALID_DAYS)
+    .withMessage(`Day must be one of: ${VALID_DAYS.join(', ')}`),
+  body('startTime')
+    .optional()
+    .matches(TIME_REGEX)
+    .withMessage('Start time must be in HH:mm format'),
+  body('endTime')
+    .optional()
+    .matches(TIME_REGEX)
+    .withMessage('End time must be in HH:mm format'),
+  body('courseId')
+    .optional()
+    .isUUID()
+    .withMessage('Course ID must be a valid UUID'),
+  body('lecturerId')
+    .optional()
+    .isUUID()
+    .withMessage('Lecturer ID must be a valid UUID'),
+  body('hallId')
+    .optional()
+    .isUUID()
+    .withMessage('Hall ID must be a valid UUID'),
+  body('groupId')
+    .optional()
+    .isUUID()
+    .withMessage('Group ID must be a valid UUID'),
+  body('semester')
+    .optional()
+    .isInt({ min: 1, max: 2 })
+    .withMessage('Semester must be 1 or 2'),
+  body('year')
+    .optional()
+    .isInt({ min: 2020, max: 2100 })
+    .withMessage('Year must be between 2020 and 2100'),
+  handleValidationErrors,
+];
