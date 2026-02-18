@@ -477,19 +477,22 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 4.2 — Hall Availability Detection System
 **Type**: Engineering | **Effort**: ~1 day
 
-- [ ] Build hall availability service (`/server/src/services/hallService.js`):
-  - Query master timetable for hall occupancy
-  - Compute free slots for a given day
+- [x] Build hall availability service (`/server/src/services/hallAvailabilityService.ts`):
+  - Query master timetable for hall occupancy per day
+  - Compute free slots (gap detection between 08:00–18:00)
   - "Available right now" — compare current time against schedule
-- [ ] API endpoints:
+  - Filter options endpoint (buildings, equipment)
+- [x] API endpoints:
   - `GET /api/halls/available` — query: day, startTime, endTime, minCapacity, building, equipment
-  - `GET /api/halls/:id/schedule` — full day schedule for a hall
+  - `GET /api/halls/:id/schedule` — full day schedule for a hall (occupied + free slots)
   - `GET /api/halls/available-now` — halls free at this moment
-- [ ] Frontend hall availability explorer:
+  - `GET /api/halls/filters` — distinct buildings & equipment for filter dropdowns
+- [x] Frontend hall availability explorer:
   - Filter panel: day, time range, capacity, building, equipment
-  - Results grid: hall name, capacity, available time slots
-  - "Available Now" quick-view tab
-  - Visual timeline for each hall
+  - Results cards: hall name, building, capacity, equipment, free slot badges
+  - "Available Now" tab with live pulse indicator
+  - Visual timeline bar (occupied=red, free=green) on expand
+  - Schedule detail rows (time, course, lecturer, group)
 
 ---
 

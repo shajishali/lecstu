@@ -18,6 +18,7 @@ import {
   MapPin,
   Menu,
   X,
+  DoorClosed,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -32,6 +33,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
     { label: 'Offices', path: '/admin/offices', icon: <DoorOpen size={18} /> },
     { label: 'Buildings', path: '/admin/buildings', icon: <Building size={18} /> },
     { label: 'Markers', path: '/admin/markers', icon: <MapPin size={18} /> },
+    { label: 'Hall Availability', path: '/halls/availability', icon: <DoorClosed size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
     { label: 'My Profile', path: '/profile', icon: <User size={18} /> },
@@ -40,6 +42,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
   LECTURER: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'My Timetable', path: '/timetable', icon: <Calendar size={18} /> },
+    { label: 'Hall Availability', path: '/halls/availability', icon: <DoorClosed size={18} /> },
     { label: 'Appointments', path: '/appointments', icon: <Users size={18} /> },
     { label: 'AI Assistant', path: '/assistant', icon: <MessageSquare size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
@@ -49,6 +52,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
   STUDENT: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'My Timetable', path: '/timetable', icon: <Calendar size={18} /> },
+    { label: 'Hall Availability', path: '/halls/availability', icon: <DoorClosed size={18} /> },
     { label: 'Book Appointment', path: '/appointments', icon: <GraduationCap size={18} /> },
     { label: 'AI Assistant', path: '/assistant', icon: <MessageSquare size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },

@@ -2411,3 +2411,390 @@ a:hover {
     padding-right: 4px;
   }
 }
+
+/* ============ HALL AVAILABILITY (Phase 4.2) ============ */
+.hall-avail-page {
+  padding: 0;
+}
+
+.ha-header {
+  margin-bottom: 1.25rem;
+}
+
+.ha-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.ha-subtitle {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-top: 0.2rem;
+}
+
+/* Tabs */
+.ha-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--gray-200);
+  margin-bottom: 1.25rem;
+}
+
+.ha-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ha-tab:hover {
+  color: var(--gray-700);
+}
+
+.ha-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Filters */
+.ha-filters {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.ha-filter-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.ha-filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.ha-filter-row .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.ha-search-btn-wrap {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 2px;
+}
+
+/* Available Now bar */
+.ha-now-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #065f46;
+}
+
+.ha-now-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: ha-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ha-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.ha-result-count {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-bottom: 0.75rem;
+}
+
+.ha-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  color: var(--gray-500);
+}
+
+.ha-loading-sm {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.ha-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--gray-400);
+}
+
+.ha-empty h3 {
+  color: var(--gray-600);
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.ha-empty p {
+  font-size: 0.85rem;
+}
+
+/* Results cards */
+.ha-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ha-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.ha-card:hover {
+  border-color: var(--gray-300);
+}
+
+.ha-card.expanded {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.08);
+}
+
+.ha-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  gap: 1rem;
+}
+
+.ha-card-info h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0 0 0.25rem;
+}
+
+.ha-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--gray-500);
+}
+
+.ha-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ha-equip {
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+.ha-card-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.ha-free-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Free slot badges */
+.ha-free-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 1rem 0.75rem;
+}
+
+.ha-slot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.ha-slot-badge.free {
+  background: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+}
+
+.ha-slot-badge small {
+  font-size: 0.65rem;
+  color: #059669;
+  opacity: 0.8;
+}
+
+/* Expanded timeline */
+.ha-expanded {
+  border-top: 1px solid var(--gray-100);
+  padding: 1rem;
+}
+
+.ha-timeline-section h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0 0 0.75rem;
+}
+
+.ha-timeline {
+  margin-bottom: 1rem;
+}
+
+.ha-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.ha-tl-label {
+  font-size: 0.65rem;
+  color: var(--gray-400);
+}
+
+.ha-timeline-bar {
+  position: relative;
+  height: 32px;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ha-tl-occupied {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(239, 68, 68, 0.15);
+  border-left: 2px solid #ef4444;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  z-index: 1;
+}
+
+.ha-tl-occupied span {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #b91c1c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ha-tl-free {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 2px solid #10b981;
+}
+
+/* Schedule detail rows */
+.ha-schedule-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ha-occ-row {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.78rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--gray-50);
+  align-items: center;
+}
+
+.ha-occ-time {
+  width: 140px;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.ha-occ-course {
+  flex: 2;
+  color: var(--gray-800);
+  font-weight: 500;
+}
+
+.ha-occ-lec {
+  flex: 1;
+  color: var(--gray-500);
+}
+
+.ha-occ-grp {
+  flex: 1;
+  color: var(--gray-400);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 768px) {
+  .ha-filter-row {
+    flex-direction: column;
+  }
+
+  .ha-filter-row .form-group {
+    min-width: unset;
+  }
+
+  .ha-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ha-card-right {
+    align-self: flex-end;
+  }
+
+  .ha-occ-row {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .ha-occ-time {
+    width: auto;
+  }
+}

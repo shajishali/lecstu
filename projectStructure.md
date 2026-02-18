@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 4.1)
+# Last Updated : 2026-02-18 (After Sub-Phase 4.2)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -55,6 +55,7 @@ lecstu/
 │       │   ├── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
 │       │   ├── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
 │       │   ├── 📄 MyTimetable.tsx   ← Weekly timetable grid (color-coded, current time line, slot details, CSV export)
+│       │   ├── 📄 HallAvailability.tsx ← Hall availability explorer (search/available-now tabs, filters, timeline)
 │       │   │
 │       │   └── 📁 admin/            ← Admin-only pages
 │       │       ├── 📄 AdminDashboard.tsx     ← Admin stats, quick-action buttons, academic summary
@@ -121,7 +122,8 @@ lecstu/
 │       │   ├── 📄 officeController.ts   ← CRUD + getAvailableLecturers
 │       │   ├── 📄 buildingController.ts ← CRUD + uploadFloorPlan + deleteFloorPlan
 │       │   ├── 📄 markerController.ts   ← CRUD + getMarkerDropdowns (buildings, halls, offices)
-│       │   └── 📄 userTimetableController.ts ← /timetable/my, /student/:id, /lecturer/:id, cache invalidate
+│       │   ├── 📄 userTimetableController.ts ← /timetable/my, /student/:id, /lecturer/:id, cache invalidate
+│       │   └── 📄 hallAvailabilityController.ts ← /halls/available, /available-now, /:id/schedule, /filters
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
@@ -137,7 +139,8 @@ lecstu/
 │       │   ├── 📄 offices.ts        ← Office routes: CRUD + available lecturers (ADMIN guard)
 │       │   ├── 📄 buildings.ts      ← Building routes: CRUD + floor plan upload/delete (ADMIN guard)
 │       │   ├── 📄 markers.ts        ← Marker routes: CRUD + dropdowns (ADMIN guard)
-│       │   └── 📄 userTimetable.ts  ← User timetable routes: /my, /student/:id, /lecturer/:id, cache
+│       │   ├── 📄 userTimetable.ts  ← User timetable routes: /my, /student/:id, /lecturer/:id, cache
+│       │   └── 📄 hallAvailability.ts ← Hall availability routes: /available, /available-now, /:id/schedule, /filters
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -150,7 +153,8 @@ lecstu/
 │       │   ├── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
 │       │   ├── 📄 auditLogger.ts     ← Audit log service (logs admin actions to AuditLog table)
 │       │   ├── 📄 timetableService.ts ← Timetable generation (student groups → weekly grid, lecturer schedule)
-│       │   └── 📄 timetableCache.ts  ← In-memory cache (5-min TTL, invalidate on master timetable changes)
+│       │   ├── 📄 timetableCache.ts  ← In-memory cache (5-min TTL, invalidate on master timetable changes)
+│       │   └── 📄 hallAvailabilityService.ts ← Hall occupancy, free slot computation, available-now detection
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
@@ -302,6 +306,10 @@ lecstu/
 | GET | `/api/timetable/student/:id` | Specific student timetable | JWT + ADMIN | No |
 | GET | `/api/timetable/lecturer/:id` | Specific lecturer schedule | JWT | No |
 | POST | `/api/timetable/cache/invalidate` | Flush timetable cache | JWT + ADMIN | No |
+| GET | `/api/halls/available` | Find available halls (day, time, capacity, building, equipment) | JWT | No |
+| GET | `/api/halls/available-now` | Halls free at this moment | JWT | No |
+| GET | `/api/halls/filters` | Distinct buildings & equipment for filter dropdowns | JWT | No |
+| GET | `/api/halls/:id/schedule` | Full day schedule for a hall (occupied + free) | JWT | No |
 
 
 ---
@@ -388,6 +396,7 @@ lecstu/
 | 2026-02-18 | **3.3** | Student Group, Hall & Office management: Group CRUD with student assignment (individual + bulk CSV), member list with add/remove UI; Hall CRUD with equipment tags, capacity, active status; Office CRUD with lecturer linking (1:1), available lecturers endpoint; Audit logging service for all admin actions; Admin sidebar updated with Groups/Halls/Offices links |
 | 2026-02-18 | **3.4** | Faculty map data management: Building CRUD (name, code, lat/lng, floors), floor plan image upload/delete per building per floor; Marker CRUD with type (HALL/OFFICE/LAB/AMENITY/ENTRANCE) and entity linking (hallId/officeId); Leaflet map preview with color-coded markers, popups, auto-bounds; Admin sidebar with Buildings/Markers links |
 | 2026-02-18 | **4.1** | Student timetable generation engine: timetableService (student groups → weekly grid, lecturer schedule), in-memory cache (5-min TTL, invalidated on master timetable CRUD + bulk import), user timetable API (GET /my, /student/:id, /lecturer/:id, POST cache/invalidate), MyTimetable frontend (weekly grid Mon–Fri 08–18, color-coded courses, current time red indicator, click-to-detail modal, print + CSV export) |
+| 2026-02-18 | **4.2** | Hall availability detection system: hallAvailabilityService (occupancy queries, free-slot gap detection 08–18, available-now with current time check, filter options), hallAvailabilityController + routes (GET /available, /available-now, /filters, /:id/schedule), HallAvailability frontend (Available Now tab with pulse indicator, Search tab with filters for day/time/capacity/building/equipment, result cards with free-slot badges, expandable visual timeline bar, schedule detail rows), sidebar updated for all roles |
 
 
 ---
