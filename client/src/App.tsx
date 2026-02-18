@@ -6,6 +6,7 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import Login from '@pages/Login';
 import Register from '@pages/Register';
 import Dashboard from '@pages/Dashboard';
+import Profile from '@pages/Profile';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -44,6 +45,7 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* Placeholder routes — to be built in later phases */}
         <Route path="/timetable" element={<PlaceholderPage title="Timetable" phase="3" />} />

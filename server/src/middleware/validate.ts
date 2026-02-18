@@ -59,3 +59,27 @@ export const loginRules = [
     .withMessage('Password is required'),
   handleValidationErrors,
 ];
+
+export const profileUpdateRules = [
+  body('firstName')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('First name cannot be empty')
+    .escape(),
+  body('lastName')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Last name cannot be empty')
+    .escape(),
+  body('phone')
+    .optional()
+    .trim()
+    .escape(),
+  body('departmentId')
+    .optional()
+    .isUUID()
+    .withMessage('Department ID must be a valid UUID'),
+  handleValidationErrors,
+];

@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 2.2)
+# Last Updated : 2026-02-18 (After Sub-Phase 2.3)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -48,7 +48,8 @@ lecstu/
 │       ├── 📁 pages/                ← Page-level components (one per route)
 │       │   ├── 📄 Login.tsx         ← Email/password form, validation, error display, show/hide password
 │       │   ├── 📄 Register.tsx      ← Name, email, role selector, password with strength rules
-│       │   └── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
+│       │   ├── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
+│       │   └── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
@@ -93,19 +94,22 @@ lecstu/
 │       │   └── 📄 ...               ← Other generated files
 │       │
 │       ├── 📁 controllers/          ← Request handlers (one file per resource)
-│       │   └── 📄 authController.ts ← register, login, refresh, logout, getMe
+│       │   ├── 📄 authController.ts ← register, login, refresh, logout, getMe
+│       │   └── 📄 profileController.ts ← getProfile, updateProfile, uploadAvatar, getDepartments
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 routes/
-│       │   ├── 📄 index.ts          ← API router (health check + auth routes)
-│       │   └── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
+│       │   ├── 📄 index.ts          ← API router (health + auth + profile routes)
+│       │   ├── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
+│       │   └── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
 │       │   ├── 📄 auth.ts           ← authenticate (JWT verification) + authorize (RBAC roles)
-│       │   ├── 📄 validate.ts       ← express-validator rules: registerRules, loginRules
+│       │   ├── 📄 validate.ts       ← express-validator rules: registerRules, loginRules, profileUpdateRules
+│       │   ├── 📄 upload.ts         ← Multer config: disk storage, file filter (JPEG/PNG/WebP), 5MB limit
 │       │   └── 📄 rateLimiter.ts    ← Rate limiting: authLimiter (20/15min), generalLimiter (200/15min)
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
@@ -211,6 +215,10 @@ lecstu/
 | POST | `/api/auth/refresh` | Refresh access token | Cookie | 20/15min |
 | POST | `/api/auth/logout` | Clear auth cookies | None | No |
 | GET | `/api/auth/me` | Get current user profile | JWT | No |
+| GET | `/api/profile` | Get own profile details | JWT | No |
+| PATCH | `/api/profile` | Update name, phone, department | JWT | No |
+| POST | `/api/profile/avatar` | Upload profile image (multipart) | JWT | No |
+| GET | `/api/profile/departments` | List all departments | JWT | No |
 
 
 ---
@@ -291,6 +299,7 @@ lecstu/
 | 2026-02-18 | **1.3** | Research environment: experiment logger (logger.js), latency profiler, research-config.yaml (seeds, model versions, thresholds), metric calculators (WER, F1/precision/recall, BLEU), experiment & usability report templates, data collection ethics plan |
 | 2026-02-18 | **2.1** | Backend auth system: JWT access/refresh tokens (15min/7d), bcrypt password hashing (salt:12), auth controller (register/login/refresh/logout/getMe), authenticate + authorize(roles) middleware, express-validator rules, rate limiting (20/15min on auth), auth routes wired to /api/auth/* |
 | 2026-02-18 | **2.2** | Frontend auth UI: Zustand auth store, Login page, Register page (role selector), ProtectedRoute guard, Layout (sidebar+navbar), Dashboard (role-aware cards+profile), routing, global CSS, lucide-react icons |
+| 2026-02-18 | **2.3** | User profile and file upload: Multer (disk storage, JPEG/PNG/WebP, 5MB), profileController (get/update/avatar/departments), Profile page (edit form, avatar upload, department dropdown), sidebar My Profile link |
 
 
 ---

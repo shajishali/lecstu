@@ -23,6 +23,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
     { label: 'Timetable', path: '/timetable', icon: <Calendar size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
+    { label: 'My Profile', path: '/profile', icon: <User size={18} /> },
     { label: 'Settings', path: '/settings', icon: <Settings size={18} /> },
   ],
   LECTURER: [
@@ -32,6 +33,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
     { label: 'AI Assistant', path: '/assistant', icon: <MessageSquare size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
+    { label: 'My Profile', path: '/profile', icon: <User size={18} /> },
   ],
   STUDENT: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -40,6 +42,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
     { label: 'AI Assistant', path: '/assistant', icon: <MessageSquare size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
+    { label: 'My Profile', path: '/profile', icon: <User size={18} /> },
   ],
 };
 

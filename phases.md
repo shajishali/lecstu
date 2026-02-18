@@ -70,7 +70,7 @@ efficiency barriers in multilingual university environments.
 | **1.3** | Research Environment & Experiment Framework | Research | RO-5 | ✅ |
 | **2.1** | Backend Auth System (JWT + RBAC) | Engineering | RO-5 | ✅ |
 | **2.2** | Frontend Auth UI & State Management | Engineering | RO-5 | ✅ |
-| **2.3** | User Profile & File Upload | Engineering | RO-5 | ⬜ |
+| **2.3** | User Profile & File Upload | Engineering | RO-5 | ✅ |
 | **3.1** | Admin Dashboard Shell & Layout | Engineering | RO-5 | ⬜ |
 | **3.2** | Master Timetable Management | Engineering | RO-5 | ⬜ |
 | **3.3** | Student Group & Hall & Office Management | Engineering | RO-5 | ⬜ |
@@ -309,20 +309,20 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 2.3 — User Profile & File Upload
 **Type**: Engineering | **Effort**: ~0.5 day
 
-- [ ] Install and configure Multer for file uploads:
+- [x] Install and configure Multer for file uploads:
   - Storage config (disk or cloud)
   - File type validation (images only)
   - Size limit (5MB)
   - Serve uploaded files via static route
-- [ ] Build profile controller (`/server/src/controllers/profileController.js`):
+- [x] Build profile controller (`/server/src/controllers/profileController.js`):
   - `GET /api/profile` — get own profile
   - `PATCH /api/profile` — update name, department, etc.
   - `POST /api/profile/avatar` — upload profile image
-- [ ] Build frontend profile page:
+- [x] Build frontend profile page:
   - View profile information
   - Edit form (name, department)
   - Avatar upload with preview
-- [ ] Input validation for profile updates
+- [x] Input validation for profile updates
 
 ### Phase 2 Checkpoint
 > After completing 2.1 + 2.2 + 2.3:
