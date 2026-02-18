@@ -68,7 +68,7 @@ efficiency barriers in multilingual university environments.
 | **1.1** | Monorepo & Dev Environment Setup | Engineering | RO-5 | ⬜ |
 | **1.2** | Database Schema Design & Migration | Engineering | RO-5 | ⬜ |
 | **1.3** | Research Environment & Experiment Framework | Research | RO-5 | ✅ |
-| **2.1** | Backend Auth System (JWT + RBAC) | Engineering | RO-5 | ⬜ |
+| **2.1** | Backend Auth System (JWT + RBAC) | Engineering | RO-5 | ✅ |
 | **2.2** | Frontend Auth UI & State Management | Engineering | RO-5 | ⬜ |
 | **2.3** | User Profile & File Upload | Engineering | RO-5 | ⬜ |
 | **3.1** | Admin Dashboard Shell & Layout | Engineering | RO-5 | ⬜ |
@@ -249,29 +249,29 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 2.1 — Backend Auth System (JWT + RBAC)
 **Type**: Engineering | **Effort**: ~1 day
 
-- [ ] Install: bcrypt, jsonwebtoken, express-validator, cookie-parser
-- [ ] Create auth configuration (token secrets, expiry times) in `/server/src/config/auth.js`
-- [ ] Implement password hashing utility (bcrypt, salt rounds: 12)
-- [ ] Implement JWT token utilities:
+- [x] Install: bcrypt, jsonwebtoken, express-validator, cookie-parser
+- [x] Create auth configuration (token secrets, expiry times) in `/server/src/config/auth.js`
+- [x] Implement password hashing utility (bcrypt, salt rounds: 12)
+- [x] Implement JWT token utilities:
   - `generateAccessToken(user)` — 15 min expiry
   - `generateRefreshToken(user)` — 7 day expiry
   - `verifyToken(token)` — decode and validate
-- [ ] Build auth controller (`/server/src/controllers/authController.js`):
+- [x] Build auth controller (`/server/src/controllers/authController.js`):
   - `register` — validate input, hash password, create user, return tokens
   - `login` — verify credentials, return tokens in HTTP-only cookies
   - `refresh` — validate refresh token, issue new access token
   - `logout` — clear cookies, invalidate refresh token
   - `getMe` — return current user from token
-- [ ] Build auth middleware (`/server/src/middleware/auth.js`):
+- [x] Build auth middleware (`/server/src/middleware/auth.js`):
   - `authenticate` — extract and verify JWT from cookie/header
   - `authorize(...roles)` — check user role against allowed roles
-- [ ] Build validation middleware (`/server/src/middleware/validate.js`):
+- [x] Build validation middleware (`/server/src/middleware/validate.js`):
   - Registration validation rules
   - Login validation rules
   - Sanitization (trim, escape)
-- [ ] Add rate limiting on auth endpoints (express-rate-limit)
-- [ ] Global error handling middleware with structured error responses
-- [ ] Register auth routes:
+- [x] Add rate limiting on auth endpoints (express-rate-limit)
+- [x] Global error handling middleware with structured error responses
+- [x] Register auth routes:
   - `POST /api/auth/register`
   - `POST /api/auth/login`
   - `POST /api/auth/refresh`

@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 1.3)
+# Last Updated : 2026-02-18 (After Sub-Phase 2.1)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -87,22 +87,27 @@ lecstu/
 │       │   └── 📄 ...               ← Other generated files
 │       │
 │       ├── 📁 controllers/          ← Request handlers (one file per resource)
-│       │   └── .gitkeep
+│       │   └── 📄 authController.ts ← register, login, refresh, logout, getMe
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 routes/
-│       │   └── 📄 index.ts          ← API router (currently: GET /api/health)
+│       │   ├── 📄 index.ts          ← API router (health check + auth routes)
+│       │   └── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
 │       │
 │       ├── 📁 middleware/
-│       │   └── 📄 errorHandler.ts   ← AppError class + global error handler middleware
+│       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
+│       │   ├── 📄 auth.ts           ← authenticate (JWT verification) + authorize (RBAC roles)
+│       │   ├── 📄 validate.ts       ← express-validator rules: registerRules, loginRules
+│       │   └── 📄 rateLimiter.ts    ← Rate limiting: authLimiter (20/15min), generalLimiter (200/15min)
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
 │       │   └── .gitkeep
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
-│           └── .gitkeep
+│           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
+│           └── 📄 password.ts       ← bcrypt password hashing (salt rounds: 12) + compare
 │
 │
 ├── 📁 shared/                       ← SHARED — Types & constants used by both client and server
@@ -183,15 +188,23 @@ lecstu/
 | `research/lib/bleu_calculator.py` | BLEU score for translation evaluation (RO-3) |
 | `research/lib/latency_profiler.js` | Response latency measurement with percentile stats |
 | `research/usability-study/instruments/ethics_plan.md` | Data collection ethics plan (consent, PII handling, risk assessment) |
+| `server/src/utils/jwt.ts` | JWT token utilities: generate/verify access & refresh tokens, set/clear cookies |
+| `server/src/middleware/auth.ts` | Authentication (JWT verify) and authorization (RBAC) middleware |
+| `server/src/middleware/rateLimiter.ts` | Rate limiting: 20 req/15min for auth, 200 req/15min general |
 
 
 ---
 
 ## API Endpoints (Current)
 
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| GET | `/api/health` | Server health check | None |
+| Method | Path | Description | Auth | Rate Limited |
+|--------|------|-------------|------|-------------|
+| GET | `/api/health` | Server health check | None | No |
+| POST | `/api/auth/register` | Create new user account | None | 20/15min |
+| POST | `/api/auth/login` | Login with email/password | None | 20/15min |
+| POST | `/api/auth/refresh` | Refresh access token | Cookie | 20/15min |
+| POST | `/api/auth/logout` | Clear auth cookies | None | No |
+| GET | `/api/auth/me` | Get current user profile | JWT | No |
 
 
 ---
@@ -270,6 +283,7 @@ lecstu/
 | 2026-02-18 | **1.1** | Initial monorepo setup: client (Vite+React+TS), server (Express+TS MVC), shared types, ai-services scaffold, research directory structure, root concurrently scripts, .env configs, Prettier config, .gitignore |
 | 2026-02-18 | **1.2** | Prisma ORM + PostgreSQL: 14-model schema (User, Faculty, Department, Course, StudentGroup, LectureHall, LecturerOffice, MasterTimetable, Appointment, Notification, MapBuilding, FloorPlan, MapMarker, AuditLog), composite indexes, PG adapter, seed script (122 users, 15 courses, 30 timetable entries, map data), database.ts client singleton |
 | 2026-02-18 | **1.3** | Research environment: experiment logger (logger.js), latency profiler, research-config.yaml (seeds, model versions, thresholds), metric calculators (WER, F1/precision/recall, BLEU), experiment & usability report templates, data collection ethics plan |
+| 2026-02-18 | **2.1** | Backend auth system: JWT access/refresh tokens (15min/7d), bcrypt password hashing (salt:12), auth controller (register/login/refresh/logout/getMe), authenticate + authorize(roles) middleware, express-validator rules, rate limiting (20/15min on auth), auth routes wired to /api/auth/* |
 
 
 ---
