@@ -11,6 +11,7 @@ import {
   Users,
   GraduationCap,
   Settings,
+  ShieldCheck,
   Menu,
   X,
 } from 'lucide-react';
@@ -19,7 +20,8 @@ import { useState } from 'react';
 const navByRole: Record<string, { label: string; path: string; icon: React.ReactNode }[]> = {
   ADMIN: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-    { label: 'Users', path: '/users', icon: <Users size={18} /> },
+    { label: 'Admin Panel', path: '/admin', icon: <ShieldCheck size={18} /> },
+    { label: 'Users', path: '/admin/users', icon: <Users size={18} /> },
     { label: 'Timetable', path: '/timetable', icon: <Calendar size={18} /> },
     { label: 'Campus Map', path: '/map', icon: <Map size={18} /> },
     { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },

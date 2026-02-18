@@ -345,18 +345,18 @@ efficiency barriers in multilingual university environments.
 
 ---
 
-### Sub-Phase 3.1 — Admin Dashboard Shell & Layout
+### Sub-Phase 3.1 — Admin Dashboard Shell & Layout ✅
 **Type**: Engineering | **Effort**: ~0.5 day
 
-- [ ] Build admin layout component:
+- [x] Build admin layout component:
   - Sidebar navigation (links to all admin modules)
   - Header with breadcrumbs
   - Main content area
-- [ ] Build admin dashboard home:
+- [x] Build admin dashboard home:
   - Stats cards: total students, lecturers, halls, courses, groups
   - Quick-action buttons
-- [ ] Admin route guard (only `ADMIN` role can access `/admin/*`)
-- [ ] Reusable UI components for admin:
+- [x] Admin route guard (only `ADMIN` role can access `/admin/*`)
+- [x] Reusable UI components for admin:
   - Data table with pagination, sorting, search
   - Modal for create/edit forms
   - Confirmation dialog for delete

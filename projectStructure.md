@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 2.3)
+# Last Updated : 2026-02-18 (After Sub-Phase 3.1)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -43,13 +43,20 @@ lecstu/
 │       │
 │       ├── 📁 components/           ← Reusable UI components
 │       │   ├── 📄 Layout.tsx        ← App shell: sidebar (role-aware nav) + top navbar + <Outlet/>
-│       │   └── 📄 ProtectedRoute.tsx ← Auth guard: redirect to /login if not authenticated, 403 for wrong role
+│       │   ├── 📄 ProtectedRoute.tsx ← Auth guard: redirect to /login if not authenticated, 403 for wrong role
+│       │   ├── 📄 DataTable.tsx     ← Generic data table: pagination, sorting, search, column rendering
+│       │   ├── 📄 Modal.tsx         ← Reusable modal dialog (overlay, ESC close, configurable width)
+│       │   ├── 📄 ConfirmDialog.tsx ← Confirmation dialog for destructive actions (danger/warning variants)
+│       │   └── 📄 Toast.tsx         ← Toast notification system (success/error/info, auto-dismiss 4s)
 │       │
 │       ├── 📁 pages/                ← Page-level components (one per route)
 │       │   ├── 📄 Login.tsx         ← Email/password form, validation, error display, show/hide password
 │       │   ├── 📄 Register.tsx      ← Name, email, role selector, password with strength rules
 │       │   ├── 📄 Dashboard.tsx     ← Role-aware dashboard with stat cards + profile info
-│       │   └── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
+│       │   ├── 📄 Profile.tsx       ← View/edit profile, avatar upload with preview, department dropdown
+│       │   │
+│       │   └── 📁 admin/            ← Admin-only pages
+│       │       └── 📄 AdminDashboard.tsx ← Admin stats (users, halls, courses, groups), quick-action buttons
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
@@ -95,15 +102,17 @@ lecstu/
 │       │
 │       ├── 📁 controllers/          ← Request handlers (one file per resource)
 │       │   ├── 📄 authController.ts ← register, login, refresh, logout, getMe
-│       │   └── 📄 profileController.ts ← getProfile, updateProfile, uploadAvatar, getDepartments
+│       │   ├── 📄 profileController.ts ← getProfile, updateProfile, uploadAvatar, getDepartments
+│       │   └── 📄 adminController.ts ← getDashboardStats (aggregated counts for admin panel)
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 routes/
-│       │   ├── 📄 index.ts          ← API router (health + auth + profile routes)
+│       │   ├── 📄 index.ts          ← API router (health + auth + profile + admin routes)
 │       │   ├── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
-│       │   └── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
+│       │   ├── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
+│       │   └── 📄 admin.ts          ← Admin routes: GET stats (ADMIN role guard)
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -219,6 +228,7 @@ lecstu/
 | PATCH | `/api/profile` | Update name, phone, department | JWT | No |
 | POST | `/api/profile/avatar` | Upload profile image (multipart) | JWT | No |
 | GET | `/api/profile/departments` | List all departments | JWT | No |
+| GET | `/api/admin/stats` | Admin dashboard statistics (aggregated counts) | JWT + ADMIN | No |
 
 
 ---
@@ -300,6 +310,7 @@ lecstu/
 | 2026-02-18 | **2.1** | Backend auth system: JWT access/refresh tokens (15min/7d), bcrypt password hashing (salt:12), auth controller (register/login/refresh/logout/getMe), authenticate + authorize(roles) middleware, express-validator rules, rate limiting (20/15min on auth), auth routes wired to /api/auth/* |
 | 2026-02-18 | **2.2** | Frontend auth UI: Zustand auth store, Login page, Register page (role selector), ProtectedRoute guard, Layout (sidebar+navbar), Dashboard (role-aware cards+profile), routing, global CSS, lucide-react icons |
 | 2026-02-18 | **2.3** | User profile and file upload: Multer (disk storage, JPEG/PNG/WebP, 5MB), profileController (get/update/avatar/departments), Profile page (edit form, avatar upload, department dropdown), sidebar My Profile link |
+| 2026-02-18 | **3.1** | Admin dashboard shell: admin stats API (GET /api/admin/stats), AdminDashboard page (stat cards, quick actions, academic summary), admin route guard (ADMIN-only /admin/*), reusable components (DataTable, Modal, ConfirmDialog, Toast), admin sidebar nav links, global Toast container |
 
 
 ---

@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@store/authStore';
 import Layout from '@components/Layout';
 import ProtectedRoute from '@components/ProtectedRoute';
+import ToastContainer from '@components/Toast';
 import Login from '@pages/Login';
 import Register from '@pages/Register';
 import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
+import AdminDashboard from '@pages/admin/AdminDashboard';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -47,13 +49,62 @@ function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
 
+        {/* Admin-only routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlaceholderPage title="User Management" phase="3.3" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/timetable"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlaceholderPage title="Timetable Management" phase="3.2" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/halls"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlaceholderPage title="Hall Management" phase="3.3" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlaceholderPage title="Course Management" phase="3.3" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/groups"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <PlaceholderPage title="Group Management" phase="3.3" />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Placeholder routes — to be built in later phases */}
         <Route path="/timetable" element={<PlaceholderPage title="Timetable" phase="3" />} />
         <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="4" />} />
         <Route path="/assistant" element={<PlaceholderPage title="AI Assistant" phase="8" />} />
         <Route path="/map" element={<PlaceholderPage title="Campus Map" phase="5" />} />
         <Route path="/notifications" element={<PlaceholderPage title="Notifications" phase="6" />} />
-        <Route path="/users" element={<PlaceholderPage title="User Management" phase="2.3" />} />
         <Route path="/settings" element={<PlaceholderPage title="Settings" phase="6" />} />
       </Route>
 
@@ -75,6 +126,7 @@ function PlaceholderPage({ title, phase }: { title: string; phase: string }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ToastContainer />
       <AppRoutes />
     </BrowserRouter>
   );
