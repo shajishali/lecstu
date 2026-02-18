@@ -1760,6 +1760,195 @@ a:hover {
   margin-top: 0.5rem;
 }
 
+/* ═══════════════ Entity Management (Groups, Halls, Offices) ═══════════════ */
+
+.entity-mgmt {
+  max-width: 1200px;
+}
+
+.entity-mgmt .admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.entity-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.entity-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.entity-form input,
+.entity-form select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.entity-form input:focus,
+.entity-form select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.equip-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.equip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.equip-tag.removable {
+  cursor: pointer;
+}
+
+.equip-tag.removable:hover {
+  background: #dbeafe;
+}
+
+.equip-input-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.equip-input-row input {
+  flex: 1;
+}
+
+.equip-input-row .btn-secondary {
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.status-badge.inactive {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+/* Members & Assign Students */
+
+.members-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.members-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.member-row div {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-email {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+.empty-text {
+  text-align: center;
+  color: var(--gray-400);
+  padding: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.assign-list {
+  max-height: 350px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.assign-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem !important;
+}
+
+.assign-item:hover {
+  background: var(--gray-50);
+}
+
+.assign-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.assign-count {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-right: auto;
+}
+
 /* ═══════════════ Responsive ═══════════════ */
 
 @media (max-width: 768px) {

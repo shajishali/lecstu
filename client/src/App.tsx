@@ -10,6 +10,9 @@ import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
 import AdminDashboard from '@pages/admin/AdminDashboard';
 import TimetableManagement from '@pages/admin/TimetableManagement';
+import GroupManagement from '@pages/admin/GroupManagement';
+import HallManagement from '@pages/admin/HallManagement';
+import OfficeManagement from '@pages/admin/OfficeManagement';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -63,7 +66,7 @@ function AppRoutes() {
           path="/admin/users"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <PlaceholderPage title="User Management" phase="3.3" />
+              <PlaceholderPage title="User Management" phase="3.5" />
             </ProtectedRoute>
           }
         />
@@ -79,7 +82,7 @@ function AppRoutes() {
           path="/admin/halls"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <PlaceholderPage title="Hall Management" phase="3.3" />
+              <HallManagement />
             </ProtectedRoute>
           }
         />
@@ -95,7 +98,15 @@ function AppRoutes() {
           path="/admin/groups"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <PlaceholderPage title="Group Management" phase="3.3" />
+              <GroupManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/offices"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <OfficeManagement />
             </ProtectedRoute>
           }
         />

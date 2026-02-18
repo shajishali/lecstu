@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 3.2)
+# Last Updated : 2026-02-18 (After Sub-Phase 3.3)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -60,7 +60,10 @@ lecstu/
 │       │       ├── 📄 TimetableManagement.tsx ← Master timetable CRUD: table/calendar/import views, filters
 │       │       ├── 📄 TimetableForm.tsx       ← Create/edit form modal with conflict display
 │       │       ├── 📄 TimetableCalendar.tsx   ← Weekly calendar grid view (Mon–Fri, color-coded courses)
-│       │       └── 📄 TimetableBulkImport.tsx ← CSV file upload, preview, validation, import
+│       │       ├── 📄 TimetableBulkImport.tsx ← CSV file upload, preview, validation, import
+│       │       ├── 📄 GroupManagement.tsx     ← Student group CRUD, member list, assign/remove students
+│       │       ├── 📄 HallManagement.tsx      ← Lecture hall CRUD with equipment tags, active status
+│       │       └── 📄 OfficeManagement.tsx    ← Lecturer office CRUD with lecturer linking
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
 │       │   └── .gitkeep
@@ -108,7 +111,10 @@ lecstu/
 │       │   ├── 📄 authController.ts ← register, login, refresh, logout, getMe
 │       │   ├── 📄 profileController.ts  ← getProfile, updateProfile, uploadAvatar, getDepartments
 │       │   ├── 📄 adminController.ts   ← getDashboardStats (aggregated counts for admin panel)
-│       │   └── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport
+│       │   ├── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport
+│       │   ├── 📄 groupController.ts    ← CRUD + assignStudents, removeStudent, bulkAssign, availableStudents
+│       │   ├── 📄 hallController.ts     ← CRUD + getBuildings (distinct building names)
+│       │   └── 📄 officeController.ts   ← CRUD + getAvailableLecturers
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
@@ -118,7 +124,10 @@ lecstu/
 │       │   ├── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
 │       │   ├── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
 │       │   ├── 📄 admin.ts          ← Admin routes: GET stats (ADMIN role guard)
-│       │   └── 📄 timetable.ts      ← Timetable routes: CRUD + dropdowns + bulk-import (ADMIN guard)
+│       │   ├── 📄 timetable.ts      ← Timetable routes: CRUD + dropdowns + bulk-import (ADMIN guard)
+│       │   ├── 📄 groups.ts         ← Group routes: CRUD + student assign/remove/bulk (ADMIN guard)
+│       │   ├── 📄 halls.ts          ← Hall routes: CRUD + buildings list (ADMIN guard)
+│       │   └── 📄 offices.ts        ← Office routes: CRUD + available lecturers (ADMIN guard)
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
@@ -128,7 +137,8 @@ lecstu/
 │       │   └── 📄 rateLimiter.ts    ← Rate limiting: authLimiter (20/15min), generalLimiter (200/15min)
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
-│       │   └── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
+│       │   ├── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
+│       │   └── 📄 auditLogger.ts     ← Audit log service (logs admin actions to AuditLog table)
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
@@ -242,6 +252,27 @@ lecstu/
 | PATCH | `/api/admin/timetable/:id` | Update timetable entry (conflict check) | JWT + ADMIN | No |
 | DELETE | `/api/admin/timetable/:id` | Delete timetable entry | JWT + ADMIN | No |
 | POST | `/api/admin/timetable/bulk-import` | Bulk import timetable via CSV (multipart) | JWT + ADMIN | No |
+| GET | `/api/admin/groups` | List student groups (filterable) | JWT + ADMIN | No |
+| GET | `/api/admin/groups/:id` | Get group with members | JWT + ADMIN | No |
+| POST | `/api/admin/groups` | Create student group | JWT + ADMIN | No |
+| PATCH | `/api/admin/groups/:id` | Update student group | JWT + ADMIN | No |
+| DELETE | `/api/admin/groups/:id` | Delete student group | JWT + ADMIN | No |
+| GET | `/api/admin/groups/:id/available-students` | Students not in group | JWT + ADMIN | No |
+| POST | `/api/admin/groups/:id/students` | Assign students to group | JWT + ADMIN | No |
+| POST | `/api/admin/groups/:id/students/bulk` | Bulk assign via CSV | JWT + ADMIN | No |
+| DELETE | `/api/admin/groups/:id/students/:studentId` | Remove student from group | JWT + ADMIN | No |
+| GET | `/api/admin/halls` | List lecture halls | JWT + ADMIN | No |
+| GET | `/api/admin/halls/buildings` | Get distinct building names | JWT + ADMIN | No |
+| GET | `/api/admin/halls/:id` | Get single hall | JWT + ADMIN | No |
+| POST | `/api/admin/halls` | Create hall | JWT + ADMIN | No |
+| PATCH | `/api/admin/halls/:id` | Update hall | JWT + ADMIN | No |
+| DELETE | `/api/admin/halls/:id` | Delete hall (fails if has timetable) | JWT + ADMIN | No |
+| GET | `/api/admin/offices` | List lecturer offices | JWT + ADMIN | No |
+| GET | `/api/admin/offices/available-lecturers` | Lecturers without office | JWT + ADMIN | No |
+| GET | `/api/admin/offices/:id` | Get single office | JWT + ADMIN | No |
+| POST | `/api/admin/offices` | Create/assign office | JWT + ADMIN | No |
+| PATCH | `/api/admin/offices/:id` | Update office | JWT + ADMIN | No |
+| DELETE | `/api/admin/offices/:id` | Delete office | JWT + ADMIN | No |
 
 
 ---
@@ -325,6 +356,7 @@ lecstu/
 | 2026-02-18 | **2.3** | User profile and file upload: Multer (disk storage, JPEG/PNG/WebP, 5MB), profileController (get/update/avatar/departments), Profile page (edit form, avatar upload, department dropdown), sidebar My Profile link |
 | 2026-02-18 | **3.1** | Admin dashboard shell: admin stats API (GET /api/admin/stats), AdminDashboard page (stat cards, quick actions, academic summary), admin route guard (ADMIN-only /admin/*), reusable components (DataTable, Modal, ConfirmDialog, Toast), admin sidebar nav links, global Toast container |
 | 2026-02-18 | **3.2** | Master timetable management: CRUD API with paginated/filtered listing, conflict detection service (hall/lecturer/group overlap), CSV bulk import with validation, dropdown data endpoint, frontend TimetableManagement (table/calendar/import views), TimetableForm (create/edit with conflict display), TimetableCalendar (weekly grid, color-coded), TimetableBulkImport (upload, preview, error display) |
+| 2026-02-18 | **3.3** | Student Group, Hall & Office management: Group CRUD with student assignment (individual + bulk CSV), member list with add/remove UI; Hall CRUD with equipment tags, capacity, active status; Office CRUD with lecturer linking (1:1), available lecturers endpoint; Audit logging service for all admin actions; Admin sidebar updated with Groups/Halls/Offices links |
 
 
 ---

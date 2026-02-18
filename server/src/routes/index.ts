@@ -3,6 +3,9 @@ import authRoutes from './auth';
 import profileRoutes from './profile';
 import adminRoutes from './admin';
 import timetableRoutes from './timetable';
+import groupRoutes from './groups';
+import hallRoutes from './halls';
+import officeRoutes from './offices';
 
 const router = Router();
 
@@ -18,5 +21,8 @@ router.use('/auth', authRoutes);
 router.use('/profile', profileRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin/timetable', timetableRoutes);
+router.use('/admin/groups', groupRoutes);
+router.use('/admin/halls', hallRoutes);
+router.use('/admin/offices', officeRoutes);
 
 export default router;
