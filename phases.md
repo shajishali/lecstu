@@ -499,21 +499,25 @@ efficiency barriers in multilingual university environments.
 ### Sub-Phase 4.3 — Lecturer Availability & Frontend Views
 **Type**: Engineering | **Effort**: ~1 day
 
-- [ ] Build lecturer availability service (`/server/src/services/lecturerService.js`):
+- [x] Build lecturer availability service (`/server/src/services/lecturerAvailabilityService.ts`):
   - Derive free slots from timetable (inverse of teaching schedule)
-  - Exclude existing accepted appointments
-  - Weekly availability grid (per 30-min or 1-hour slots)
-- [ ] API endpoints:
+  - Exclude existing accepted/pending appointments
+  - Weekly availability (Mon–Fri) with per-day teaching, appointments, and free slots
+  - Specific date availability query
+- [x] API endpoints:
   - `GET /api/lecturers/:id/availability` — weekly free slots
   - `GET /api/lecturers/:id/availability?date=` — specific date free slots
-  - `GET /api/lecturers` — list all lecturers (with basic info)
-- [ ] Frontend lecturer views:
-  - Lecturer directory (searchable list with department filter)
-  - Lecturer profile card (photo, department, office, courses)
-  - Availability grid (green = free, gray = teaching, red = booked)
-- [ ] Performance optimization:
-  - Ensure all timetable queries use indexed columns
-  - Profile slow queries and add covering indexes if needed
+  - `GET /api/lecturers` — list all lecturers (search, department filter)
+  - `GET /api/lecturers/:id` — lecturer profile (courses, office, department)
+  - `GET /api/lecturers/departments` — department list for filters
+- [x] Frontend lecturer views:
+  - Lecturer directory (searchable card grid with department filter)
+  - Lecturer profile card (avatar, email, phone, department, office, course badges)
+  - Availability grid (green=free, blue=teaching, red=booked) with hover tooltips
+  - Daily breakdown with free slot badges
+- [x] Performance optimization:
+  - All timetable queries use indexed columns (dayOfWeek+startTime+hallId, dayOfWeek+startTime+lecturerId)
+  - Appointment queries use lecturerId+dateTime index
 
 ### Phase 4 Checkpoint
 > After completing 4.1 + 4.2 + 4.3:

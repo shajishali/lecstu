@@ -2798,3 +2798,470 @@ a:hover {
     width: auto;
   }
 }
+
+/* ============ LECTURER DIRECTORY (Phase 4.3) ============ */
+.lecdir-page {
+  padding: 0;
+}
+
+.lecdir-header {
+  margin-bottom: 1.25rem;
+}
+
+.lecdir-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.lecdir-subtitle {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-top: 0.2rem;
+}
+
+.lecdir-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.lecdir-search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.lecdir-search input {
+  width: 100%;
+  padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.lecdir-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+.lecdir-filters select {
+  min-width: 180px;
+}
+
+/* Card grid */
+.lecdir-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.85rem;
+}
+
+.lecdir-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lecdir-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.08);
+}
+
+.lecdir-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lecdir-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lecdir-avatar-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.lecdir-avatar-placeholder.large {
+  width: 72px;
+  height: 72px;
+  font-size: 1.35rem;
+}
+
+.lecdir-card-body h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0 0 0.15rem;
+}
+
+.lecdir-email {
+  font-size: 0.78rem;
+  color: var(--gray-500);
+  margin-bottom: 0.35rem;
+}
+
+.lecdir-dept,
+.lecdir-office,
+.lecdir-classes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.15rem;
+}
+
+.lecdir-card-action {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-100);
+}
+
+/* ============ LECTURER PROFILE (Phase 4.3) ============ */
+.lecprof-page {
+  padding: 0;
+}
+
+.lecprof-back {
+  margin-bottom: 1rem;
+}
+
+.lecprof-card {
+  display: flex;
+  gap: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.lecprof-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lecprof-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lecprof-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.lecprof-info h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 0.5rem;
+}
+
+.lecprof-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.lecprof-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+
+.lecprof-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.lecprof-course-badge {
+  padding: 0.15rem 0.5rem;
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.lecprof-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
+.lecprof-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lecprof-stat-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.lecprof-stat-num.free {
+  color: #059669;
+}
+
+.lecprof-stat-label {
+  font-size: 0.7rem;
+  color: var(--gray-500);
+}
+
+/* Availability section */
+.lecprof-avail-section {
+  margin-bottom: 1.5rem;
+}
+
+.lecprof-avail-section h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 0.75rem;
+}
+
+.lecprof-legend {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.lecprof-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--gray-600);
+}
+
+.lecprof-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.lecprof-dot.free {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+}
+
+.lecprof-dot.teaching {
+  background: #e0e7ff;
+  border: 1px solid #a5b4fc;
+}
+
+.lecprof-dot.appointment {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+/* Availability grid */
+.lecprof-grid-wrap {
+  overflow-x: auto;
+}
+
+.lecprof-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(5, 1fr);
+  min-width: 500px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.lecprof-grid-corner {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  border-right: 1px solid var(--gray-200);
+  height: 36px;
+}
+
+.lecprof-grid-day {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  border-right: 1px solid var(--gray-100);
+}
+
+.lecprof-grid-day:last-child {
+  border-right: none;
+}
+
+.lecprof-grid-hour {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  font-weight: 500;
+  border-right: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-100);
+  height: 40px;
+}
+
+.lecprof-grid-cell {
+  height: 40px;
+  border-right: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: opacity 0.15s;
+  position: relative;
+}
+
+.lecprof-grid-cell:last-child {
+  border-right: none;
+}
+
+.lecprof-grid-cell.free {
+  background: #ecfdf5;
+}
+
+.lecprof-grid-cell.teaching {
+  background: #eef2ff;
+}
+
+.lecprof-grid-cell.appointment {
+  background: #fef2f2;
+}
+
+.lecprof-grid-cell.hovered {
+  opacity: 0.7;
+}
+
+.lecprof-cell-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+.lecprof-grid-cell.teaching .lecprof-cell-label {
+  color: #4338ca;
+}
+
+.lecprof-grid-cell.appointment .lecprof-cell-label {
+  color: #b91c1c;
+}
+
+/* Daily breakdown */
+.lecprof-daily-detail {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.lecprof-daily-detail h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 0.75rem;
+}
+
+.lecprof-day-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gray-50);
+}
+
+.lecprof-day-row:last-child {
+  border-bottom: none;
+}
+
+.lecprof-day-label {
+  width: 40px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.lecprof-day-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.lecprof-no-free {
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .lecdir-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lecprof-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .lecprof-meta {
+    justify-content: center;
+  }
+
+  .lecprof-grid {
+    min-width: 400px;
+  }
+}

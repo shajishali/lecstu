@@ -10,6 +10,7 @@ import buildingRoutes from './buildings';
 import markerRoutes from './markers';
 import userTimetableRoutes from './userTimetable';
 import hallAvailabilityRoutes from './hallAvailability';
+import lecturerRoutes from './lecturers';
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use('/admin/buildings', buildingRoutes);
 router.use('/admin/markers', markerRoutes);
 router.use('/timetable', userTimetableRoutes);
 router.use('/halls', hallAvailabilityRoutes);
+router.use('/lecturers', lecturerRoutes);
 
 export default router;

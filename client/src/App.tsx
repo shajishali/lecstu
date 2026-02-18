@@ -17,6 +17,8 @@ import BuildingManagement from '@pages/admin/BuildingManagement';
 import MarkerManagement from '@pages/admin/MarkerManagement';
 import MyTimetable from '@pages/MyTimetable';
 import HallAvailability from '@pages/HallAvailability';
+import LecturerDirectory from '@pages/LecturerDirectory';
+import LecturerProfile from '@pages/LecturerProfile';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -134,7 +136,9 @@ function AppRoutes() {
         {/* User-facing pages */}
         <Route path="/timetable" element={<MyTimetable />} />
         <Route path="/halls/availability" element={<HallAvailability />} />
-        <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="4" />} />
+        <Route path="/lecturers" element={<LecturerDirectory />} />
+        <Route path="/lecturers/:id" element={<LecturerProfile />} />
+        <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="5" />} />
         <Route path="/assistant" element={<PlaceholderPage title="AI Assistant" phase="8" />} />
         <Route path="/map" element={<PlaceholderPage title="Campus Map" phase="5" />} />
         <Route path="/notifications" element={<PlaceholderPage title="Notifications" phase="6" />} />
