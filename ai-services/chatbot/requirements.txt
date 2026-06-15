@@ -1,0 +1,8 @@
+# LECSTU Chatbot — Phase 8.1
+# Install: pip install -r requirements.txt
+# Run Rasa: rasa train && rasa run
+# Run actions: rasa run actions
+
+rasa>=3.6.0
+rasa-sdk>=3.6.0
+requests>=2.28.0

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import api from '@services/api';
+import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
 import DataTable from '@components/DataTable';
 import Modal from '@components/Modal';
@@ -38,7 +38,7 @@ export default function OfficeManagement() {
     try {
       const res = await api.get('/admin/offices');
       setOffices(res.data.data);
-    } catch { showToast('error', 'Failed to load offices'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to load offices'); }
     finally { setLoading(false); }
   }, []);
 
@@ -79,7 +79,7 @@ export default function OfficeManagement() {
       setFormOpen(false);
       fetchOffices();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to save');
+      showApiErrorToast(err, 'Failed to save');
     } finally { setSaving(false); }
   };
 
@@ -92,7 +92,7 @@ export default function OfficeManagement() {
       setDeleteTarget(null);
       fetchOffices();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to delete');
+      showApiErrorToast(err, 'Failed to delete');
     } finally { setDeleting(false); }
   };
 
@@ -138,7 +138,7 @@ export default function OfficeManagement() {
         <form onSubmit={handleSave} className="entity-form">
           <label>Lecturer
             <select value={form.lecturerId} onChange={(e) => setForm({ ...form, lecturerId: e.target.value })} required>
-              <option value="">— Select Lecturer —</option>
+              <option value="">- Select Lecturer -</option>
               {allLecturers.map((l) => (
                 <option key={l.id} value={l.id}>{l.firstName} {l.lastName} ({l.email})</option>
               ))}

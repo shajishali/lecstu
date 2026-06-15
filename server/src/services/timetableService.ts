@@ -1,10 +1,26 @@
 import prisma from '../config/database';
+import { resolveGroupIdsForStudent, parseEnrollmentFromGroupName } from './studentGroupResolver';
+import { getPublishedGridForGroup } from './timetableTableService';
+import { enrichGridFromSlots, type GridSlotRef } from './timetableGridBuilder';
+import { backfillSlotRefsForGroup } from './timetableRepairService';
+import { getLecturerDisplayIndex } from './lecturerDisplayService';
+import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import type { TimetableGridSnapshot } from '../types/timetableGrid';
 
-const SLOT_INCLUDE = {
+const SLOT_SELECT = {
+  id: true,
+  dayOfWeek: true,
+  startTime: true,
+  endTime: true,
+  semester: true,
+  year: true,
+  month: true,
+  week: true,
+  lecturerInitials: true,
   course: { select: { id: true, name: true, code: true } },
-  lecturer: { select: { id: true, firstName: true, lastName: true, email: true } },
+  lecturer: { select: { id: true, firstName: true, lastName: true, designation: true, email: true } },
   hall: { select: { id: true, name: true, building: true, capacity: true } },
-  group: { select: { id: true, name: true, batchYear: true } },
+  group: { select: { id: true, name: true, batchYear: true, batchLabel: true } },
 };
 
 export interface TimetableSlot {
@@ -14,10 +30,13 @@ export interface TimetableSlot {
   endTime: string;
   semester: number;
   year: number;
+  month: number;
+  week: number;
+  lecturerInitials: string | null;
   course: { id: string; name: string; code: string };
-  lecturer: { id: string; firstName: string; lastName: string; email: string };
+  lecturer: { id: string; firstName: string; lastName: string; designation: string | null; email: string };
   hall: { id: string; name: string; building: string; capacity: number };
-  group: { id: string; name: string; batchYear: number };
+  group: { id: string; name: string; batchYear: number; batchLabel: string | null };
 }
 
 export type WeeklyTimetable = Record<string, TimetableSlot[]>;
@@ -48,34 +67,99 @@ function deduplicateEntries(entries: TimetableSlot[]): TimetableSlot[] {
   });
 }
 
-export async function getStudentTimetable(studentId: string): Promise<{ weekly: WeeklyTimetable; flat: TimetableSlot[] }> {
+export type StudentTimetableResult = {
+  weekly: WeeklyTimetable;
+  flat: TimetableSlot[];
+  enrollment?: { programCode: string; studyYear: string; pathwayCode: string; groupName: string };
+  /** Faithful FET grid for the student's batch (preferred for My Timetable UI) */
+  grid?: TimetableGridSnapshot | null;
+};
+
+export async function getStudentTimetable(studentId: string): Promise<StudentTimetableResult> {
   const memberships = await prisma.studentGroupMember.findMany({
     where: { studentId },
-    select: { groupId: true },
+    select: { group: { select: { id: true, name: true } } },
   });
 
-  const groupIds = memberships.map((m) => m.groupId);
+  const primaryGroup = memberships[0]?.group;
+  const enrollment = primaryGroup
+    ? { ...parseEnrollmentFromGroupName(primaryGroup.name), groupName: primaryGroup.name }
+    : undefined;
+
+  const groupIds = await resolveGroupIdsForStudent(studentId);
 
   if (groupIds.length === 0) {
-    return { weekly: organizeByDay([]), flat: [] };
+    return { weekly: organizeByDay([]), flat: [], enrollment };
   }
 
   const entries = await prisma.masterTimetable.findMany({
     where: { groupId: { in: groupIds }, isActive: true },
-    include: SLOT_INCLUDE,
+    select: SLOT_SELECT,
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-  }) as unknown as TimetableSlot[];
+  }) as TimetableSlot[];
 
   const flat = deduplicateEntries(entries);
-  return { weekly: organizeByDay(flat), flat };
+
+  let grid: TimetableGridSnapshot | null = null;
+  if (primaryGroup?.name) {
+    grid = await getPublishedGridForGroup(primaryGroup.name);
+  }
+
+  if (grid && flat.length > 0) {
+    const lecturerDisplay = await getLecturerDisplayIndex();
+    const slotRefs = backfillSlotRefsForGroup(
+      primaryGroup.name,
+      flat.map((e) => {
+        let lecturerName = e.lecturerInitials?.trim() || undefined;
+        if (!lecturerName && e.lecturer.email !== UNASSIGNED_LECTURER_EMAIL) {
+          lecturerName = `${e.lecturer.firstName} ${e.lecturer.lastName}`.trim() || undefined;
+        }
+        return {
+          dayOfWeek: e.dayOfWeek,
+          startTime: e.startTime,
+          endTime: e.endTime,
+          courseName: e.course.name,
+          hallName: e.hall.name,
+          lecturerName,
+        };
+      }),
+    );
+    grid = enrichGridFromSlots(grid, slotRefs, { lecturerDisplay });
+  }
+
+  return { weekly: organizeByDay(flat), flat, enrollment, grid };
 }
 
-export async function getLecturerTimetable(lecturerId: string): Promise<{ weekly: WeeklyTimetable; flat: TimetableSlot[] }> {
-  const entries = await prisma.masterTimetable.findMany({
-    where: { lecturerId, isActive: true },
-    include: SLOT_INCLUDE,
+/** Lecturer "My Timetable" — own editable schedule only (not FET student import). */
+export async function getLecturerTimetable(lecturerId: string): Promise<{
+  weekly: WeeklyTimetable;
+  flat: TimetableSlot[];
+  scheduleSlots: {
+    id: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    slotType: string;
+    label: string | null;
+    location: string | null;
+  }[];
+}> {
+  const slots = await prisma.lecturerScheduleSlot.findMany({
+    where: { lecturerId },
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-  }) as unknown as TimetableSlot[];
+  });
 
-  return { weekly: organizeByDay(entries), flat: entries };
+  return {
+    weekly: organizeByDay([]),
+    flat: [],
+    scheduleSlots: slots.map((s) => ({
+      id: s.id,
+      dayOfWeek: s.dayOfWeek,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      slotType: s.slotType,
+      label: s.label,
+      location: s.location,
+    })),
+  };
 }

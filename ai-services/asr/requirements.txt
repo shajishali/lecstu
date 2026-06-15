@@ -1,0 +1,23 @@
+# ASR Service Dependencies (Phase 7.1)
+# Install: pip install -r requirements.txt
+
+# OpenAI Whisper (open-source local model)
+openai-whisper>=20231117
+
+# Google Cloud Speech-to-Text (optional - requires GOOGLE_APPLICATION_CREDENTIALS)
+google-cloud-speech>=2.24.0
+
+# Azure Speech Services (optional - requires AZURE_SPEECH_KEY and AZURE_SPEECH_REGION)
+azure-cognitiveservices-speech>=1.34.0
+
+# Audio processing
+numpy>=1.24.0
+scipy>=1.11.0
+soundfile>=0.12.0
+noisereduce>=3.0.0
+pydub>=0.25.0
+
+# FastAPI for optional standalone HTTP service
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6

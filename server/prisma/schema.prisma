@@ -18,8 +18,11 @@ enum UserRole {
 }
 
 enum AppointmentStatus {
+  PENDING_ADMIN  // Legacy: pre-direct-booking requests; treated as PENDING for lecturer actions
   PENDING
   ACCEPTED
+  SCHEDULED
+  CANCELLATION_REQUESTED
   REJECTED
   COMPLETED
   CANCELLED
@@ -29,7 +32,15 @@ enum NotificationType {
   APPOINTMENT_REQUEST
   APPOINTMENT_ACCEPTED
   APPOINTMENT_REJECTED
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CONFIRMED
   APPOINTMENT_CANCELLED
+  APPOINTMENT_REMINDER
+  APPOINTMENT_ADMIN_APPROVED   // Admin approved; lecturer notified
+  APPOINTMENT_ADMIN_REJECTED   // Admin rejected; student notified
+  HALL_BOOKING_REQUEST
+  HALL_BOOKING_APPROVED
+  HALL_BOOKING_REJECTED
   TIMETABLE_CHANGE
   ANNOUNCEMENT
 }
@@ -44,12 +55,67 @@ enum DayOfWeek {
   SUNDAY
 }
 
+enum LecturerSlotType {
+  TEACHING
+  BUSY
+  OFFICE_HOUR
+}
+
 enum MapMarkerType {
-  HALL
-  OFFICE
-  LAB
-  AMENITY
   ENTRANCE
+  EXIT
+  LOBBY
+  STAIRS
+  LIFT
+  STAIRS_LIFT
+  PARKING
+  LECTURE_HALL
+  SEMINAR_ROOM
+  AUDITORIUM
+  CONFERENCE_ROOM
+  ROOM
+  HALL
+  LAB
+  WORKSHOP
+  LIBRARY
+  OFFICE
+  COUNTER
+  CAFETERIA
+  STORE
+  CLINIC
+  TOILET
+  PRAYER_ROOM
+  SPORTS
+  AMENITY
+}
+
+enum FloorPlanPublishStatus {
+  DRAFT
+  REVIEWED
+  PUBLISHED
+}
+
+enum NavNodeType {
+  ROOM
+  CORRIDOR
+  STAIRS
+  LIFT
+  ENTRANCE
+  EXIT
+}
+
+enum PositionSource {
+  QR_CODE
+  BLE_BEACON
+  UWB
+  MANUAL
+  ENTRANCE_DEFAULT
+}
+
+enum NavigationSessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
 }
 
 // ─────────────────────────────────────────
@@ -63,6 +129,8 @@ model User {
   role         UserRole
   firstName    String
   lastName     String
+  designation  String?  // e.g. Senior Lecturer (Grade I), Lecturer (Probationary)
+  timetableCode String? @unique // FET 1–2 letter lecturer code (e.g. "KP", "P")
   profileImage String?
   phone        String?
   isActive     Boolean  @default(true)
@@ -75,15 +143,18 @@ model User {
   // Student relations
   studentGroupMemberships StudentGroupMember[]
   studentAppointments     Appointment[]        @relation("StudentAppointments")
+  studentHallBookings     HallBooking[]        @relation("StudentHallBookings")
 
   // Lecturer relations
   lecturerOffice        LecturerOffice?
   lecturerAppointments  Appointment[]    @relation("LecturerAppointments")
   timetableEntries      MasterTimetable[]
+  scheduleSlots         LecturerScheduleSlot[]
 
   // General
-  notifications Notification[]
-  auditLogs     AuditLog[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  navigationSessions  NavigationSession[]
 
   @@index([email])
   @@index([role])
@@ -104,8 +175,45 @@ model Faculty {
   updatedAt   DateTime @updatedAt
 
   departments Department[]
+  programs    Program[]
 
   @@map("faculties")
+}
+
+// Degree programs (e.g. Computer Science, ICT, Engineering Technology)
+model Program {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  pathways Pathway[]
+
+  @@index([facultyId])
+  @@map("programs")
+}
+
+// Specialization pathways within a program (e.g. Cyber Security, Data Science)
+model Pathway {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  studentGroups StudentGroup[]
+
+  @@unique([name, programId])
+  @@index([programId])
+  @@map("pathways")
 }
 
 model Department {
@@ -155,20 +263,25 @@ model Course {
 // ─────────────────────────────────────────
 
 model StudentGroup {
-  id        String   @id @default(uuid())
-  name      String
-  batchYear Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  batchYear  Int      // e.g. 2024; for combined 2023-2024 use 2024 + batchLabel
+  batchLabel String?  // e.g. "2023-2024" when batches run in parallel
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  pathwayId String?
+  pathway   Pathway? @relation(fields: [pathwayId], references: [id], onDelete: SetNull)
 
   members          StudentGroupMember[]
   timetableEntries MasterTimetable[]
 
   @@unique([name, departmentId])
   @@index([departmentId])
+  @@index([pathwayId])
   @@map("student_groups")
 }
 
@@ -204,6 +317,7 @@ model LectureHall {
 
   timetableEntries MasterTimetable[]
   mapMarkers       MapMarker[]       @relation("HallMarkers")
+  hallBookings     HallBooking[]
 
   @@index([building])
   @@map("lecture_halls")
@@ -230,18 +344,40 @@ model LecturerOffice {
   @@map("lecturer_offices")
 }
 
+/// Lecturer-managed weekly availability (not tied to FET student timetable import)
+model LecturerScheduleSlot {
+  id         String           @id @default(uuid())
+  dayOfWeek  DayOfWeek
+  startTime  String           // "08:00"
+  endTime    String           // "10:00"
+  slotType   LecturerSlotType @default(BUSY)
+  label      String?
+  location   String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  lecturerId String
+  lecturer   User @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  @@index([lecturerId, dayOfWeek])
+  @@map("lecturer_schedule_slots")
+}
+
 // ─────────────────────────────────────────
 // MASTER TIMETABLE
 // ─────────────────────────────────────────
 
 model MasterTimetable {
   id        String    @id @default(uuid())
+  year      Int       @default(2026)
+  month     Int       @default(1)   // 1-12
+  week      Int       @default(1)    // 1-53 (ISO week or semester week)
   dayOfWeek DayOfWeek
   startTime String    // "08:00" format (HH:mm)
   endTime   String    // "09:00" format (HH:mm)
   semester  Int       @default(1)
-  year      Int       @default(2026)
   isActive  Boolean   @default(true)
+  lecturerInitials String? // FET sheet code (ND, MB, VL_HS) — shown as-is; not course P/T suffix
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -258,12 +394,34 @@ model MasterTimetable {
   group   StudentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   // Performance indexes for conflict detection & availability queries
-  @@index([dayOfWeek, startTime, hallId], name: "idx_timetable_hall_slot")
-  @@index([dayOfWeek, startTime, lecturerId], name: "idx_timetable_lecturer_slot")
-  @@index([groupId, dayOfWeek], name: "idx_timetable_group_day")
-  @@index([lecturerId, dayOfWeek])
-  @@index([hallId, dayOfWeek])
+  @@index([year, month, week, dayOfWeek, startTime, hallId], name: "idx_timetable_hall_slot")
+  @@index([year, month, week, dayOfWeek, startTime, lecturerId], name: "idx_timetable_lecturer_slot")
+  @@index([groupId, year, month, week, dayOfWeek], name: "idx_timetable_group_day")
+  @@index([lecturerId, year, month, week, dayOfWeek])
+  @@index([hallId, year, month, week, dayOfWeek])
   @@map("master_timetable")
+}
+
+/// Full FET grid stored per batch table (Y4 CSEC, ET-Y4-ETIA, …) — source of truth for display
+model TimetableTableSnapshot {
+  id          String   @id @default(uuid())
+  tableTitle  String   // e.g. "Y4 CSEC" as shown in the Excel header
+  groupName   String   // canonical group key e.g. "ET-Y4-CSEC"
+  year        Int
+  month       Int
+  week        Int
+  semester    Int      @default(1)
+  gridData    Json     // TimetableGridSnapshot (days × time rows, raw cell text)
+  sourceFile  String?
+  slotCount   Int      @default(0)
+  isPublished Boolean  @default(true)
+  importedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([groupName, year, month, week])
+  @@index([year, month, week])
+  @@index([tableTitle])
+  @@map("timetable_table_snapshots")
 }
 
 // ─────────────────────────────────────────
@@ -271,14 +429,19 @@ model MasterTimetable {
 // ─────────────────────────────────────────
 
 model Appointment {
-  id        String            @id @default(uuid())
-  dateTime  DateTime
-  duration  Int               @default(30) // minutes
-  status    AppointmentStatus @default(PENDING)
-  reason    String?
-  notes     String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id           String            @id @default(uuid())
+  dateTime     DateTime
+  duration     Int               @default(30) // minutes
+  status       AppointmentStatus @default(PENDING)
+  reason       String?
+  notes        String?
+  rescheduledAt DateTime?        // Set when lecturer proposes new time
+  reminderSentAt DateTime?      // 30-min reminder sent
+  cancellationReason String?    // Student's reason when requesting cancellation
+  cancellationRequestedAt DateTime?
+  cancellationPreviousStatus String?  // Revert to this if lecturer rejects
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   studentId String
   student   User @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
@@ -291,6 +454,40 @@ model Appointment {
   @@index([studentId, dateTime])
   @@index([status])
   @@map("appointments")
+}
+
+// ─────────────────────────────────────────
+// HALL BOOKING (admin approval required)
+// ─────────────────────────────────────────
+
+enum HallBookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model HallBooking {
+  id           String            @id @default(uuid())
+  date         DateTime          // Booking date
+  startTime    String             // "14:00" format
+  endTime      String             // "15:00" format
+  reason       String?
+  status       HallBookingStatus  @default(PENDING)
+  doorPassword String?            // Set by admin when approving (for automated door access)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  studentId String
+  student   User @relation("StudentHallBookings", fields: [studentId], references: [id], onDelete: Cascade)
+
+  hallId String
+  hall   LectureHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+
+  @@index([hallId, date])
+  @@index([studentId])
+  @@index([status])
+  @@map("hall_bookings")
 }
 
 // ─────────────────────────────────────────
@@ -332,16 +529,34 @@ model MapBuilding {
 
   markers    MapMarker[]
   floorPlans FloorPlan[]
+  navNodes            NavNode[]
+  navQrCodes          NavQrCode[]
+  navigationSessions  NavigationSession[]
 
   @@map("map_buildings")
 }
 
 model FloorPlan {
-  id        String   @id @default(uuid())
-  floor     Int
-  imagePath String
-  bounds    Json?
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  floor            Int
+  imagePath        String
+  bounds           Json?
+  drawableRegion   Json?
+  /// Meters represented by one percent unit on the floor plan (for distance/time estimates)
+  scaleMetersPerUnit Float?
+  /// Admin-pasted floor description (e.g. from ChatGPT) — source for story-based navigation
+  navigationNotes  String?  @db.Text
+  /// Parsed places + walking stories derived from notes and floor plan
+  navigationGuide  Json?
+  /// Admin workflow: only PUBLISHED floors are visible to students
+  publishStatus    FloorPlanPublishStatus @default(DRAFT)
+  /// When set, marker positions + image are frozen for Walking paths
+  locationsLockedAt    DateTime?
+  lockedImagePath      String?
+  lockedMarkerSnapshot Json?
+  /// Manual path points + edges backup (Path point / Stairs / Lift only)
+  walkingPathsSnapshot Json?
+  createdAt        DateTime @default(now())
 
   buildingId String
   building   MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
@@ -369,9 +584,96 @@ model MapMarker {
   officeId String?
   office   LecturerOffice? @relation("OfficeMarkers", fields: [officeId], references: [id], onDelete: SetNull)
 
+  navNode NavNode?
+
   @@index([buildingId, floor])
   @@index([type])
   @@map("map_markers")
+}
+
+model NavNode {
+  id           String      @id @default(uuid())
+  buildingId   String
+  floor        Int
+  label        String
+  x            Float
+  y            Float
+  type         NavNodeType
+  mapMarkerId  String?     @unique
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  building  MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  mapMarker MapMarker?  @relation(fields: [mapMarkerId], references: [id], onDelete: SetNull)
+  edgesFrom NavEdge[]     @relation("NavEdgeFrom")
+  edgesTo   NavEdge[]     @relation("NavEdgeTo")
+  qrCodes   NavQrCode[]
+
+  @@index([buildingId, floor])
+  @@map("nav_nodes")
+}
+
+model NavEdge {
+  id            String   @id @default(uuid())
+  fromNodeId    String
+  toNodeId      String
+  weight        Float?
+  bidirectional Boolean  @default(true)
+  label         String?
+  createdAt     DateTime @default(now())
+
+  from NavNode @relation("NavEdgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  to   NavNode @relation("NavEdgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([fromNodeId, toNodeId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@map("nav_edges")
+}
+
+/// QR code anchored to a navigation node for Phase-1 indoor positioning
+model NavQrCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  label     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buildingId String
+  building   MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  navNodeId String
+  navNode   NavNode @relation(fields: [navNodeId], references: [id], onDelete: Cascade)
+
+  @@index([buildingId])
+  @@index([navNodeId])
+  @@map("nav_qr_codes")
+}
+
+/// Tracks user position and active route (QR / future BLE / UWB)
+model NavigationSession {
+  id              String                  @id @default(uuid())
+  status          NavigationSessionStatus @default(ACTIVE)
+  positionSource  PositionSource          @default(ENTRANCE_DEFAULT)
+  currentFloor    Int?
+  currentNodeId   String?
+  destinationNodeId String?
+  routePayload    Json?
+  stepIndex       Int                     @default(0)
+  expiresAt       DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  buildingId String
+  building   MapBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([buildingId])
+  @@map("navigation_sessions")
 }
 
 // ─────────────────────────────────────────

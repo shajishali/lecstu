@@ -4,15 +4,23 @@
   "description": "LECSTU — AI-Integrated Academic Platform (Research Project)",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "concurrently -k \"npm run dev:server\" \"wait-on http://localhost:5000/api/health -t 60000 && npm run dev:client\"",
     "dev:client": "npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
+    "asr": "cd ai-services/asr && python -m uvicorn server:app --host 0.0.0.0 --port 8001",
+    "timetable-extract": "cd ai-services/timetable-extract && python -m uvicorn server:app --host 0.0.0.0 --port 8002",
+    "floorplan-vision": "cd ai-services/floorplan-vision && .venv\\Scripts\\python -m uvicorn server:app --host 0.0.0.0 --port 8003 --reload",
+    "indoor-navigation": "cd ai-services/indoor-navigation-engine && .venv\\Scripts\\python -m uvicorn server:app --host 0.0.0.0 --port 8004 --reload",
     "build:client": "npm run build --prefix client",
     "build:server": "npm run build --prefix server",
     "build": "npm run build:server & npm run build:client",
-    "lint": "npm run lint --prefix client & npm run lint --prefix server"
+    "lint": "npm run lint --prefix client & npm run lint --prefix server",
+    "test": "playwright test",
+    "test:timetable": "playwright test tests/student-timetable.spec.ts --reporter=list"
   },
   "devDependencies": {
-    "concurrently": "latest"
+    "@playwright/test": "latest",
+    "concurrently": "latest",
+    "wait-on": "latest"
   }
 }

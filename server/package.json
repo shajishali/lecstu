@@ -10,6 +10,17 @@
     "lint": "eslint src --ext .ts",
     "db:migrate": "npx prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:purge": "tsx scripts/purge-all-data.ts",
+    "db:sync-groups": "tsx scripts/sync-timetable-groups.ts",
+    "db:repair-timetable-times": "tsx scripts/repair-fet-merged-times.ts",
+    "db:repair-timetable-grids": "tsx scripts/repair-grid-snapshots.ts",
+    "db:repair-timetable-details": "tsx scripts/repair-grid-snapshots.ts",
+    "db:sync-lecturer-codes": "tsx scripts/sync-lecturer-codes-from-names.ts",
+    "db:seed-lecturers": "tsx scripts/seed-faculty-lecturers.ts",
+    "db:seed-faculty-buildings": "tsx scripts/seed-faculty-buildings.ts",
+    "db:import-floorplans": "tsx scripts/import-floorplans-from-folder.ts",
+    "db:scrape-fct-lecturers": "tsx scripts/scrape-fct-lecturers.ts",
+    "db:seed-et-y1": "tsx scripts/seed-et-y1-timetable.ts",
     "db:reset": "npx prisma migrate reset",
     "db:studio": "npx prisma studio"
   },
@@ -27,6 +38,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
+    "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -35,9 +47,12 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.1",
+    "form-data": "^4.0.5",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
-    "pg": "^8.18.0"
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.18.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

@@ -1,0 +1,47 @@
+{
+  "experiment_id": "20260219_082315",
+  "timestamp": "2026-02-19T08:23:19.559556Z",
+  "config": {
+    "num_utterances": 2,
+    "num_configs": 1,
+    "num_runs": 1,
+    "engine_filter": "whisper",
+    "model_filter": "tiny",
+    "language_filter": null
+  },
+  "raw_results": [
+    {
+      "utterance_id": "en_timetable_001",
+      "language": "en",
+      "engine": "whisper",
+      "model": "tiny",
+      "run": 1,
+      "reference": "When is my next Data Structures lecture?",
+      "hypothesis": "",
+      "wer": Infinity,
+      "cer": Infinity,
+      "latency_ms": 0,
+      "ref_length": null,
+      "hyp_length": null,
+      "error": "[WinError 2] The system cannot find the file specified"
+    },
+    {
+      "utterance_id": "en_timetable_002",
+      "language": "en",
+      "engine": "whisper",
+      "model": "tiny",
+      "run": 1,
+      "reference": "What lectures do I have on Monday?",
+      "hypothesis": "",
+      "wer": Infinity,
+      "cer": Infinity,
+      "latency_ms": 0,
+      "ref_length": null,
+      "hyp_length": null,
+      "error": "[WinError 2] The system cannot find the file specified"
+    }
+  ],
+  "wer_stats": {},
+  "cer_stats": {},
+  "latency_stats": {}
+}

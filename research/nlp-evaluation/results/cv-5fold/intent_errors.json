@@ -1,0 +1,314 @@
+[
+  {
+    "text": "Is Hall A booked at 11am?",
+    "intent": "ask_hall_availability",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.8667520880699158
+    }
+  },
+  {
+    "text": "Can I meet Dr. Chandrasena tomorrow?",
+    "intent": "ask_lecturer_availability",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.7756375670433044
+    }
+  },
+  {
+    "text": "Schedule slot Dr. Perera Tuesday",
+    "intent": "book_appointment",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.9194520711898804
+    }
+  },
+  {
+    "text": "Yo",
+    "intent": "greeting",
+    "intent_prediction": {
+      "name": "goodbye",
+      "confidence": 0.8295679688453674
+    }
+  },
+  {
+    "text": "Good night",
+    "intent": "goodbye",
+    "intent_prediction": {
+      "name": "greeting",
+      "confidence": 0.9984092116355896
+    }
+  },
+  {
+    "text": "Play some music",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.5979217886924744
+    }
+  },
+  {
+    "text": "What can you do?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.9408369064331055
+    }
+  },
+  {
+    "text": "When is CS201?",
+    "intent": "ask_timetable",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.7045693397521973
+    }
+  },
+  {
+    "text": "Can I see Dr. Rajapaksha Friday?",
+    "intent": "ask_lecturer_availability",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.5452649593353271
+    }
+  },
+  {
+    "text": "Schedule Dr. Perera Wednesday 10am",
+    "intent": "book_appointment",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.9980689883232117
+    }
+  },
+  {
+    "text": "Remove my appointment with Dr. Hakmanage",
+    "intent": "cancel_appointment",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.9988046884536743
+    }
+  },
+  {
+    "text": "What?",
+    "intent": "fallback",
+    "intent_prediction": {
+      "name": "out_of_scope",
+      "confidence": 0.7647021412849426
+    }
+  },
+  {
+    "text": "What do you mean",
+    "intent": "fallback",
+    "intent_prediction": {
+      "name": "out_of_scope",
+      "confidence": 0.8012862205505371
+    }
+  },
+  {
+    "text": "What time is it in New York?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "ask_timetable",
+      "confidence": 0.6257531046867371
+    }
+  },
+  {
+    "text": "How old are you?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "greeting",
+      "confidence": 0.9695983529090881
+    }
+  },
+  {
+    "text": "Schedule meeting Dr. Dias Wednesday",
+    "intent": "book_appointment",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.9978722333908081
+    }
+  },
+  {
+    "text": "I'd like to see Dr. Dias on Monday at 11am",
+    "intent": "book_appointment",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.98970627784729
+    }
+  },
+  {
+    "text": "Can I book Dr. Hakmanage Friday?",
+    "intent": "book_appointment",
+    "intent_prediction": {
+      "name": "ask_lecturer_availability",
+      "confidence": 0.7821857333183289
+    }
+  },
+  {
+    "text": "Wassup",
+    "intent": "greeting",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.999840259552002
+    }
+  },
+  {
+    "text": "I didn't catch that",
+    "intent": "fallback",
+    "intent_prediction": {
+      "name": "goodbye",
+      "confidence": 0.9079645276069641
+    }
+  },
+  {
+    "text": "What's 2 plus 2?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "ask_hall_availability",
+      "confidence": 0.9975106716156006
+    }
+  },
+  {
+    "text": "Recommend a movie",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.9636247754096985
+    }
+  },
+  {
+    "text": "Do you have a girlfriend?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "ask_timetable",
+      "confidence": 0.4194561541080475
+    }
+  },
+  {
+    "text": "Can you dance?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "cancel_appointment",
+      "confidence": 0.9732174873352051
+    }
+  },
+  {
+    "text": "Check Main Hall for tomorrow",
+    "intent": "ask_hall_availability",
+    "intent_prediction": {
+      "name": "ask_directions",
+      "confidence": 0.5302425026893616
+    }
+  },
+  {
+    "text": "When does Dr. Tennekoon have office hours?",
+    "intent": "ask_lecturer_availability",
+    "intent_prediction": {
+      "name": "ask_office_location",
+      "confidence": 0.9994396567344666
+    }
+  },
+  {
+    "text": "Cheers",
+    "intent": "goodbye",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.7785147428512573
+    }
+  },
+  {
+    "text": "See you next time",
+    "intent": "goodbye",
+    "intent_prediction": {
+      "name": "ask_timetable",
+      "confidence": 0.5856460332870483
+    }
+  },
+  {
+    "text": "How are you feeling?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "greeting",
+      "confidence": 0.6163759827613831
+    }
+  },
+  {
+    "text": "What time is Software Engineering?",
+    "intent": "ask_timetable",
+    "intent_prediction": {
+      "name": "ask_directions",
+      "confidence": 0.9985998272895813
+    }
+  },
+  {
+    "text": "Can I book Dr. Perera Wednesday?",
+    "intent": "ask_lecturer_availability",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.9999829530715942
+    }
+  },
+  {
+    "text": "Where is Main Hall?",
+    "intent": "ask_directions",
+    "intent_prediction": {
+      "name": "ask_hall_availability",
+      "confidence": 0.9976611137390137
+    }
+  },
+  {
+    "text": "Where's Main Hall?",
+    "intent": "ask_directions",
+    "intent_prediction": {
+      "name": "ask_hall_availability",
+      "confidence": 0.9964839220046997
+    }
+  },
+  {
+    "text": "Main Hall location please",
+    "intent": "ask_directions",
+    "intent_prediction": {
+      "name": "ask_hall_availability",
+      "confidence": 0.9899590611457825
+    }
+  },
+  {
+    "text": "Greetings",
+    "intent": "greeting",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.4721943438053131
+    }
+  },
+  {
+    "text": "Nice to meet you",
+    "intent": "greeting",
+    "intent_prediction": {
+      "name": "goodbye",
+      "confidence": 0.5679499506950378
+    }
+  },
+  {
+    "text": "Ta",
+    "intent": "goodbye",
+    "intent_prediction": {
+      "name": "fallback",
+      "confidence": 0.9601576924324036
+    }
+  },
+  {
+    "text": "Come again",
+    "intent": "fallback",
+    "intent_prediction": {
+      "name": "out_of_scope",
+      "confidence": 0.9481568336486816
+    }
+  },
+  {
+    "text": "Do you like pizza?",
+    "intent": "out_of_scope",
+    "intent_prediction": {
+      "name": "book_appointment",
+      "confidence": 0.7108111381530762
+    }
+  }
+]

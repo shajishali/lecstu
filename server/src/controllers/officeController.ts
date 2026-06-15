@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import { logAction } from '../services/auditLogger';
+import { logActionForRequest } from '../services/auditLogger';
 
 const INCLUDE = {
-  lecturer: { select: { id: true, firstName: true, lastName: true, email: true } },
+  lecturer: { select: { id: true, firstName: true, lastName: true, designation: true, email: true } },
 };
 
 export async function listOffices(req: Request, res: Response, next: NextFunction) {
@@ -50,7 +50,7 @@ export async function createOffice(req: Request, res: Response, next: NextFuncti
       data: { roomNumber, building, floor: floor || 0, lecturerId },
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'CREATE', 'LecturerOffice', office.id, { roomNumber, building, lecturerId });
+    await logActionForRequest(req, 'CREATE', 'LecturerOffice', office.id, { roomNumber, building, lecturerId });
     res.status(201).json({ success: true, data: office });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('This lecturer already has an office assigned', 409));
@@ -69,7 +69,7 @@ export async function updateOffice(req: Request, res: Response, next: NextFuncti
       data: req.body,
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'UPDATE', 'LecturerOffice', id, req.body);
+    await logActionForRequest(req, 'UPDATE', 'LecturerOffice', id, req.body);
     res.json({ success: true, data: office });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('This lecturer already has an office assigned', 409));
@@ -84,7 +84,7 @@ export async function deleteOffice(req: Request, res: Response, next: NextFuncti
     if (!existing) throw new AppError('Office not found', 404);
 
     await prisma.lecturerOffice.delete({ where: { id } });
-    await logAction((req as any).user.id, 'DELETE', 'LecturerOffice', id, { roomNumber: existing.roomNumber });
+    await logActionForRequest(req, 'DELETE', 'LecturerOffice', id, { roomNumber: existing.roomNumber });
     res.json({ success: true, message: 'Office deleted' });
   } catch (err) { next(err); }
 }
@@ -96,7 +96,7 @@ export async function getAvailableLecturers(_req: Request, res: Response, next: 
 
     const lecturers = await prisma.user.findMany({
       where: { role: 'LECTURER', id: { notIn: assignedIds } },
-      select: { id: true, firstName: true, lastName: true, email: true },
+      select: { id: true, firstName: true, lastName: true, designation: true, email: true },
       orderBy: { firstName: 'asc' },
     });
 

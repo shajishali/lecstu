@@ -91,6 +91,21 @@ function getCurrentTime(): string {
   return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 
+/** Get date string (YYYY-MM-DD) for the next occurrence of dayOfWeek (MONDAY=1, etc.) */
+function getNextDateForDay(dayOfWeek: string): string {
+  const dayMap: Record<string, number> = {
+    SUNDAY: 0, MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5, SATURDAY: 6,
+  };
+  const target = dayMap[dayOfWeek.toUpperCase()] ?? 1;
+  const today = new Date();
+  const todayNum = today.getDay();
+  let daysAhead = target - todayNum;
+  if (daysAhead <= 0) daysAhead += 7;
+  const d = new Date(today);
+  d.setDate(d.getDate() + daysAhead);
+  return d.toISOString().split('T')[0];
+}
+
 export async function getHallDaySchedule(hallId: string, day: string): Promise<HallSchedule> {
   const hall = await prisma.lectureHall.findUnique({ where: { id: hallId } });
   if (!hall) throw new Error('Hall not found');
@@ -172,10 +187,30 @@ export async function findAvailableHalls(query: AvailableQuery): Promise<Availab
     occupancyMap.get(e.hallId)!.push({ startTime: e.startTime, endTime: e.endTime });
   }
 
+  const targetDate = getNextDateForDay(query.day);
+  const targetDateStart = new Date(targetDate);
+  targetDateStart.setHours(0, 0, 0, 0);
+  const targetDateEnd = new Date(targetDateStart);
+  targetDateEnd.setDate(targetDateEnd.getDate() + 1);
+  const hallBookings = await prisma.hallBooking.findMany({
+    where: {
+      hallId: { in: hallIds },
+      date: { gte: targetDateStart, lt: targetDateEnd },
+      status: 'APPROVED',
+    },
+    select: { hallId: true, startTime: true, endTime: true },
+  });
+  for (const b of hallBookings) {
+    if (!occupancyMap.has(b.hallId)) occupancyMap.set(b.hallId, []);
+    occupancyMap.get(b.hallId)!.push({ startTime: b.startTime, endTime: b.endTime });
+  }
+
   const results: AvailableHallResult[] = [];
 
   for (const hall of halls) {
     const occupied = occupancyMap.get(hall.id) || [];
+    if (occupied.length > 0) continue;
+
     const freeSlots = computeFreeSlots(occupied);
 
     let matchingFreeSlots = freeSlots;
@@ -212,23 +247,39 @@ export async function findAvailableNow(): Promise<AvailableHallResult[]> {
   const day = getCurrentDayOfWeek();
   const now = getCurrentTime();
 
+  const today = new Date();
+  const dateStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dateEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
   if (['SATURDAY', 'SUNDAY'].includes(day)) {
     const halls = await prisma.lectureHall.findMany({
       where: { isActive: true },
       orderBy: { name: 'asc' },
     });
-    return halls.map((h) => ({
-      hall: {
-        id: h.id,
-        name: h.name,
-        building: h.building,
-        floor: h.floor,
-        capacity: h.capacity,
-        equipment: h.equipment,
+    const hallIds = halls.map((h) => h.id);
+    const hallBookings = await prisma.hallBooking.findMany({
+      where: {
+        hallId: { in: hallIds },
+        date: { gte: dateStart, lt: dateEnd },
+        status: 'APPROVED',
       },
-      freeSlots: [{ startTime: DAY_START, endTime: DAY_END, durationMinutes: 600 }],
-      matchingFreeSlots: [{ startTime: DAY_START, endTime: DAY_END, durationMinutes: 600 }],
-    }));
+      select: { hallId: true },
+    });
+    const bookedHallIds = new Set(hallBookings.map((b) => b.hallId));
+    return halls
+      .filter((h) => !bookedHallIds.has(h.id))
+      .map((h) => ({
+        hall: {
+          id: h.id,
+          name: h.name,
+          building: h.building,
+          floor: h.floor,
+          capacity: h.capacity,
+          equipment: h.equipment,
+        },
+        freeSlots: [{ startTime: DAY_START, endTime: DAY_END, durationMinutes: 600 }],
+        matchingFreeSlots: [{ startTime: DAY_START, endTime: DAY_END, durationMinutes: 600 }],
+      }));
   }
 
   const halls = await prisma.lectureHall.findMany({
@@ -254,28 +305,39 @@ export async function findAvailableNow(): Promise<AvailableHallResult[]> {
     occupancyMap.get(e.hallId)!.push({ startTime: e.startTime, endTime: e.endTime });
   }
 
+  const hallBookings = await prisma.hallBooking.findMany({
+    where: {
+      hallId: { in: hallIds },
+      date: { gte: dateStart, lt: dateEnd },
+      status: 'APPROVED',
+    },
+    select: { hallId: true, startTime: true, endTime: true },
+  });
+  for (const b of hallBookings) {
+    if (!occupancyMap.has(b.hallId)) occupancyMap.set(b.hallId, []);
+    occupancyMap.get(b.hallId)!.push({ startTime: b.startTime, endTime: b.endTime });
+  }
+
   const results: AvailableHallResult[] = [];
 
   for (const hall of halls) {
     const occupied = occupancyMap.get(hall.id) || [];
-    const isBusy = occupied.some((s) => s.startTime <= now && s.endTime > now);
+    if (occupied.length > 0) continue;
 
-    if (!isBusy) {
-      const freeSlots = computeFreeSlots(occupied);
-      const currentSlot = freeSlots.find((fs) => fs.startTime <= now && fs.endTime > now);
-      results.push({
-        hall: {
-          id: hall.id,
-          name: hall.name,
-          building: hall.building,
-          floor: hall.floor,
-          capacity: hall.capacity,
-          equipment: hall.equipment,
-        },
-        freeSlots,
-        matchingFreeSlots: currentSlot ? [currentSlot] : freeSlots,
-      });
-    }
+    const freeSlots = computeFreeSlots(occupied);
+    const currentSlot = freeSlots.find((fs) => fs.startTime <= now && fs.endTime > now);
+    results.push({
+      hall: {
+        id: hall.id,
+        name: hall.name,
+        building: hall.building,
+        floor: hall.floor,
+        capacity: hall.capacity,
+        equipment: hall.equipment,
+      },
+      freeSlots,
+      matchingFreeSlots: currentSlot ? [currentSlot] : freeSlots,
+    });
   }
 
   return results;

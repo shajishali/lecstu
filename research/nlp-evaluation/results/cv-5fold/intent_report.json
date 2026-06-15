@@ -1,0 +1,125 @@
+{
+  "ask_directions": {
+    "precision": 0.9428571428571428,
+    "recall": 0.9166666666666666,
+    "f1-score": 0.9295774647887323,
+    "support": 36,
+    "confused_with": {
+      "ask_hall_availability": 3
+    }
+  },
+  "ask_timetable": {
+    "precision": 0.9285714285714286,
+    "recall": 0.9512195121951219,
+    "f1-score": 0.9397590361445782,
+    "support": 41,
+    "confused_with": {
+      "ask_lecturer_availability": 1,
+      "ask_directions": 1
+    }
+  },
+  "book_appointment": {
+    "precision": 0.8409090909090909,
+    "recall": 0.8809523809523809,
+    "f1-score": 0.8604651162790699,
+    "support": 42,
+    "confused_with": {
+      "ask_lecturer_availability": 5
+    }
+  },
+  "out_of_scope": {
+    "precision": 0.9032258064516129,
+    "recall": 0.7368421052631579,
+    "f1-score": 0.8115942028985507,
+    "support": 38,
+    "confused_with": {
+      "fallback": 3,
+      "greeting": 2
+    }
+  },
+  "goodbye": {
+    "precision": 0.918918918918919,
+    "recall": 0.8947368421052632,
+    "f1-score": 0.9066666666666667,
+    "support": 38,
+    "confused_with": {
+      "fallback": 2,
+      "greeting": 1
+    }
+  },
+  "fallback": {
+    "precision": 0.8461538461538461,
+    "recall": 0.8918918918918919,
+    "f1-score": 0.868421052631579,
+    "support": 37,
+    "confused_with": {
+      "out_of_scope": 3,
+      "goodbye": 1
+    }
+  },
+  "ask_office_location": {
+    "precision": 0.972972972972973,
+    "recall": 1.0,
+    "f1-score": 0.9863013698630138,
+    "support": 36,
+    "confused_with": {}
+  },
+  "ask_lecturer_availability": {
+    "precision": 0.8723404255319149,
+    "recall": 0.9111111111111111,
+    "f1-score": 0.891304347826087,
+    "support": 45,
+    "confused_with": {
+      "book_appointment": 3,
+      "ask_office_location": 1
+    }
+  },
+  "ask_hall_availability": {
+    "precision": 0.8888888888888888,
+    "recall": 0.9411764705882353,
+    "f1-score": 0.9142857142857143,
+    "support": 34,
+    "confused_with": {
+      "book_appointment": 1,
+      "ask_directions": 1
+    }
+  },
+  "cancel_appointment": {
+    "precision": 0.9705882352941176,
+    "recall": 0.9705882352941176,
+    "f1-score": 0.9705882352941176,
+    "support": 34,
+    "confused_with": {
+      "book_appointment": 1
+    }
+  },
+  "greeting": {
+    "precision": 0.9117647058823529,
+    "recall": 0.8857142857142857,
+    "f1-score": 0.8985507246376812,
+    "support": 35,
+    "confused_with": {
+      "goodbye": 2,
+      "fallback": 1
+    }
+  },
+  "accuracy": 0.90625,
+  "macro avg": {
+    "precision": 0.9088355874938444,
+    "recall": 0.9073545001620211,
+    "f1-score": 0.9070467210287082,
+    "support": 416
+  },
+  "weighted avg": {
+    "precision": 0.9069663281449708,
+    "recall": 0.90625,
+    "f1-score": 0.9055540161157817,
+    "support": 416
+  },
+  "micro avg": {
+    "precision": 0.90625,
+    "recall": 0.90625,
+    "f1-score": 0.90625,
+    "support": 416
+  }
+}

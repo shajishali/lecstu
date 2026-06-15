@@ -14,6 +14,12 @@ export function showToast(type: ToastMessage['type'], text: string) {
   toastListener?.(msg);
 }
 
+const toastStyles = {
+  success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+  error: 'bg-red-50 border-red-200 text-red-800',
+  info: 'bg-[var(--color-primary-light)] border-[var(--color-primary)]/30 text-[var(--color-primary-hover)]',
+};
+
 export default function ToastContainer() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -40,12 +46,21 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast-container">
+    <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast toast-${t.type}`}>
+        <div
+          key={t.id}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-3 shadow-lg ${toastStyles[t.type]}`}
+        >
           {icons[t.type]}
-          <span>{t.text}</span>
-          <button onClick={() => remove(t.id)}><X size={14} /></button>
+          <span className="text-sm font-medium">{t.text}</span>
+          <button
+            type="button"
+            onClick={() => remove(t.id)}
+            className="ml-1 rounded p-0.5 hover:opacity-70"
+          >
+            <X size={14} />
+          </button>
         </div>
       ))}
     </div>

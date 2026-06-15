@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import api from '@services/api';
+import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
 import DataTable from '@components/DataTable';
 import Modal from '@components/Modal';
@@ -8,11 +8,20 @@ import {
   Plus, Edit2, Trash2, Users, UserPlus, UserMinus,
 } from 'lucide-react';
 
+interface Pathway {
+  id: string;
+  name: string;
+  code: string;
+  program: { name: string; code: string };
+}
+
 interface Group {
   id: string;
   name: string;
   batchYear: number;
+  batchLabel?: string | null;
   department: { id: string; name: string; code: string };
+  pathway?: { id: string; name: string; code: string } | null;
   _count: { members: number; timetableEntries: number };
   members?: { student: { id: string; firstName: string; lastName: string; email: string } }[];
 }
@@ -28,10 +37,11 @@ export default function GroupManagement() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [pathways, setPathways] = useState<Pathway[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<Group | null>(null);
-  const [form, setForm] = useState({ name: '', batchYear: 2026, departmentId: '' });
+  const [form, setForm] = useState({ name: '', batchYear: 1, batchLabel: 'Y1', departmentId: '', pathwayId: '' as string });
   const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null);
@@ -50,7 +60,7 @@ export default function GroupManagement() {
     try {
       const res = await api.get('/admin/groups');
       setGroups(res.data.data);
-    } catch { showToast('error', 'Failed to load groups'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to load groups'); }
     finally { setLoading(false); }
   }, []);
 
@@ -62,17 +72,24 @@ export default function GroupManagement() {
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { fetchGroups(); fetchDepartments(); }, [fetchGroups, fetchDepartments]);
+  const fetchPathways = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/groups/pathways');
+      setPathways(res.data.data || []);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchGroups(); fetchDepartments(); fetchPathways(); }, [fetchGroups, fetchDepartments, fetchPathways]);
 
   const openCreate = () => {
     setEditGroup(null);
-    setForm({ name: '', batchYear: 2026, departmentId: departments[0]?.id || '' });
+    setForm({ name: '', batchYear: 1, batchLabel: 'Y1', departmentId: departments[0]?.id || '', pathwayId: '' });
     setFormOpen(true);
   };
 
   const openEdit = (g: Group) => {
     setEditGroup(g);
-    setForm({ name: g.name, batchYear: g.batchYear, departmentId: g.department.id });
+    setForm({ name: g.name, batchYear: g.batchYear, batchLabel: g.batchLabel || '', departmentId: g.department.id, pathwayId: g.pathway?.id || '' });
     setFormOpen(true);
   };
 
@@ -81,16 +98,16 @@ export default function GroupManagement() {
     setSaving(true);
     try {
       if (editGroup) {
-        await api.patch(`/admin/groups/${editGroup.id}`, form);
+        await api.patch(`/admin/groups/${editGroup.id}`, { ...form, batchLabel: form.batchLabel || null, pathwayId: form.pathwayId || null });
         showToast('success', 'Group updated');
       } else {
-        await api.post('/admin/groups', form);
+        await api.post('/admin/groups', { ...form, batchLabel: form.batchLabel || null, pathwayId: form.pathwayId || null });
         showToast('success', 'Group created');
       }
       setFormOpen(false);
       fetchGroups();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to save');
+      showApiErrorToast(err, 'Failed to save');
     } finally { setSaving(false); }
   };
 
@@ -103,7 +120,7 @@ export default function GroupManagement() {
       setDeleteTarget(null);
       fetchGroups();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to delete');
+      showApiErrorToast(err, 'Failed to delete');
     } finally { setDeleting(false); }
   };
 
@@ -113,7 +130,7 @@ export default function GroupManagement() {
     try {
       const res = await api.get(`/admin/groups/${g.id}`);
       setMembersGroup(res.data.data);
-    } catch { showToast('error', 'Failed to load members'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to load members'); }
     finally { setMembersLoading(false); }
   };
 
@@ -124,7 +141,7 @@ export default function GroupManagement() {
       showToast('success', 'Student removed');
       openMembers(membersGroup);
       fetchGroups();
-    } catch { showToast('error', 'Failed to remove student'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to remove student'); }
   };
 
   const openAssign = async () => {
@@ -134,7 +151,7 @@ export default function GroupManagement() {
     try {
       const res = await api.get(`/admin/groups/${membersGroup.id}/available-students`);
       setAvailableStudents(res.data.data);
-    } catch { showToast('error', 'Failed to load students'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to load students'); }
   };
 
   const handleAssign = async () => {
@@ -146,7 +163,7 @@ export default function GroupManagement() {
       setAssignOpen(false);
       openMembers(membersGroup);
       fetchGroups();
-    } catch { showToast('error', 'Failed to assign students'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to assign students'); }
     finally { setAssigning(false); }
   };
 
@@ -156,7 +173,8 @@ export default function GroupManagement() {
 
   const columns = [
     { key: 'name', label: 'Name', sortable: true },
-    { key: 'batchYear', label: 'Batch Year', sortable: true },
+    { key: 'batchYear', label: 'Year', sortable: true, render: (r: Group) => r.batchLabel ?? `Y${r.batchYear}` },
+    { key: 'pathway', label: 'Pathway', render: (r: Group) => r.pathway ? `${r.pathway.code} - ${r.pathway.name}` : '-' },
     { key: 'department', label: 'Department', render: (r: Group) => r.department.name },
     { key: 'members', label: 'Students', render: (r: Group) => r._count.members },
     { key: 'entries', label: 'Timetable', render: (r: Group) => r._count.timetableEntries },
@@ -186,12 +204,44 @@ export default function GroupManagement() {
       {/* Create/Edit Modal */}
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editGroup ? 'Edit Group' : 'Create Group'} width="450px">
         <form onSubmit={handleSave} className="entity-form">
-          <label>Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
-          <label>Batch Year<input type="number" value={form.batchYear} onChange={(e) => setForm({ ...form, batchYear: parseInt(e.target.value) })} min={2020} max={2100} required /></label>
+          <label>
+            Group name <span className="text-slate-500 text-xs">(match timetable: CS-Y1, CS-Y3-AINT, CT-Y2, BS-Y1)</span>
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="CS-Y3-AINT"
+              required
+            />
+          </label>
+          <label>
+            Study year
+            <select
+              value={form.batchYear}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                setForm({ ...form, batchYear: n, batchLabel: `Y${n}` });
+              }}
+              required
+            >
+              <option value={1}>Y1 — First year</option>
+              <option value={2}>Y2 — Second year</option>
+              <option value={3}>Y3 — Third year</option>
+              <option value={4}>Y4 — Fourth year</option>
+            </select>
+          </label>
+          <input type="hidden" value={form.batchLabel} readOnly />
           <label>Department
             <select value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })} required>
-              <option value="">— Select —</option>
+              <option value="">- Select -</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </label>
+          <label>Pathway <span className="text-slate-500 text-xs">(Y3/Y4 only — leave empty for Y1/Y2)</span>
+            <select value={form.pathwayId} onChange={(e) => setForm({ ...form, pathwayId: e.target.value })}>
+              <option value="">- None -</option>
+              {pathways.map((p) => (
+                <option key={p.id} value={p.id}>{p.code} - {p.name} ({p.program.code})</option>
+              ))}
             </select>
           </label>
           <div className="tt-form-actions">
@@ -202,7 +252,7 @@ export default function GroupManagement() {
       </Modal>
 
       {/* Members Modal */}
-      <Modal open={membersOpen} onClose={() => setMembersOpen(false)} title={`Members — ${membersGroup?.name || ''}`} width="600px">
+      <Modal open={membersOpen} onClose={() => setMembersOpen(false)} title={`Members - ${membersGroup?.name || ''}`} width="600px">
         {membersLoading ? <div className="admin-loading"><div className="spinner" /></div> : (
           <>
             <div className="members-toolbar">

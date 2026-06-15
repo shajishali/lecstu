@@ -1,0 +1,114 @@
+{
+  "experiment_id": "20260307_171928",
+  "timestamp": "2026-03-07T17:19:42.178617Z",
+  "config": {
+    "num_utterances": 5,
+    "num_configs": 1,
+    "num_runs": 1,
+    "engine_filter": "google",
+    "model_filter": null,
+    "language_filter": null
+  },
+  "raw_results": [
+    {
+      "utterance_id": "en_timetable_001",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "When is my next Data Structures lecture?",
+      "hypothesis": "When is my next data structures lecture?",
+      "wer": 0.0,
+      "cer": 0.0,
+      "latency_ms": 6948.3,
+      "ref_length": 7,
+      "hyp_length": 7
+    },
+    {
+      "utterance_id": "en_timetable_002",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "What lectures do I have on Monday?",
+      "hypothesis": "What lectures do I have on Monday?",
+      "wer": 0.0,
+      "cer": 0.0,
+      "latency_ms": 1656.9,
+      "ref_length": 7,
+      "hyp_length": 7
+    },
+    {
+      "utterance_id": "en_timetable_003",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "When does Group B have Algorithm class?",
+      "hypothesis": "When does Group B have algorithm class?",
+      "wer": 0.0,
+      "cer": 0.0,
+      "latency_ms": 1784.3,
+      "ref_length": 7,
+      "hyp_length": 7
+    },
+    {
+      "utterance_id": "en_timetable_004",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "Is there a lecture at ten am tomorrow?",
+      "hypothesis": "Is there a lecture at 10:00 a.m. tomorrow?",
+      "wer": 0.125,
+      "cer": 0.1333,
+      "latency_ms": 1688.1,
+      "ref_length": 8,
+      "hyp_length": 8
+    },
+    {
+      "utterance_id": "en_timetable_005",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "What are today's lectures for Group A?",
+      "hypothesis": "what are today's lectures for group a",
+      "wer": 0.0,
+      "cer": 0.0,
+      "latency_ms": 1866.0,
+      "ref_length": 7,
+      "hyp_length": 7
+    }
+  ],
+  "wer_stats": {
+    "google_default_en": {
+      "mean": 0.025,
+      "median": 0.0,
+      "std": 0.05,
+      "min": 0.0,
+      "max": 0.125,
+      "count": 5
+    }
+  },
+  "cer_stats": {
+    "google_default_en": {
+      "mean": 0.0267,
+      "median": 0.0,
+      "std": 0.0533,
+      "min": 0.0,
+      "max": 0.1333,
+      "count": 5
+    }
+  },
+  "latency_stats": {
+    "google_default_en": {
+      "mean": 2788.72,
+      "median": 1784.3,
+      "std": 2081.0939,
+      "min": 1656.9,
+      "max": 6948.3,
+      "count": 5
+    }
+  }
+}

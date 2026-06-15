@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import { logAction } from '../services/auditLogger';
+import { logActionForRequest } from '../services/auditLogger';
 
 const INCLUDE = {
   building: { select: { id: true, name: true, code: true } },
@@ -51,7 +51,7 @@ export async function createMarker(req: Request, res: Response, next: NextFuncti
       },
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'CREATE', 'MapMarker', marker.id, { label, type, buildingId });
+    await logActionForRequest(req, 'CREATE', 'MapMarker', marker.id, { label, type, buildingId });
     res.status(201).json({ success: true, data: marker });
   } catch (err) { next(err); }
 }
@@ -73,7 +73,7 @@ export async function updateMarker(req: Request, res: Response, next: NextFuncti
       data,
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'UPDATE', 'MapMarker', id, req.body);
+    await logActionForRequest(req, 'UPDATE', 'MapMarker', id, req.body);
     res.json({ success: true, data: marker });
   } catch (err) { next(err); }
 }
@@ -85,7 +85,7 @@ export async function deleteMarker(req: Request, res: Response, next: NextFuncti
     if (!existing) throw new AppError('Marker not found', 404);
 
     await prisma.mapMarker.delete({ where: { id } });
-    await logAction((req as any).user.id, 'DELETE', 'MapMarker', id, { label: existing.label });
+    await logActionForRequest(req, 'DELETE', 'MapMarker', id, { label: existing.label });
     res.json({ success: true, message: 'Marker deleted' });
   } catch (err) { next(err); }
 }

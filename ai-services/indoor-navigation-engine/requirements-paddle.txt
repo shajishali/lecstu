@@ -1,0 +1,5 @@
+# Optional — large download (~500MB+). Only if you want PaddleOCR instead of EasyOCR.
+# Install separately: pip install -r requirements-paddle.txt
+# Then set: $env:NAV_USE_PADDLE = "true"
+paddleocr>=2.7.0
+paddlepaddle>=2.6.0

@@ -1,0 +1,681 @@
+{
+  "utterances": [
+    {
+      "audio_path": "../audio/en/S01/en_general_001.wav",
+      "text": "What are today's lectures for Group B?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_002.wav",
+      "text": "நாளை டாக்டர் சில்வாவை பார்க்க முடியுமா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_009.wav",
+      "text": "ගණිත දෙපාර්තමේන්තුව කොහෙද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_003.wav",
+      "text": "ஒரு மணி நேரத்திற்கு சிறந்த மண்டபம் உள்ளதா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_009.wav",
+      "text": "Show me my notifications",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_006.wav",
+      "text": "When is the Database Systems class?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_006.wav",
+      "text": "அறிவியல் கட்டிடத்தை எப்படி அடைவது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_006.wav",
+      "text": "தரவுதள அமைப்பு வகுப்பு எப்போது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_001.wav",
+      "text": "Is Hall B available at 2pm?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_005.wav",
+      "text": "வியாழன் டாக்டர் பெரேரா கிடைக்கிறாரா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_001.wav",
+      "text": "අද කණ්ඩායම බී සඳහා පන්ති මොනවාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_009.wav",
+      "text": "What time is the Machine Learning lecture?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_002.wav",
+      "text": "කැම්පස් සිතියම පෙන්වන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_007.wav",
+      "text": "When can I see Dr. Chandrasena?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_006.wav",
+      "text": "සිසුන් පනස් දෙනෙකුට ඉඩ ඇති හෝල් මොකක්ද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_007.wav",
+      "text": "ඩොක්ටර් ජයවර්ධන හමුවිය හැක්කේ කවදාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_008.wav",
+      "text": "கஃபேட்டீரியாவுக்கு செல்லும் வழி?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_009.wav",
+      "text": "என் சந்திப்பை வெள்ளிக்கு மாற்றுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_002.wav",
+      "text": "How do I get to Hall B?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_009.wav",
+      "text": "கணித துறை எங்கே?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_006.wav",
+      "text": "என் ஆலோசகருடன் சந்திப்பு திட்டமிடுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_005.wav",
+      "text": "බ්රහස්පතින්දා ඩොක්ටර් පෙරේරා තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_007.wav",
+      "text": "මගේ සතික වේලාසටි පෙන්වන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_003.wav",
+      "text": "What is the weather like?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_008.wav",
+      "text": "வெள்ளி மதியம் வகுப்புகள் உள்ளனவா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_010.wav",
+      "text": "இந்த தளம் எந்த மொழிகளை ஆதரிக்கிறது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_005.wav",
+      "text": "ප්රධාන පුස්තකාලය කොහෙද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_007.wav",
+      "text": "Show me my weekly timetable",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_003.wav",
+      "text": "பேராசிரியர் சென்னுடன் இடம் பதிவு செய்யுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_007.wav",
+      "text": "දෙවන මහලේ කතාබහ කාමරය කොහෙද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_003.wav",
+      "text": "Book me a slot with Professor Chen",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_010.wav",
+      "text": "அறை மூன்று பூஜ்ஜிய ஒன்றை எப்படி கண்டுபிடிப்பது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_007.wav",
+      "text": "இரண்டாவது மாடியில் வெளிப்பாடு அறை எங்கே?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_004.wav",
+      "text": "ප්රොජෙක්ටර් ඇති හෝල් පෙන්වන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_010.wav",
+      "text": "Do I have any pending appointments?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_010.wav",
+      "text": "බදාදා ගණිතය කණ්ඩායම් කිහිපයකටද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_008.wav",
+      "text": "அடுத்த தேர்வு எப்போது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_010.wav",
+      "text": "මට තැබුම් ඇති හමුවීම් තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_001.wav",
+      "text": "I want to book an appointment with Dr. Dias",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_001.wav",
+      "text": "පරිගණක විද්යා ගොඩනැගිල්ල කොහෙද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_004.wav",
+      "text": "ඉංජිනේරු බ්ලොක් පෙන්වන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_002.wav",
+      "text": "Can I meet Dr. Rajapaksha tomorrow?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_005.wav",
+      "text": "Is Dr. Perera available on Thursday?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_007.wav",
+      "text": "Where is the lecture hall on floor two?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_004.wav",
+      "text": "நாளை பத்து மணிக்கு வகுப்பு உள்ளதா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_005.wav",
+      "text": "இன்று குழு ஏக்கான வகுப்புகள் என்ன?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_004.wav",
+      "text": "විශ්වවිද්යාලය කවදා අරින්නේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_006.wav",
+      "text": "ஐம்பது மாணவர்களுக்கு இடம் உள்ள மண்டபம் எது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_005.wav",
+      "text": "Where is the main library?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_002.wav",
+      "text": "සඳුදා මට ඇති පන්ති මොනවාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_002.wav",
+      "text": "மண்டபம் பிக்கு எப்படி செல்வது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_008.wav",
+      "text": "Point me to the cafeteria",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_006.wav",
+      "text": "How do I reach the Science building?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_007.wav",
+      "text": "டாக்டர் சில்வா என்ன பாடங்களை கற்பிக்கிறார்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_002.wav",
+      "text": "What lectures do I have on Monday?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_004.wav",
+      "text": "Show me the Engineering block",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_005.wav",
+      "text": "தரவு கட்டமைப்பை யார் கற்றுத் தருகிறார்கள்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_003.wav",
+      "text": "When does Group B have Algorithm class?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_007.wav",
+      "text": "Find me a hall with a whiteboard",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_005.wav",
+      "text": "முதன்மை நூலகம் எங்கே?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_006.wav",
+      "text": "கட்டிடம் சியில் எந்த துறை உள்ளது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_010.wav",
+      "text": "හෝල් සී ඊළඟට කවදා ලබා ගත හැකිද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_005.wav",
+      "text": "අද කණ්ඩායම ඒ සඳහා පන්ති මොනවාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_003.wav",
+      "text": "පැයක් සඳහා හිස් හෝල් තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_001.wav",
+      "text": "இன்று குழு பிக்கான வகுப்புகள் என்ன?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_005.wav",
+      "text": "දත්ත ව්යුහ කවුරු කියවද්ද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_010.wav",
+      "text": "How do I find Room 301?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_008.wav",
+      "text": "සිකුරාදා දහවල් පන්ති තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_004.wav",
+      "text": "பல்கலைக்கழகம் எப்போது திறக்கும்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_004.wav",
+      "text": "Show me available halls with projectors",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_003.wav",
+      "text": "කණ්ඩායම බීට ඇල්ගොරිතම පන්තිය කවදාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_008.wav",
+      "text": "Do I have any classes on Friday afternoon?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_002.wav",
+      "text": "හෙට ඩොක්ටර් සිල්වා හමුවීමට පුළුවන්ද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_005.wav",
+      "text": "Who teaches Data Structures?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_008.wav",
+      "text": "When is the next exam?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_004.wav",
+      "text": "When does the university open?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_008.wav",
+      "text": "இன்று மதியம் காலி கருத்தரங்க அறைகள் உள்ளதா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_002.wav",
+      "text": "இப்போது எந்த மண்டபங்கள் காலியாக உள்ளன?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_009.wav",
+      "text": "என் அறிவிப்புகளை காட்டுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_006.wav",
+      "text": "විද්යා ගොඩනැගිල්ලට යන ආකාරය",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_001.wav",
+      "text": "மண்டபம் பி மணி இரண்டுக்கு கிடைக்குமா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_007.wav",
+      "text": "ඩොක්ටර් සිල්වා ඉගැන්වෙන විෂය මොනවාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_009.wav",
+      "text": "ගණිත ඉගෙනීම් පන්තිය කොයි වේලාවටද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_008.wav",
+      "text": "ඩොක්ටර් කුමාර් සමඟ හමුවීම අවලංගු කරන්න ඕන",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_010.wav",
+      "text": "මෙම වේදිකාව කුමන භාෂා සඳහා සහාය දක්වයිද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_007.wav",
+      "text": "வைட்போர்டு உள்ள மண்டபம் தேடுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_007.wav",
+      "text": "සුදු පුවරුව ඇති හෝල් සොයන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_002.wav",
+      "text": "දැන් හිස් හෝල් මොනවාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_008.wav",
+      "text": "I want to cancel my appointment with Dr. Dias",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_009.wav",
+      "text": "Reschedule my meeting to Friday",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_009.wav",
+      "text": "இயந்திர கற்றல் வகுப்பு எந்த நேரம்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_001.wav",
+      "text": "கணினி அறிவியல் கட்டிடம் எங்கே?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_009.wav",
+      "text": "எந்த கட்டிடத்தில் காலி மண்டபங்கள் உள்ளன?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_001.wav",
+      "text": "මගේ ඊළඟ දත්ත ව්යුහ පංතිය කවදාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_009.wav",
+      "text": "Which building has available halls?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_001.wav",
+      "text": "டாக்டர் குமாரிடம் சந்திப்பு பதிவு செய்ய விரும்புகிறேன்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_004.wav",
+      "text": "Is there a lecture at ten am tomorrow?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_009.wav",
+      "text": "මගේ දැනුම්දීම් පෙන්වන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_004.wav",
+      "text": "ඩොක්ටර් පර්නැන්ඩෝ සමඟ මගේ ව්යාපෘතිය සාකච්ඡා කරන්න ඕන",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_003.wav",
+      "text": "ඩොක්ටර් කුමාර්ගේ කාර්යාලය කොහෙද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_009.wav",
+      "text": "Where is the Mathematics department?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_007.wav",
+      "text": "என் வாராந்திர அட்டவணையை காட்டுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_006.wav",
+      "text": "දත්ත සමුදාය පන්තිය කවදාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_003.wav",
+      "text": "Is there a free lecture hall for one hour?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_010.wav",
+      "text": "What languages does this platform support?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_005.wav",
+      "text": "Is Hall A occupied at three pm?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_008.wav",
+      "text": "ඊළඟ විභාගය කවදාද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_009.wav",
+      "text": "මගේ හමුවීම සිකුරාදාට මාරු කරන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_002.wav",
+      "text": "திங்கள் கிழமை என்ன வகுப்புகள் உள்ளன?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_001.wav",
+      "text": "When is my next Data Structures lecture?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_010.wav",
+      "text": "Which group has Calculus on Wednesday?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_003.wav",
+      "text": "டாக்டர் குமாரின் அலுவலகம் எங்கே?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_008.wav",
+      "text": "Are any seminar rooms free this afternoon?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_006.wav",
+      "text": "මගේ උපදේශක සමඟ හමුවීම සැලසුම් කරන්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_006.wav",
+      "text": "ගොඩනැගිල්ල සී තුළ කුමන දෙපාර්තමේන්තුවද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_001.wav",
+      "text": "මට ඩොක්ටර් කුමාර් සමඟ හමුවීමක් කළ යුතුයි",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_010.wav",
+      "text": "කාමර තුන බිංදු එක සොයා ගන්නේ කෙසේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_directions_004.wav",
+      "text": "பொறியியல் தொகுதியை காட்டுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_001.wav",
+      "text": "Where is the Computer Science building?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_008.wav",
+      "text": "කැෆෙටීරියාවට යන මාර්ගය",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_001.wav",
+      "text": "என் அடுத்த தரவு கட்டமைப்பு வகுப்பு எப்போது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_002.wav",
+      "text": "Show me the campus map",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_007.wav",
+      "text": "What courses does Dr. Rajapaksha teach?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_003.wav",
+      "text": "குழு பிக்கு வழிமுறை வகுப்பு எப்போது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_008.wav",
+      "text": "டாக்டர் குமாருடனான சந்திப்பை ரத்து செய்ய விரும்புகிறேன்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_004.wav",
+      "text": "டாக்டர் பெர்னாண்டோவுடன் என் திட்டத்தை பற்றி பேச விரும்புகிறேன்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_timetable_004.wav",
+      "text": "හෙට උදේ දහයට පන්තියක් තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_005.wav",
+      "text": "மணி மூன்றுக்கு மண்டபம் ஏ நிரம்பியுள்ளதா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_directions_003.wav",
+      "text": "Where is Dr. Dias's office?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_010.wav",
+      "text": "எனக்கு நிலுவையான சந்திப்புகள் உள்ளனவா?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_directions_002.wav",
+      "text": "හෝල් බී වෙත යන ආකාරය",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_appointments_007.wav",
+      "text": "டாக்டர் ஜயவர்தனாவை எப்போது பார்க்க முடியும்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_general_006.wav",
+      "text": "Which department is in Building C?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_general_003.wav",
+      "text": "කාලගුණය කෙබඳුද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_006.wav",
+      "text": "What halls have capacity for fifty students?",
+      "language": "en"
+    }
+  ],
+  "version": "1.0",
+  "source": "LECSTU Phase 7.6"
+}

@@ -1,0 +1,5 @@
+# LECSTU Chatbot Action Server — Phase 8.1
+# Run: rasa run actions
+
+action_endpoint:
+  url: "http://localhost:5055/webhook"

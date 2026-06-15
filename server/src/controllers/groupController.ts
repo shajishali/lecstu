@@ -3,10 +3,21 @@ import { Readable } from 'stream';
 import csvParser from 'csv-parser';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import { logAction } from '../services/auditLogger';
+import { logActionForRequest } from '../services/auditLogger';
+
+export async function listPathways(req: Request, res: Response, next: NextFunction) {
+  try {
+    const pathways = await prisma.pathway.findMany({
+      select: { id: true, name: true, code: true, program: { select: { name: true, code: true } } },
+      orderBy: [{ program: { code: 'asc' } }, { code: 'asc' }],
+    });
+    res.json({ success: true, data: pathways });
+  } catch (err) { next(err); }
+}
 
 const INCLUDE = {
   department: { select: { id: true, name: true, code: true } },
+  pathway: { select: { id: true, name: true, code: true, program: { select: { name: true, code: true } } } },
   _count: { select: { members: true, timetableEntries: true } },
 };
 
@@ -51,12 +62,12 @@ export async function getGroup(req: Request, res: Response, next: NextFunction) 
 
 export async function createGroup(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, batchYear, departmentId } = req.body;
+    const { name, batchYear, batchLabel, departmentId, pathwayId } = req.body as Record<string, unknown>;
     const group = await prisma.studentGroup.create({
-      data: { name, batchYear, departmentId },
+      data: { name, batchYear, batchLabel: batchLabel || null, departmentId, pathwayId: pathwayId || null },
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'CREATE', 'StudentGroup', group.id, { name, batchYear });
+    await logActionForRequest(req, 'CREATE', 'StudentGroup', group.id, { name, batchYear });
     res.status(201).json({ success: true, data: group });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('A group with this name already exists in this department', 409));
@@ -70,12 +81,20 @@ export async function updateGroup(req: Request, res: Response, next: NextFunctio
     const existing = await prisma.studentGroup.findUnique({ where: { id } });
     if (!existing) throw new AppError('Group not found', 404);
 
+    const body = req.body as { name?: string; batchYear?: number; batchLabel?: string | null; departmentId?: string; pathwayId?: string | null };
+    const data: { name?: string; batchYear?: number; batchLabel?: string | null; departmentId?: string; pathwayId?: string | null } = {};
+    if (body.name !== undefined) data.name = body.name;
+    if (body.batchYear !== undefined) data.batchYear = body.batchYear;
+    if (body.batchLabel !== undefined) data.batchLabel = body.batchLabel || null;
+    if (body.departmentId !== undefined) data.departmentId = body.departmentId;
+    if (body.pathwayId !== undefined) data.pathwayId = body.pathwayId || null;
+
     const group = await prisma.studentGroup.update({
       where: { id },
-      data: req.body,
+      data,
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'UPDATE', 'StudentGroup', id, req.body);
+    await logActionForRequest(req, 'UPDATE', 'StudentGroup', id, req.body);
     res.json({ success: true, data: group });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('A group with this name already exists in this department', 409));
@@ -90,7 +109,7 @@ export async function deleteGroup(req: Request, res: Response, next: NextFunctio
     if (!existing) throw new AppError('Group not found', 404);
 
     await prisma.studentGroup.delete({ where: { id } });
-    await logAction((req as any).user.id, 'DELETE', 'StudentGroup', id, { name: existing.name });
+    await logActionForRequest(req, 'DELETE', 'StudentGroup', id, { name: existing.name });
     res.json({ success: true, message: 'Group deleted' });
   } catch (err) { next(err); }
 }
@@ -121,7 +140,7 @@ export async function assignStudents(req: Request, res: Response, next: NextFunc
       });
     }
 
-    await logAction((req as any).user.id, 'ASSIGN_STUDENTS', 'StudentGroup', groupId, { added: newIds.length });
+    await logActionForRequest(req, 'ASSIGN_STUDENTS', 'StudentGroup', groupId, { added: newIds.length });
     res.json({ success: true, message: `${newIds.length} students assigned`, added: newIds.length, skipped: studentIds.length - newIds.length });
   } catch (err) { next(err); }
 }
@@ -137,7 +156,7 @@ export async function removeStudent(req: Request, res: Response, next: NextFunct
     if (!membership) throw new AppError('Student is not in this group', 404);
 
     await prisma.studentGroupMember.delete({ where: { id: membership.id } });
-    await logAction((req as any).user.id, 'REMOVE_STUDENT', 'StudentGroup', groupId, { studentId });
+    await logActionForRequest(req, 'REMOVE_STUDENT', 'StudentGroup', groupId, { studentId });
     res.json({ success: true, message: 'Student removed from group' });
   } catch (err) { next(err); }
 }
@@ -187,7 +206,7 @@ export async function bulkAssignStudents(req: Request, res: Response, next: Next
       added = result.count;
     }
 
-    await logAction((req as any).user.id, 'BULK_ASSIGN', 'StudentGroup', groupId, { added, errors: errors.length });
+    await logActionForRequest(req, 'BULK_ASSIGN', 'StudentGroup', groupId, { added, errors: errors.length });
     res.json({
       success: true,
       message: `${added} students assigned`,

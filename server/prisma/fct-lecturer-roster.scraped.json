@@ -1,0 +1,122 @@
+[
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dac-lecturers/dr-pradeep-samarasekere",
+    "fctDepartment": "DAC",
+    "departmentCode": "CS",
+    "firstName": "Pradeep",
+    "lastName": "Samarasekere",
+    "email": "pradeep.samarasekere@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dac-lecturers/dr-shakila-pathirana",
+    "fctDepartment": "DAC",
+    "departmentCode": "CS",
+    "firstName": "Shakila",
+    "lastName": "Pathirana",
+    "email": "shakila.pathirana@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dac-lecturers/dr-shakya-bandara",
+    "fctDepartment": "DAC",
+    "departmentCode": "CS",
+    "firstName": "Shakya",
+    "lastName": "Bandara",
+    "email": "shakya.bandara@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/dr-madusha-chandrasena",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Madusha",
+    "lastName": "Chandrasena",
+    "email": "madusha.chandrasena@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/dr-navodi-hakmanage",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Navodi",
+    "lastName": "Hakmanage",
+    "email": "navodi.hakmanage@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/dr-rajitha-tennekoon",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Rajitha",
+    "lastName": "Tennekoon",
+    "email": "rajitha.tennekoon@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/dr-rasika-rajapaksha",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Rasika",
+    "lastName": "Rajapaksha",
+    "email": "rasika.rajapaksha@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/prof-dhammika-weerasinghe",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Dhammika",
+    "lastName": "Weerasinghe",
+    "email": "dhammika.weerasinghe@kln.ac.lk",
+    "designation": "Dean / Professor",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dcse-lecturers/prof-dias",
+    "fctDepartment": "DCSE",
+    "departmentCode": "CS",
+    "firstName": "Dias",
+    "lastName": "Dias",
+    "email": "dias.dias@kln.ac.lk",
+    "designation": "Professor",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dse-lecturers/dr-carmel-wijegunasekara",
+    "fctDepartment": "DSE",
+    "departmentCode": "CT",
+    "firstName": "Carmel",
+    "lastName": "Wijegunasekara",
+    "email": "carmel.wijegunasekara@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dse-lecturers/dr-muditha-tissera",
+    "fctDepartment": "DSE",
+    "departmentCode": "CT",
+    "firstName": "Muditha",
+    "lastName": "Tissera",
+    "email": "muditha.tissera@kln.ac.lk",
+    "designation": "Senior Lecturer",
+    "sampleSubjects": []
+  },
+  {
+    "sourceUrl": "https://fct.kln.ac.lk/dse-lecturers/prof-sidath-liyanage",
+    "fctDepartment": "DSE",
+    "departmentCode": "CT",
+    "firstName": "Sidath",
+    "lastName": "Liyanage",
+    "email": "sidath.liyanage@kln.ac.lk",
+    "designation": "Professor",
+    "sampleSubjects": []
+  }
+]

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@services/api';
 import { showToast } from '@components/Toast';
@@ -12,6 +12,7 @@ import {
   UserCheck,
   Layers,
   ArrowRight,
+  CheckSquare,
 } from 'lucide-react';
 
 interface Stats {
@@ -33,18 +34,37 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const toastShown = useRef(false);
+
   useEffect(() => {
     api
       .get('/admin/stats')
-      .then((res) => setStats(res.data.data))
-      .catch(() => showToast('error', 'Failed to load admin statistics'))
+      .then((res) => {
+        const d = res.data?.data;
+        if (d && typeof d === 'object') {
+          setStats({
+            users: { ...DEFAULT.users, ...d.users },
+            academic: { ...DEFAULT.academic, ...d.academic },
+            facilities: { ...DEFAULT.facilities, ...d.facilities },
+            operations: { ...DEFAULT.operations, ...d.operations },
+          });
+        }
+      })
+      .catch((err: { response?: { status?: number } }) => {
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) return;
+        if (!toastShown.current) {
+          toastShown.current = true;
+          showToast('error', 'Failed to load admin statistics');
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="admin-loading">
-        <div className="spinner" />
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-slate-500">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--color-primary)]" />
         <p>Loading admin dashboard...</p>
       </div>
     );
@@ -62,6 +82,7 @@ export default function AdminDashboard() {
   ];
 
   const quickActions = [
+    { label: 'Approvals', path: '/admin/approvals', icon: <CheckSquare size={16} /> },
     { label: 'Manage Users', path: '/admin/users', icon: <Users size={16} /> },
     { label: 'Manage Timetable', path: '/admin/timetable', icon: <Calendar size={16} /> },
     { label: 'Manage Halls', path: '/admin/halls', icon: <Building size={16} /> },
@@ -70,57 +91,65 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-page-header">
-        <h1>Admin Dashboard</h1>
-        <p>Manage platform data and monitor statistics</p>
+    <div className="space-y-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage platform data and monitor statistics</p>
       </div>
 
-      <div className="admin-stats-grid">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="admin-stat-card">
-            <div className="stat-icon" style={{ backgroundColor: c.color + '18', color: c.color }}>
+          <div key={c.label} className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
+              style={{ backgroundColor: c.color + '18', color: c.color }}
+            >
               {c.icon}
             </div>
-            <div className="stat-info">
-              <span className="stat-value">{c.value}</span>
-              <span className="stat-label">{c.label}</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xl font-bold text-slate-900">{c.value}</span>
+              <span className="text-sm text-slate-500">{c.label}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="admin-section">
-        <h2>Quick Actions</h2>
-        <div className="admin-quick-actions">
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">Quick Actions</h2>
+        <div className="flex flex-wrap gap-3">
           {quickActions.map((a) => (
-            <button key={a.label} className="quick-action-btn" onClick={() => navigate(a.path)}>
+            <button
+              key={a.label}
+              type="button"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+              onClick={() => navigate(a.path)}
+            >
               {a.icon}
               <span>{a.label}</span>
-              <ArrowRight size={14} />
+              <ArrowRight size={14} className="text-slate-400" />
             </button>
           ))}
         </div>
       </div>
 
-      <div className="admin-section">
-        <h2>Academic Summary</h2>
-        <div className="admin-summary-grid">
-          <div className="summary-card">
-            <h3>Faculties</h3>
-            <span className="summary-value">{stats.academic.faculties}</span>
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">Academic Summary</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-500">Faculties</h3>
+            <span className="mt-1 block text-2xl font-bold text-slate-900">{stats.academic.faculties}</span>
           </div>
-          <div className="summary-card">
-            <h3>Departments</h3>
-            <span className="summary-value">{stats.academic.departments}</span>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-500">Departments</h3>
+            <span className="mt-1 block text-2xl font-bold text-slate-900">{stats.academic.departments}</span>
           </div>
-          <div className="summary-card">
-            <h3>Offices</h3>
-            <span className="summary-value">{stats.facilities.offices}</span>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-500">Offices</h3>
+            <span className="mt-1 block text-2xl font-bold text-slate-900">{stats.facilities.offices}</span>
           </div>
-          <div className="summary-card">
-            <h3>Appointments</h3>
-            <span className="summary-value">{stats.operations.appointments}</span>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-500">Appointments</h3>
+            <span className="mt-1 block text-2xl font-bold text-slate-900">{stats.operations.appointments}</span>
           </div>
         </div>
       </div>

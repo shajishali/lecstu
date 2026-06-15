@@ -3,21 +3,7 @@ import prisma from '../config/database';
 
 export async function getDashboardStats(_req: Request, res: Response, next: NextFunction) {
   try {
-    const [
-      totalUsers,
-      students,
-      lecturers,
-      admins,
-      faculties,
-      departments,
-      courses,
-      halls,
-      offices,
-      groups,
-      timetableEntries,
-      appointments,
-      buildings,
-    ] = await Promise.all([
+    const counts = await Promise.allSettled([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'STUDENT' } }),
       prisma.user.count({ where: { role: 'LECTURER' } }),
@@ -33,13 +19,15 @@ export async function getDashboardStats(_req: Request, res: Response, next: Next
       prisma.mapBuilding.count(),
     ]);
 
+    const get = (i: number) => (counts[i].status === 'fulfilled' ? counts[i].value : 0);
+
     res.json({
       success: true,
       data: {
-        users: { total: totalUsers, students, lecturers, admins },
-        academic: { faculties, departments, courses, groups },
-        facilities: { halls, offices, buildings },
-        operations: { timetableEntries, appointments },
+        users: { total: get(0), students: get(1), lecturers: get(2), admins: get(3) },
+        academic: { faculties: get(4), departments: get(5), courses: get(6), groups: get(9) },
+        facilities: { halls: get(7), offices: get(8), buildings: get(12) },
+        operations: { timetableEntries: get(10), appointments: get(11) },
       },
     });
   } catch (err) {

@@ -1,8 +1,15 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '@store/authStore';
+import { parseGroupName } from '@components/StudentEnrollmentForm';
 import { showToast } from '@components/Toast';
+import TranslatableText from '@components/TranslatableText';
 import api from '@services/api';
+import { formatCourseLabel } from '@utils/courseDisplay';
+import { formatTimetableLecturer } from '@utils/timetableLecturerDisplay';
 import { Printer, Download, RefreshCw } from 'lucide-react';
+import FetTimetableGrid from '@components/FetTimetableGrid';
+import type { TimetableGridSnapshot } from '../types/timetableGrid';
 
 interface SlotData {
   id: string;
@@ -11,27 +18,74 @@ interface SlotData {
   endTime: string;
   semester: number;
   year: number;
+  month?: number;
+  week?: number;
   course: { id: string; name: string; code: string };
+  lecturerInitials?: string | null;
   lecturer: { id: string; firstName: string; lastName: string; email: string };
   hall: { id: string; name: string; building: string; capacity: number };
-  group: { id: string; name: string; batchYear: number };
+  group: { id: string; name: string; batchYear: number; batchLabel?: string | null };
 }
 
 type WeeklyTimetable = Record<string, SlotData[]>;
 
-const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Mon',
   TUESDAY: 'Tue',
   WEDNESDAY: 'Wed',
   THURSDAY: 'Thu',
   FRIDAY: 'Fri',
+  SATURDAY: 'Sat',
+  SUNDAY: 'Sun',
 };
 
-const TIME_SLOTS = [
-  '08:00', '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
-];
+/** FET grids typically run 08:00–20:55 (13 hourly bands) */
+const GRID_START_HOUR = 8;
+const GRID_END_HOUR = 21;
+const TIME_SLOTS = Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) => {
+  const h = GRID_START_HOUR + i;
+  return `${String(h).padStart(2, '0')}:00`;
+});
+
+type PeriodKey = string; // "year-month-week"
+
+function getPeriodKey(s: SlotData): PeriodKey {
+  const y = s.year ?? 2026;
+  const m = s.month ?? 1;
+  const w = s.week ?? 1;
+  return `${y}-${m}-${w}`;
+}
+
+function getAvailablePeriods(flat: SlotData[]): { key: PeriodKey; label: string }[] {
+  const seen = new Set<PeriodKey>();
+  const periods: { key: PeriodKey; label: string }[] = [];
+  for (const s of flat) {
+    const key = getPeriodKey(s);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const m = s.month ?? 1;
+    periods.push({
+      key,
+      label: `${s.year} · ${MONTH_NAMES[m - 1] ?? m} · Week ${s.week ?? 1}`,
+    });
+  }
+  // Sort: most recent first (March before January)
+  periods.sort((a, b) => {
+    const [ay, am, aw] = a.key.split('-').map(Number);
+    const [by, bm, bw] = b.key.split('-').map(Number);
+    if (ay !== by) return by - ay;
+    if (am !== bm) return bm - am;
+    return bw - aw;
+  });
+  return periods;
+}
+
+function filterByPeriod(flat: SlotData[], periodKey: PeriodKey): SlotData[] {
+  return flat.filter((s) => getPeriodKey(s) === periodKey);
+}
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const COURSE_COLORS = [
   '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626',
@@ -54,64 +108,189 @@ function formatTime(t: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
+function getCurrentDayName(): string | null {
+  const jsDay = new Date().getDay(); // 0=Sun, 1=Mon … 6=Sat
+  const map: Record<number, string> = {
+    0: 'SUNDAY',
+    1: 'MONDAY',
+    2: 'TUESDAY',
+    3: 'WEDNESDAY',
+    4: 'THURSDAY',
+    5: 'FRIDAY',
+    6: 'SATURDAY',
+  };
+  return map[jsDay] ?? null;
+}
+
 function getCurrentDayIndex(): number {
-  const jsDay = new Date().getDay(); // 0=Sun
-  return jsDay >= 1 && jsDay <= 5 ? jsDay - 1 : -1;
+  const name = getCurrentDayName();
+  if (!name) return 0;
+  const idx = DAYS.indexOf(name);
+  return idx >= 0 ? idx : 0;
 }
 
 function getCurrentTimePosition(): number | null {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
-  const startHour = 8;
-  const endHour = 18;
+  if (hours < GRID_START_HOUR || hours >= GRID_END_HOUR) return null;
 
-  if (hours < startHour || hours >= endHour) return null;
-
-  const totalMinutes = (hours - startHour) * 60 + minutes;
-  const totalRange = (endHour - startHour) * 60;
+  const totalMinutes = (hours - GRID_START_HOUR) * 60 + minutes;
+  const totalRange = (GRID_END_HOUR - GRID_START_HOUR) * 60;
   return (totalMinutes / totalRange) * 100;
 }
 
 function getSlotPosition(startTime: string, endTime: string) {
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
-  const startMin = (sh - 8) * 60 + sm;
-  const endMin = (eh - 8) * 60 + em;
-  const totalRange = 10 * 60; // 08:00 to 18:00
+  const startMin = (sh - GRID_START_HOUR) * 60 + sm;
+  const endMin = (eh - GRID_START_HOUR) * 60 + em;
+  const totalRange = (GRID_END_HOUR - GRID_START_HOUR) * 60;
   return {
     top: (startMin / totalRange) * 100,
     height: ((endMin - startMin) / totalRange) * 100,
   };
 }
 
+/** Group slots that share the same time range (overlapping in the grid) so we can stack them. */
+function groupOverlappingSlots(slots: SlotData[]): SlotData[][] {
+  if (slots.length === 0) return [];
+  const sorted = [...slots].sort(
+    (a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)
+  );
+  const groups: SlotData[][] = [];
+  let current: SlotData[] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const s = sorted[i];
+    const prev = current[0];
+    if (prev.startTime === s.startTime && prev.endTime === s.endTime) {
+      current.push(s);
+    } else {
+      groups.push(current);
+      current = [s];
+    }
+  }
+  groups.push(current);
+  return groups;
+}
+
+interface TimetableEnrollment {
+  programCode: string;
+  studyYear: string;
+  pathwayCode: string;
+  groupName: string;
+}
+
 export default function MyTimetable() {
   const { user } = useAuthStore();
+  const location = useLocation();
   const [weekly, setWeekly] = useState<WeeklyTimetable>({});
   const [flat, setFlat] = useState<SlotData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [gridSnapshot, setGridSnapshot] = useState<TimetableGridSnapshot | null>(null);
+  const [enrollment, setEnrollment] = useState<TimetableEnrollment | null>(null);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<PeriodKey | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [currentTimePos, setCurrentTimePos] = useState<number | null>(null);
+  const [mobileDayIndex, setMobileDayIndex] = useState(() => Math.max(0, getCurrentDayIndex()));
   const colorMap = useRef(new Map<string, string>());
   const gridRef = useRef<HTMLDivElement>(null);
+  const lastFetchedGroupIdRef = useRef<string>('');
+  const lastTimetableErrorToastAt = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
 
-  const fetchTimetable = useCallback(async () => {
-    setLoading(true);
+  const profileGroup = user?.studentGroupMemberships?.[0]?.group;
+  const enrolledGroupId = profileGroup?.id ?? '';
+  const enrolledGroupName = profileGroup?.name ?? '';
+
+  /** Prefer live profile group so UI updates before/without waiting on timetable API cache */
+  const displayEnrollment = useMemo((): TimetableEnrollment | null => {
+    if (profileGroup) {
+      const parsed = parseGroupName(profileGroup.name);
+      const pathwayFromGroup =
+        parsed.pathway ||
+        profileGroup.pathway?.code?.replace(/^(CS|ET|CT|BS)-/, '') ||
+        '';
+      return {
+        programCode: parsed.program,
+        studyYear: parsed.year || profileGroup.batchLabel || '',
+        pathwayCode: pathwayFromGroup,
+        groupName: profileGroup.name,
+      };
+    }
+    return enrollment;
+  }, [profileGroup, enrollment]);
+
+  const fetchTimetable = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true && hasLoadedOnceRef.current;
+    const groupChanged = lastFetchedGroupIdRef.current !== enrolledGroupId;
+    if (groupChanged) {
+      setWeekly({});
+      setFlat([]);
+      setGridSnapshot(null);
+      setEnrollment(null);
+      setSelectedPeriodKey(null);
+      colorMap.current.clear();
+      hasLoadedOnceRef.current = false;
+    }
+    lastFetchedGroupIdRef.current = enrolledGroupId;
+
+    if (silent) setRefreshing(true);
+    else setInitialLoading(true);
     try {
-      const res = await api.get('/timetable/my');
+      const res = await api.get('/timetable/my', {
+        params: { _: Date.now() },
+      });
       const data = res.data.data;
       setWeekly(data.weekly || {});
       setFlat(data.flat || []);
+      setGridSnapshot(data.grid ?? null);
+      setEnrollment(data.enrollment ?? null);
       colorMap.current.clear();
+      const periods = getAvailablePeriods(data.flat || []);
+      if (periods.length > 0) {
+        setSelectedPeriodKey((prev) => {
+          if (prev && periods.some((p) => p.key === prev)) return prev;
+          // Default to the most recent period (sorted newest-first in getAvailablePeriods)
+          return periods[0].key;
+        });
+      } else {
+        setSelectedPeriodKey(null);
+      }
+      hasLoadedOnceRef.current = true;
     } catch {
-      showToast('error', 'Failed to load timetable');
+      const now = Date.now();
+      if (now - lastTimetableErrorToastAt.current > 3000) {
+        lastTimetableErrorToastAt.current = now;
+        showToast('error', 'Failed to load timetable');
+      }
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [enrolledGroupId, enrolledGroupName]);
 
   useEffect(() => {
     fetchTimetable();
+  }, [fetchTimetable]);
+
+  // Refetch when navigating here from another page (e.g. after profile enrollment change)
+  const prevPathRef = useRef(location.pathname);
+  useEffect(() => {
+    const navigatedToTimetable =
+      location.pathname === '/timetable' && prevPathRef.current !== '/timetable';
+    prevPathRef.current = location.pathname;
+    if (navigatedToTimetable) {
+      fetchTimetable({ silent: hasLoadedOnceRef.current });
+    }
+  }, [location.pathname, enrolledGroupId, fetchTimetable]);
+
+  // Refetch when timetable is updated (admin import, enrollment change) — keep grid visible
+  useEffect(() => {
+    const onTimetableUpdated = () => fetchTimetable({ silent: true });
+    window.addEventListener('timetable-updated', onTimetableUpdated);
+    return () => window.removeEventListener('timetable-updated', onTimetableUpdated);
   }, [fetchTimetable]);
 
   useEffect(() => {
@@ -121,14 +300,15 @@ export default function MyTimetable() {
     return () => clearInterval(interval);
   }, []);
 
+
   const handlePrint = () => window.print();
 
   const handleExport = () => {
-    if (flat.length === 0) return;
+    if (filteredFlat.length === 0) return;
     const header = 'Day,Start,End,Course,Lecturer,Hall,Group';
-    const rows = flat.map(
+    const rows = filteredFlat.map(
       (s) =>
-        `${s.dayOfWeek},${s.startTime},${s.endTime},${s.course.code} - ${s.course.name},${s.lecturer.firstName} ${s.lecturer.lastName},${s.hall.name} (${s.hall.building}),${s.group.name}`
+        `${s.dayOfWeek},${s.startTime},${s.endTime},${s.course.code} - ${s.course.name},${formatTimetableLecturer(s)},${s.hall.name} (${s.hall.building}),${s.group.name}`
     );
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -140,9 +320,32 @@ export default function MyTimetable() {
     URL.revokeObjectURL(url);
   };
 
-  const todayIdx = getCurrentDayIndex();
+  const todayDayName = getCurrentDayName(); // e.g. "MONDAY" or null on Sunday
 
-  if (loading) {
+  const filteredFlat = useMemo(
+    () => (selectedPeriodKey ? filterByPeriod(flat, selectedPeriodKey) : flat),
+    [flat, selectedPeriodKey]
+  );
+  const filteredWeekly = useMemo(() => {
+    const byDay: WeeklyTimetable = {};
+    for (const day of DAYS) byDay[day] = [];
+    for (const s of filteredFlat) {
+      if (byDay[s.dayOfWeek]) byDay[s.dayOfWeek].push(s);
+    }
+    for (const day of DAYS) byDay[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    return byDay;
+  }, [filteredFlat]);
+
+  const safeMobileIdx = Math.min(mobileDayIndex, DAYS.length - 1);
+
+  const gridPeriodKey = gridSnapshot
+    ? `${gridSnapshot.year}-${gridSnapshot.month}-${gridSnapshot.week}`
+    : null;
+  const showStoredFetGrid = Boolean(
+    gridSnapshot && (!selectedPeriodKey || selectedPeriodKey === gridPeriodKey),
+  );
+
+  if (initialLoading) {
     return (
       <div className="timetable-page">
         <div className="loading-screen"><div className="spinner" /><p>Loading timetable...</p></div>
@@ -157,17 +360,31 @@ export default function MyTimetable() {
           <h1>My Timetable</h1>
           <p className="tt-subtitle">
             {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule —{' '}
-            {flat.length} slot{flat.length !== 1 ? 's' : ''} this semester
+            {filteredFlat.length} slot{filteredFlat.length !== 1 ? 's' : ''}
+            {displayEnrollment?.groupName && (
+              <> · Class: <strong>{displayEnrollment.groupName}</strong>
+                {displayEnrollment.pathwayCode
+                  ? ` (${displayEnrollment.programCode} ${displayEnrollment.studyYear} ${displayEnrollment.pathwayCode})`
+                  : displayEnrollment.programCode
+                    ? ` (${displayEnrollment.programCode} ${displayEnrollment.studyYear})`
+                    : ''}
+              </>
+            )}
           </p>
         </div>
         <div className="tt-actions">
-          <button className="btn btn-secondary btn-sm" onClick={fetchTimetable} title="Refresh">
-            <RefreshCw size={16} />
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => fetchTimetable({ silent: true })}
+            title="Refresh"
+            disabled={refreshing}
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           </button>
           <button className="btn btn-secondary btn-sm" onClick={handlePrint} title="Print">
             <Printer size={16} />
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={flat.length === 0}>
+          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={filteredFlat.length === 0}>
             <Download size={16} /> Export CSV
           </button>
         </div>
@@ -177,14 +394,86 @@ export default function MyTimetable() {
         <div className="tt-empty">
           <h3>No timetable entries found</h3>
           <p>
-            {user?.role === 'STUDENT'
-              ? 'You may not be assigned to any student groups yet. Contact your admin.'
-              : 'No lectures assigned to you this semester.'}
+            {user?.role === 'STUDENT' ? (
+              user.studentGroupMemberships?.length ? (
+                <>
+                  Your profile class is{' '}
+                  <strong>{displayEnrollment?.groupName ?? user.studentGroupMemberships.map((m) => m.group.name).join(', ')}</strong>
+                  {displayEnrollment?.pathwayCode
+                    ? ` (${displayEnrollment.programCode}, ${displayEnrollment.studyYear}, pathway ${displayEnrollment.pathwayCode})`
+                    : displayEnrollment?.programCode
+                      ? ` (${displayEnrollment.programCode}, ${displayEnrollment.studyYear})`
+                      : ''}
+                  . There are no classes in the timetable for this group yet — ask admin to import the{' '}
+                  <strong>{displayEnrollment?.groupName ?? 'your group'}</strong> timetable PDF in Admin → Timetable → Import
+                  (use Replace period), then refresh this page. Update enrollment in My Profile if the class is wrong.
+                </>
+              ) : (
+                'You are not assigned to a student group yet. Set your program, study year, and pathway in My Profile → Academic year enrollment.'
+              )
+            ) : (
+              'No lectures assigned to you this semester.'
+            )}
           </p>
         </div>
       ) : (
+        <>
         <div className="tt-grid-wrapper" ref={gridRef}>
-          <div className="tt-grid">
+          {/* Mobile view: day-by-day cards */}
+          <div className="tt-mobile-view">
+            <div className="tt-mobile-day-tabs">
+              {DAYS.map((day, idx) => (
+                <button
+                  key={day}
+                  type="button"
+                  className={`tt-mobile-day-tab ${idx === safeMobileIdx ? 'active' : ''} ${day === todayDayName ? 'today' : ''}`}
+                  onClick={() => setMobileDayIndex(idx)}
+                >
+                  <TranslatableText text={DAY_LABELS[day]} />
+                </button>
+              ))}
+            </div>
+            <div className="tt-mobile-slots">
+              {(filteredWeekly[DAYS[safeMobileIdx]] || []).length === 0 ? (
+                <p className="tt-mobile-empty">
+                  No classes on <TranslatableText text={DAY_LABELS[DAYS[safeMobileIdx]]} />
+                </p>
+              ) : (
+                (filteredWeekly[DAYS[safeMobileIdx]] || [])
+                  .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                  .map((slot) => {
+                    const color = getCourseColor(slot.course.id, colorMap.current);
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        className="tt-mobile-slot-card"
+                        style={{ borderLeftColor: color }}
+                        onClick={() => setSelectedSlot(slot)}
+                      >
+                        <span className="tt-mobile-slot-time">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+                        <span className="tt-mobile-slot-course" style={{ color }}>
+                          {formatCourseLabel(slot.course.code, slot.course.name)}
+                        </span>
+                        <span className="tt-mobile-slot-hall">{slot.hall.name} · {formatTimetableLecturer(slot)}</span>
+                      </button>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+
+          {/* Stored FET table (faithful to uploaded Excel) or slot-based calendar */}
+          <div className="tt-grid-scroll">
+          {showStoredFetGrid && gridSnapshot ? (
+            <FetTimetableGrid grid={gridSnapshot} className="max-h-[min(78vh,calc(100vh-220px))]" />
+          ) : (
+          <div
+            className="tt-grid"
+            style={{
+              gridTemplateColumns: `72px repeat(${DAYS.length}, minmax(128px, 1fr))`,
+            }}
+          >
             {/* Time column */}
             <div className="tt-time-col">
               <div className="tt-corner" />
@@ -193,39 +482,58 @@ export default function MyTimetable() {
               ))}
             </div>
 
-            {/* Day columns */}
-            {DAYS.map((day, dayIdx) => {
-              const slots = weekly[day] || [];
+            {DAYS.map((day) => {
+              const slots = filteredWeekly[day] || [];
+              const isToday = day === todayDayName;
               return (
-                <div key={day} className={`tt-day-col ${dayIdx === todayIdx ? 'tt-today' : ''}`}>
-                  <div className={`tt-day-header ${dayIdx === todayIdx ? 'active' : ''}`}>
-                    {DAY_LABELS[day]}
-                    {dayIdx === todayIdx && <span className="tt-today-dot" />}
+                <div key={day} className={`tt-day-col ${isToday ? 'tt-today' : ''}`}>
+                  <div className={`tt-day-header ${isToday ? 'active' : ''}`}>
+                    <TranslatableText text={DAY_LABELS[day]} />
+                    {isToday && <span className="tt-today-dot" />}
                   </div>
                   <div className="tt-day-body">
-                    {slots.map((slot) => {
-                      const { top, height } = getSlotPosition(slot.startTime, slot.endTime);
-                      const color = getCourseColor(slot.course.id, colorMap.current);
+                    {groupOverlappingSlots(slots).map((group) => {
+                      const { top, height } = getSlotPosition(group[0].startTime, group[0].endTime);
                       return (
                         <div
-                          key={slot.id}
-                          className="tt-slot"
-                          style={{
-                            top: `${top}%`,
-                            height: `${height}%`,
-                            backgroundColor: `${color}15`,
-                            borderLeft: `3px solid ${color}`,
-                          }}
-                          onClick={() => setSelectedSlot(slot)}
+                          key={group.map((s) => s.id).join('-')}
+                          className="tt-slot-group"
+                          style={{ top: `${top}%`, height: `${height}%` }}
                         >
-                          <span className="tt-slot-code" style={{ color }}>{slot.course.code}</span>
-                          <span className="tt-slot-name">{slot.course.name}</span>
-                          <span className="tt-slot-meta">{slot.hall.name}</span>
+                          {group.map((slot) => {
+                            const color = getCourseColor(slot.course.id, colorMap.current);
+                            const isCompact = group.length > 1;
+                            return (
+                              <div
+                                key={slot.id}
+                                className={`tt-slot ${isCompact ? 'tt-slot-compact' : ''}`}
+                                style={{
+                                  backgroundColor: `${color}25`,
+                                  borderLeft: `3px solid ${color}`,
+                                }}
+                                onClick={() => setSelectedSlot(slot)}
+                                title={`${slot.course.code} · ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)} · ${slot.hall.name}${formatTimetableLecturer(slot) !== '—' ? ` · ${formatTimetableLecturer(slot)}` : ''}`}
+                              >
+                                <span className="tt-slot-code" style={{ color }}>
+                                  {formatCourseLabel(slot.course.code, slot.course.name)}
+                                </span>
+                                {!isCompact && (
+                                  <>
+                                    <span className="tt-slot-time">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+                                    <span className="tt-slot-meta">
+                                      {slot.hall.name}
+                                      {formatTimetableLecturer(slot) !== '—' && ` · ${formatTimetableLecturer(slot)}`}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })}
 
-                    {dayIdx === todayIdx && currentTimePos !== null && (
+                    {isToday && currentTimePos !== null && (
                       <div className="tt-now-line" style={{ top: `${currentTimePos}%` }}>
                         <div className="tt-now-dot" />
                       </div>
@@ -235,21 +543,26 @@ export default function MyTimetable() {
               );
             })}
           </div>
+          )}
+          </div>
+        </div>
 
-          {/* Legend */}
+        {/* Legend: below the table, never inside or overlapping */}
+        <div className="tt-legend-wrapper">
           <div className="tt-legend">
             {Array.from(colorMap.current.entries()).map(([courseId, color]) => {
-              const course = flat.find((s) => s.course.id === courseId)?.course;
+              const course = filteredFlat.find((s) => s.course.id === courseId)?.course;
               if (!course) return null;
               return (
                 <div key={courseId} className="tt-legend-item">
                   <span className="tt-legend-dot" style={{ backgroundColor: color }} />
-                  <span>{course.code} — {course.name}</span>
+                  <span>{formatCourseLabel(course.code, course.name)}</span>
                 </div>
               );
             })}
           </div>
         </div>
+        </>
       )}
 
       {/* Detail modal */}
@@ -264,7 +577,7 @@ export default function MyTimetable() {
               <div className="tt-detail-grid">
                 <div className="tt-detail-row">
                   <label>Course</label>
-                  <span>{selectedSlot.course.code} — {selectedSlot.course.name}</span>
+                  <span>{formatCourseLabel(selectedSlot.course.code, selectedSlot.course.name)}</span>
                 </div>
                 <div className="tt-detail-row">
                   <label>Day</label>
@@ -272,11 +585,16 @@ export default function MyTimetable() {
                 </div>
                 <div className="tt-detail-row">
                   <label>Time</label>
-                  <span>{formatTime(selectedSlot.startTime)} – {formatTime(selectedSlot.endTime)}</span>
+                  <span>{formatTime(selectedSlot.startTime)} - {formatTime(selectedSlot.endTime)}</span>
                 </div>
                 <div className="tt-detail-row">
                   <label>Lecturer</label>
-                  <span>{selectedSlot.lecturer.firstName} {selectedSlot.lecturer.lastName}</span>
+                  <span>
+                    {formatTimetableLecturer(selectedSlot)}
+                    {(selectedSlot.lecturer as { designation?: string | null }).designation && (
+                      <span className="block text-xs text-slate-500 mt-0.5">{(selectedSlot.lecturer as { designation?: string | null }).designation}</span>
+                    )}
+                  </span>
                 </div>
                 <div className="tt-detail-row">
                   <label>Hall</label>
@@ -288,7 +606,7 @@ export default function MyTimetable() {
                 </div>
                 <div className="tt-detail-row">
                   <label>Group</label>
-                  <span>{selectedSlot.group.name} (Batch {selectedSlot.group.batchYear})</span>
+                  <span>{selectedSlot.group.name} (Batch {selectedSlot.group.batchLabel ?? selectedSlot.group.batchYear})</span>
                 </div>
                 <div className="tt-detail-row">
                   <label>Semester / Year</label>

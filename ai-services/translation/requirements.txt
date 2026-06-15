@@ -1,0 +1,15 @@
+# Translation Service Dependencies (Phase 9.1)
+# Install: pip install -r requirements.txt
+
+# MarianMT / Hugging Face Transformers
+transformers>=4.36.0
+torch>=2.0.0
+sentencepiece>=0.1.99
+accelerate>=0.25.0
+# If TensorFlow is installed (e.g. from Rasa), add: pip install tf-keras
+
+# Google Cloud Translation (optional - requires GOOGLE_APPLICATION_CREDENTIALS)
+google-cloud-translate>=3.14.0
+
+# Azure Translator (optional - requires AZURE_TRANSLATOR_KEY and AZURE_TRANSLATOR_REGION)
+azure-ai-translation-text>=1.0.0

@@ -24,4 +24,31 @@ export const config = {
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
     uploadDir: path.resolve(__dirname, '../../uploads'),
   },
+
+  asr: {
+    // On Linux/Mac, 'python3' is often the only available command
+    pythonPath: process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3'),
+    asrScriptPath: path.resolve(__dirname, '../../../ai-services/asr/run_transcribe.py'),
+    asrServiceUrl: process.env.ASR_SERVICE_URL || 'http://localhost:8001',
+    useHttpService: process.env.ASR_USE_HTTP === 'true',
+  },
+
+  chatbot: {
+    apiKey: process.env.CHATBOT_API_KEY || 'lecstu-chatbot-dev-key',
+  },
+
+  floorplanVision: {
+    serviceUrl: process.env.FLOORPLAN_VISION_URL || 'http://localhost:8003',
+    enabled: process.env.FLOORPLAN_VISION_ENABLED !== 'false',
+  },
+
+  indoorNavigation: {
+    serviceUrl: process.env.INDOOR_NAVIGATION_URL || 'http://localhost:8004',
+    enabled: process.env.INDOOR_NAVIGATION_ENABLED !== 'false',
+  },
+
+  translation: {
+    pythonPath: process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3'),
+    scriptPath: path.resolve(__dirname, '../../../ai-services/translation/run_translate.py'),
+  },
 } as const;

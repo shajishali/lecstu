@@ -1,0 +1,573 @@
+[
+  {
+    "text": "What lectures are scheduled today?",
+    "entities": [
+      {
+        "start": 28,
+        "end": 33,
+        "value": "today",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "Good afternoon madam",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 15,
+        "end": 20,
+        "confidence_entity": 0.4952471852302551,
+        "value": "madam",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "When is CS201?",
+    "entities": [
+      {
+        "start": 8,
+        "end": 13,
+        "value": "CS201",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "building",
+        "start": 8,
+        "end": 13,
+        "confidence_entity": 0.5966944694519043,
+        "value": "CS201",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Timetable for next week",
+    "entities": [
+      {
+        "start": 14,
+        "end": 23,
+        "value": "next week",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "Is Lecture Hall 1 available today?",
+    "entities": [
+      {
+        "start": 3,
+        "end": 17,
+        "value": "Lecture Hall 1",
+        "entity": "hall_name"
+      },
+      {
+        "start": 28,
+        "end": 33,
+        "value": "today",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "hall_name",
+        "start": 11,
+        "end": 15,
+        "confidence_entity": 0.7369893193244934,
+        "value": "Hall",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "day",
+        "start": 28,
+        "end": 33,
+        "confidence_entity": 0.9696378707885742,
+        "value": "today",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Which halls can I use today?",
+    "entities": [
+      {
+        "start": 22,
+        "end": 27,
+        "value": "today",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "Can I book Dr. Rajapaksha for today?",
+    "entities": [
+      {
+        "start": 11,
+        "end": 25,
+        "value": "Dr. Rajapaksha",
+        "entity": "lecturer_name"
+      },
+      {
+        "start": 30,
+        "end": 35,
+        "value": "today",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 11,
+        "end": 13,
+        "confidence_entity": 0.9423457384109497,
+        "value": "Dr",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "lecturer_name",
+        "start": 15,
+        "end": 25,
+        "confidence_entity": 0.999850869178772,
+        "value": "Rajapaksha",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Good morning sir",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 13,
+        "end": 16,
+        "confidence_entity": 0.833185076713562,
+        "value": "sir",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "What time is it in New York?",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 19,
+        "end": 22,
+        "confidence_entity": 0.38631731271743774,
+        "value": "New",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "What classes do I have today?",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "day",
+        "start": 23,
+        "end": 28,
+        "confidence_entity": 0.9875698685646057,
+        "value": "today",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Do I have Networks tomorrow?",
+    "entities": [
+      {
+        "start": 10,
+        "end": 18,
+        "value": "Networks",
+        "entity": "course_name"
+      },
+      {
+        "start": 19,
+        "end": 27,
+        "value": "tomorrow",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "day",
+        "start": 19,
+        "end": 27,
+        "confidence_entity": 0.9993945360183716,
+        "value": "tomorrow",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Can I book lecturer Dr. Rajapaksha today?",
+    "entities": [
+      {
+        "start": 11,
+        "end": 34,
+        "value": "lecturer Dr. Rajapaksha",
+        "entity": "lecturer_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 20,
+        "end": 22,
+        "confidence_entity": 0.990479052066803,
+        "value": "Dr",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "lecturer_name",
+        "start": 24,
+        "end": 34,
+        "confidence_entity": 0.9999222755432129,
+        "value": "Rajapaksha",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "day",
+        "start": 35,
+        "end": 40,
+        "confidence_entity": 0.901087760925293,
+        "value": "today",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "What's 2 plus 2?",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "hall_name",
+        "start": 7,
+        "end": 8,
+        "confidence_entity": 0.9858657121658325,
+        "value": "2",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "hall_name",
+        "start": 14,
+        "end": 15,
+        "confidence_entity": 0.9687210321426392,
+        "value": "2",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "When does Machine Learning happen?",
+    "entities": [
+      {
+        "start": 10,
+        "end": 26,
+        "value": "Machine Learning",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "When is Operating Systems?",
+    "entities": [
+      {
+        "start": 8,
+        "end": 25,
+        "value": "Operating Systems",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "course_name",
+        "start": 18,
+        "end": 25,
+        "confidence_entity": 0.9950011372566223,
+        "value": "Systems",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Tharaga sir free tomorrow?",
+    "entities": [
+      {
+        "start": 0,
+        "end": 11,
+        "value": "Tharaga sir",
+        "entity": "lecturer_name"
+      },
+      {
+        "start": 17,
+        "end": 25,
+        "value": "tomorrow",
+        "entity": "day"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 0,
+        "end": 7,
+        "confidence_entity": 0.7403395175933838,
+        "value": "Tharaga",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "day",
+        "start": 17,
+        "end": 25,
+        "confidence_entity": 0.9988712668418884,
+        "value": "tomorrow",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Nimal sir available or not?",
+    "entities": [
+      {
+        "start": 0,
+        "end": 9,
+        "value": "Nimal sir",
+        "entity": "lecturer_name"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "When do I have Algorithms?",
+    "entities": [
+      {
+        "start": 15,
+        "end": 25,
+        "value": "Algorithms",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "What time is Software Engineering?",
+    "entities": [
+      {
+        "start": 13,
+        "end": 33,
+        "value": "Software Engineering",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "building",
+        "start": 22,
+        "end": 33,
+        "confidence_entity": 0.9995081424713135,
+        "value": "Engineering",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "When do I have AI?",
+    "entities": [
+      {
+        "start": 15,
+        "end": 17,
+        "value": "AI",
+        "entity": "course_name"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "Are halls available at noon?",
+    "entities": [
+      {
+        "start": 23,
+        "end": 27,
+        "value": "noon",
+        "entity": "time"
+      }
+    ],
+    "predicted_entities": []
+  },
+  {
+    "text": "Lecturer Dr. Dias availability",
+    "entities": [
+      {
+        "start": 9,
+        "end": 17,
+        "value": "Dr. Dias",
+        "entity": "lecturer_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 0,
+        "end": 8,
+        "confidence_entity": 0.974631667137146,
+        "value": "Lecturer",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "lecturer_name",
+        "start": 9,
+        "end": 11,
+        "confidence_entity": 0.9958957433700562,
+        "value": "Dr",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "lecturer_name",
+        "start": 13,
+        "end": 17,
+        "confidence_entity": 0.9997513890266418,
+        "value": "Dias",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Can I book lecturer Dr. Rajapaksha today?",
+    "entities": [
+      {
+        "start": 20,
+        "end": 34,
+        "value": "Dr. Rajapaksha",
+        "entity": "lecturer_name"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "lecturer_name",
+        "start": 11,
+        "end": 22,
+        "confidence_entity": 0.8167335391044617,
+        "value": "lecturer Dr",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "lecturer_name",
+        "start": 24,
+        "end": 34,
+        "confidence_entity": 0.9998812675476074,
+        "value": "Rajapaksha",
+        "extractor": "DIETClassifier"
+      },
+      {
+        "entity": "day",
+        "start": 35,
+        "end": 40,
+        "confidence_entity": 0.8912355899810791,
+        "value": "today",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Where is Main Hall?",
+    "entities": [
+      {
+        "start": 9,
+        "end": 18,
+        "value": "Main Hall",
+        "entity": "building"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "hall_name",
+        "start": 9,
+        "end": 18,
+        "confidence_entity": 0.6731205582618713,
+        "value": "Main Hall",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Where's Main Hall?",
+    "entities": [
+      {
+        "start": 8,
+        "end": 17,
+        "value": "Main Hall",
+        "entity": "building"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "hall_name",
+        "start": 8,
+        "end": 17,
+        "confidence_entity": 0.6613706350326538,
+        "value": "Main Hall",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "Main Hall location please",
+    "entities": [
+      {
+        "start": 0,
+        "end": 9,
+        "value": "Main Hall",
+        "entity": "building"
+      }
+    ],
+    "predicted_entities": [
+      {
+        "entity": "hall_name",
+        "start": 0,
+        "end": 9,
+        "confidence_entity": 0.9009242057800293,
+        "value": "Main Hall",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "See you tomorrow",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "day",
+        "start": 8,
+        "end": 16,
+        "confidence_entity": 0.9996763467788696,
+        "value": "tomorrow",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  },
+  {
+    "text": "What's the news today?",
+    "entities": [],
+    "predicted_entities": [
+      {
+        "entity": "day",
+        "start": 16,
+        "end": 21,
+        "confidence_entity": 0.9472660422325134,
+        "value": "today",
+        "extractor": "DIETClassifier"
+      }
+    ]
+  }
+]

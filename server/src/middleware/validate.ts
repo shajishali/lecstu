@@ -11,11 +11,13 @@ export function handleValidationErrors(req: Request, _res: Response, next: NextF
   next();
 }
 
+const emailNormalize = { gmail_remove_dots: false, gmail_convert_googlemaildotcom: false };
+
 export const registerRules = [
   body('email')
     .trim()
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail(emailNormalize)
     .withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 8 })
@@ -52,7 +54,7 @@ export const loginRules = [
   body('email')
     .trim()
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail(emailNormalize)
     .withMessage('Valid email is required'),
   body('password')
     .notEmpty()
@@ -78,9 +80,13 @@ export const profileUpdateRules = [
     .trim()
     .escape(),
   body('departmentId')
-    .optional()
-    .isUUID()
+    .optional({ values: 'null' })
+    .custom((val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val))
     .withMessage('Department ID must be a valid UUID'),
+  body('groupId')
+    .optional({ checkFalsy: true })
+    .isUUID()
+    .withMessage('Group ID must be a valid UUID'),
   handleValidationErrors,
 ];
 
@@ -117,6 +123,82 @@ export const timetableCreateRules = [
     .optional()
     .isInt({ min: 2020, max: 2100 })
     .withMessage('Year must be between 2020 and 2100'),
+  handleValidationErrors,
+];
+
+export const appointmentCreateRules = [
+  body('lecturerId')
+    .isUUID()
+    .withMessage('Lecturer ID must be a valid UUID'),
+  body('dateTime')
+    .notEmpty()
+    .withMessage('Date and time is required')
+    .custom((v) => {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return false;
+      return true;
+    })
+    .withMessage('Invalid date time format'),
+  body('duration')
+    .optional()
+    .isInt({ min: 15, max: 120 })
+    .withMessage('Duration must be between 15 and 120 minutes'),
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be at most 500 characters')
+    .escape(),
+  body('notes')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Notes must be at most 1000 characters')
+    .escape(),
+  handleValidationErrors,
+];
+
+export const appointmentRescheduleRules = [
+  body('dateTime')
+    .notEmpty()
+    .withMessage('Date and time is required')
+    .custom((v) => {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return false;
+      return true;
+    })
+    .withMessage('Invalid date time format'),
+  body('duration')
+    .optional()
+    .isInt({ min: 15, max: 120 })
+    .withMessage('Duration must be between 15 and 120 minutes'),
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be at most 500 characters')
+    .escape(),
+  handleValidationErrors,
+];
+
+export const cancellationRequestRules = [
+  body('reason')
+    .trim()
+    .notEmpty()
+    .withMessage('Cancellation reason is required')
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Reason must be 10-500 characters')
+    .escape(),
+  handleValidationErrors,
+];
+
+export const appointmentRejectRules = [
+  body('reason')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be at most 500 characters')
+    .escape(),
   handleValidationErrors,
 ];
 
@@ -159,3 +241,46 @@ export const timetableUpdateRules = [
     .withMessage('Year must be between 2020 and 2100'),
   handleValidationErrors,
 ];
+
+const passwordRules = [
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters')
+    .matches(/[A-Z]/)
+    .withMessage('Password must contain an uppercase letter')
+    .matches(/[0-9]/)
+    .withMessage('Password must contain a number'),
+];
+
+export const adminCreateUserRules = [
+  ...registerRules.slice(0, -1),
+  body('programCode')
+    .if(body('role').equals('STUDENT'))
+    .trim()
+    .notEmpty()
+    .withMessage('Program is required for students'),
+  body('studyYear')
+    .if(body('role').equals('STUDENT'))
+    .trim()
+    .notEmpty()
+    .withMessage('Study year is required for students'),
+  body('designation').optional().trim().escape(),
+  body('timetableCode').optional().trim().escape(),
+  handleValidationErrors,
+];
+
+export const adminUpdateUserRules = [
+  body('firstName').optional().trim().notEmpty().withMessage('First name cannot be empty').escape(),
+  body('lastName').optional().trim().notEmpty().withMessage('Last name cannot be empty').escape(),
+  body('phone').optional().trim().escape(),
+  body('departmentId').optional({ nullable: true }).isUUID().withMessage('Department ID must be a valid UUID'),
+  body('designation').optional().trim().escape(),
+  body('timetableCode').optional().trim().escape(),
+  body('isActive').optional().isBoolean().withMessage('isActive must be boolean'),
+  body('programCode').optional().trim().escape(),
+  body('studyYear').optional().trim().escape(),
+  body('pathwayCode').optional().trim().escape(),
+  handleValidationErrors,
+];
+
+export const adminResetPasswordRules = [...passwordRules, handleValidationErrors];

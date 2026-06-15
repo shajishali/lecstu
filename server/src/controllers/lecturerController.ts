@@ -1,50 +1,49 @@
 import { Request, Response, NextFunction } from 'express';
-import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import {
   getLecturerWeeklyAvailability,
   getLecturerDateAvailability,
 } from '../services/lecturerAvailabilityService';
+import {
+  getDirectoryLecturerProfile,
+  isFetVirtualLecturerId,
+  listDirectoryLecturers,
+} from '../services/lecturerDirectoryService';
+import {
+  listLecturerScheduleSlots,
+  replaceLecturerSchedule,
+  type ScheduleSlotInput,
+} from '../services/lecturerScheduleService';
+import prisma from '../config/database';
 
 export async function listLecturers(req: Request, res: Response, next: NextFunction) {
   try {
     const { search, departmentId } = req.query;
-
-    const where: any = { role: 'LECTURER', isActive: true };
-
-    if (departmentId && typeof departmentId === 'string') {
-      where.departmentId = departmentId;
-    }
-
-    if (search && typeof search === 'string') {
-      where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    const lecturers = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        profileImage: true,
-        department: { select: { id: true, name: true, code: true } },
-        lecturerOffice: {
-          select: { id: true, roomNumber: true, building: true, floor: true },
-        },
-        _count: {
-          select: { timetableEntries: true },
-        },
-      },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    const lecturers = await listDirectoryLecturers({
+      search: typeof search === 'string' ? search : undefined,
+      departmentId: typeof departmentId === 'string' ? departmentId : undefined,
     });
 
-    res.json({ success: true, data: lecturers });
+    res.json({
+      success: true,
+      data: lecturers.map((l) => ({
+        id: l.id,
+        firstName: l.firstName,
+        lastName: l.lastName,
+        designation: l.designation,
+        email: l.email,
+        phone: l.phone,
+        profileImage: l.profileImage,
+        timetableCode: l.timetableCode,
+        derivedFromName: l.derivedFromName,
+        bookable: l.bookable,
+        isFetOnly: l.isFetOnly,
+        department: l.department,
+        lecturerOffice: l.lecturerOffice,
+        teachingHalls: l.teachingHalls,
+        _count: { scheduleSlots: l.scheduleSlotCount },
+      })),
+    });
   } catch (err) {
     next(err);
   }
@@ -53,48 +52,13 @@ export async function listLecturers(req: Request, res: Response, next: NextFunct
 export async function getLecturerProfile(req: Request, res: Response, next: NextFunction) {
   try {
     const id = req.params.id as string;
+    if (isFetVirtualLecturerId(id)) {
+      throw new AppError('Lecturer not found', 404);
+    }
+    const profile = await getDirectoryLecturerProfile(id);
+    if (!profile) throw new AppError('Lecturer not found', 404);
 
-    const lecturer = await prisma.user.findFirst({
-      where: { id, role: 'LECTURER' },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        profileImage: true,
-        department: { select: { id: true, name: true, code: true } },
-        lecturerOffice: {
-          select: { id: true, roomNumber: true, building: true, floor: true },
-        },
-        timetableEntries: {
-          where: { isActive: true },
-          select: {
-            course: { select: { id: true, name: true, code: true } },
-          },
-          distinct: ['courseId'],
-        },
-      },
-    });
-
-    if (!lecturer) throw new AppError('Lecturer not found', 404);
-
-    const courses = lecturer.timetableEntries.map((e) => e.course);
-
-    res.json({
-      success: true,
-      data: {
-        id: lecturer.id,
-        firstName: lecturer.firstName,
-        lastName: lecturer.lastName,
-        email: lecturer.email,
-        phone: lecturer.phone,
-        profileImage: lecturer.profileImage,
-        department: lecturer.department,
-        office: lecturer.lecturerOffice,
-        courses,
-      },
-    });
+    res.json({ success: true, data: profile });
   } catch (err) {
     next(err);
   }
@@ -105,11 +69,12 @@ export async function getLecturerAvailability(req: Request, res: Response, next:
     const id = req.params.id as string;
     const { date } = req.query;
 
-    const lecturer = await prisma.user.findFirst({
-      where: { id, role: 'LECTURER' },
-      select: { id: true },
-    });
-    if (!lecturer) throw new AppError('Lecturer not found', 404);
+    if (isFetVirtualLecturerId(id)) {
+      throw new AppError('Lecturer not found', 404);
+    }
+
+    const profile = await getDirectoryLecturerProfile(id);
+    if (!profile) throw new AppError('Lecturer not found', 404);
 
     if (date && typeof date === 'string') {
       const availability = await getLecturerDateAvailability(id, date);
@@ -118,6 +83,30 @@ export async function getLecturerAvailability(req: Request, res: Response, next:
 
     const availability = await getLecturerWeeklyAvailability(id);
     res.json({ success: true, data: availability });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMySchedule(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lecturerId = req.user!.userId;
+    const slots = await listLecturerScheduleSlots(lecturerId);
+    res.json({ success: true, data: slots });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function putMySchedule(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lecturerId = req.user!.userId;
+    const { slots } = req.body as { slots?: ScheduleSlotInput[] };
+    if (!Array.isArray(slots)) {
+      throw new AppError('Body must include slots array', 400);
+    }
+    const saved = await replaceLecturerSchedule(lecturerId, slots);
+    res.json({ success: true, data: saved });
   } catch (err) {
     next(err);
   }

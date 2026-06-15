@@ -8,8 +8,12 @@ export interface User {
   role: UserRole;
   phone: string | null;
   profileImage: string | null;
+  designation?: string | null;
+  timetableCode?: string | null;
   isActive: boolean;
   department: { id: string; name: string; code?: string } | null;
+  lecturerOffice?: { id: string; roomNumber: string; building: string; floor: number } | null;
+  studentGroupMemberships?: { group: { id: string; name: string; batchYear: number; batchLabel?: string | null; pathway?: { id: string; name: string; code: string } | null } }[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -27,6 +31,17 @@ export interface RegisterRequest {
   role: UserRole;
   departmentId?: string;
   phone?: string;
+  /** Student only */
+  programCode?: string;
+  studyYear?: string;
+  pathwayCode?: string;
+}
+
+export interface RegisterOptionsProgram {
+  code: string;
+  name: string;
+  years: string[];
+  pathways: { code: string; name: string }[];
 }
 
 export interface AuthResponse {
@@ -35,6 +50,7 @@ export interface AuthResponse {
   data: {
     user: User;
     accessToken: string;
+    refreshToken?: string;
   };
 }
 

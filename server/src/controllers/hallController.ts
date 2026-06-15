@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
-import { logAction } from '../services/auditLogger';
+import { logActionForRequest } from '../services/auditLogger';
 
 const INCLUDE = {
   _count: { select: { timetableEntries: true } },
@@ -49,7 +49,7 @@ export async function createHall(req: Request, res: Response, next: NextFunction
       data: { name, building, floor: floor || 0, capacity, equipment: equipment || [] },
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'CREATE', 'LectureHall', hall.id, { name, building, capacity });
+    await logActionForRequest(req, 'CREATE', 'LectureHall', hall.id, { name, building, capacity });
     res.status(201).json({ success: true, data: hall });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('A hall with this name already exists', 409));
@@ -68,7 +68,7 @@ export async function updateHall(req: Request, res: Response, next: NextFunction
       data: req.body,
       include: INCLUDE,
     });
-    await logAction((req as any).user.id, 'UPDATE', 'LectureHall', id, req.body);
+    await logActionForRequest(req, 'UPDATE', 'LectureHall', id, req.body);
     res.json({ success: true, data: hall });
   } catch (err: any) {
     if (err.code === 'P2002') return next(new AppError('A hall with this name already exists', 409));
@@ -86,7 +86,7 @@ export async function deleteHall(req: Request, res: Response, next: NextFunction
     }
 
     await prisma.lectureHall.delete({ where: { id } });
-    await logAction((req as any).user.id, 'DELETE', 'LectureHall', id, { name: existing.name });
+    await logActionForRequest(req, 'DELETE', 'LectureHall', id, { name: existing.name });
     res.json({ success: true, message: 'Hall deleted' });
   } catch (err) { next(err); }
 }

@@ -1,0 +1,146 @@
+# LECSTU Conversation Stories — Phase 8.2
+# Happy paths, multi-turn flows, fallback handling
+
+version: "3.1"
+
+stories:
+  # Single-intent happy paths
+  - story: greet and ask timetable
+    steps:
+      - intent: greeting
+      - action: utter_greeting
+      - intent: ask_timetable
+      - action: action_query_timetable
+
+  - story: ask hall availability
+    steps:
+      - intent: ask_hall_availability
+      - action: action_check_hall_availability
+
+  - story: ask lecturer availability
+    steps:
+      - intent: ask_lecturer_availability
+      - action: action_check_lecturer_availability
+
+  - story: book appointment
+    steps:
+      - intent: book_appointment
+      - action: action_book_appointment
+
+  - story: cancel appointment
+    steps:
+      - intent: cancel_appointment
+      - action: action_cancel_appointment
+
+  - story: ask directions
+    steps:
+      - intent: ask_directions
+      - action: action_get_directions
+
+  - story: ask todays classes
+    steps:
+      - intent: ask_todays_classes
+      - action: action_today_on_campus
+
+  - story: guide to lecture room
+    steps:
+      - intent: guide_to_lecture_room
+      - action: action_guide_to_room
+
+  - story: guide to next class
+    steps:
+      - intent: guide_to_next_class
+      - action: action_guide_to_next_class
+
+  - story: today classes then guide next
+    steps:
+      - intent: ask_todays_classes
+      - action: action_today_on_campus
+      - intent: guide_to_next_class
+      - action: action_guide_to_next_class
+
+  - story: today then guide room
+    steps:
+      - intent: ask_todays_classes
+      - action: action_today_on_campus
+      - intent: guide_to_lecture_room
+      - action: action_guide_to_room
+
+  - story: ask office location
+    steps:
+      - intent: ask_office_location
+      - action: action_get_office_location
+
+  - story: fallback path
+    steps:
+      - intent: fallback
+      - action: utter_fallback
+
+  - story: out of scope path
+    steps:
+      - intent: out_of_scope
+      - action: utter_out_of_scope
+
+  # Multi-turn: greet then ask timetable
+  - story: greet then timetable
+    steps:
+      - intent: greeting
+      - action: utter_greeting
+      - intent: ask_timetable
+      - action: action_query_timetable
+
+  # Multi-turn: ask timetable then book appointment
+  - story: timetable then book
+    steps:
+      - intent: ask_timetable
+      - action: action_query_timetable
+      - intent: book_appointment
+      - action: action_book_appointment
+
+  # Multi-turn: ask lecturer availability then book
+  - story: lecturer availability then book
+    steps:
+      - intent: ask_lecturer_availability
+      - action: action_check_lecturer_availability
+      - intent: book_appointment
+      - action: action_book_appointment
+
+  # Multi-turn: ask directions then office location
+  - story: directions then office
+    steps:
+      - intent: ask_directions
+      - action: action_get_directions
+      - intent: ask_office_location
+      - action: action_get_office_location
+
+  # Multi-turn: hall availability then directions
+  - story: hall then directions
+    steps:
+      - intent: ask_hall_availability
+      - action: action_check_hall_availability
+      - intent: ask_directions
+      - action: action_get_directions
+
+  # Multi-turn: goodbye after help
+  - story: help then goodbye
+    steps:
+      - intent: ask_timetable
+      - action: action_query_timetable
+      - intent: goodbye
+      - action: utter_goodbye
+
+  # Fallback then retry
+  - story: fallback then succeed
+    steps:
+      - intent: fallback
+      - action: utter_fallback
+      - intent: ask_timetable
+      - action: action_query_timetable
+
+  # Out of scope then redirect
+  - story: out of scope then redirect
+    steps:
+      - intent: out_of_scope
+      - action: utter_out_of_scope
+      - intent: greeting
+      - action: utter_greeting

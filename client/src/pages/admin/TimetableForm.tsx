@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import Modal from '@components/Modal';
-import api from '@services/api';
+import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
 import { AlertTriangle } from 'lucide-react';
 import type { DropdownData } from './TimetableManagement';
 
 interface Entry {
   id: string;
+  year: number;
+  month: number;
+  week: number;
   dayOfWeek: string;
   startTime: string;
   endTime: string;
   semester: number;
-  year: number;
   course: { id: string };
   lecturer: { id: string };
   hall: { id: string };
@@ -36,11 +38,13 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
   const isEdit = !!entry;
 
   const [form, setForm] = useState({
+    year: entry?.year ?? 2026,
+    month: entry?.month ?? 1,
+    week: entry?.week ?? 1,
     dayOfWeek: entry?.dayOfWeek || 'MONDAY',
     startTime: entry?.startTime || '08:00',
     endTime: entry?.endTime || '09:00',
     semester: entry?.semester || 1,
-    year: entry?.year || 2026,
     courseId: entry?.course.id || '',
     lecturerId: entry?.lecturer.id || '',
     hallId: entry?.hall.id || '',
@@ -85,7 +89,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         setConflicts(data.conflicts);
       } else {
         setError(data?.message || 'Failed to save entry');
-        showToast('error', data?.message || 'Failed to save entry');
+        showApiErrorToast(err, 'Failed to save entry');
       }
     } finally {
       setSaving(false);
@@ -115,26 +119,51 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
       <form onSubmit={handleSubmit} className="tt-form">
         <div className="form-row-2">
           <label>
+            Year
+            <input
+              type="number"
+              value={form.year}
+              onChange={(e) => handleChange('year', parseInt(e.target.value))}
+              min={2020}
+              max={2100}
+            />
+          </label>
+          <label>
+            Month
+            <input
+              type="number"
+              value={form.month}
+              onChange={(e) => handleChange('month', parseInt(e.target.value))}
+              min={1}
+              max={12}
+            />
+          </label>
+        </div>
+        <div className="form-row-2">
+          <label>
+            Week
+            <input
+              type="number"
+              value={form.week}
+              onChange={(e) => handleChange('week', parseInt(e.target.value))}
+              min={1}
+              max={53}
+            />
+          </label>
+          <label>
             Day of Week
             <select value={form.dayOfWeek} onChange={(e) => handleChange('dayOfWeek', e.target.value)}>
               {DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </label>
+        </div>
+        <div className="form-row-2">
           <label>
-            Semester / Year
-            <div className="form-inline">
-              <select value={form.semester} onChange={(e) => handleChange('semester', parseInt(e.target.value))}>
-                <option value={1}>Semester 1</option>
-                <option value={2}>Semester 2</option>
-              </select>
-              <input
-                type="number"
-                value={form.year}
-                onChange={(e) => handleChange('year', parseInt(e.target.value))}
-                min={2020}
-                max={2100}
-              />
-            </div>
+            Semester
+            <select value={form.semester} onChange={(e) => handleChange('semester', parseInt(e.target.value))}>
+              <option value={1}>Semester 1</option>
+              <option value={2}>Semester 2</option>
+            </select>
           </label>
         </div>
 
@@ -152,9 +181,9 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Course
           <select value={form.courseId} onChange={(e) => handleChange('courseId', e.target.value)}>
-            <option value="">— Select Course —</option>
+            <option value="">- Select Course -</option>
             {dropdowns.courses.map((c) => (
-              <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+              <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
             ))}
           </select>
         </label>
@@ -162,7 +191,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Lecturer
           <select value={form.lecturerId} onChange={(e) => handleChange('lecturerId', e.target.value)}>
-            <option value="">— Select Lecturer —</option>
+            <option value="">- Select Lecturer -</option>
             {dropdowns.lecturers.map((l) => (
               <option key={l.id} value={l.id}>{l.firstName} {l.lastName}</option>
             ))}
@@ -172,7 +201,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Lecture Hall
           <select value={form.hallId} onChange={(e) => handleChange('hallId', e.target.value)}>
-            <option value="">— Select Hall —</option>
+            <option value="">- Select Hall -</option>
             {dropdowns.halls.map((h) => (
               <option key={h.id} value={h.id}>{h.name} ({h.building}, cap: {h.capacity})</option>
             ))}
@@ -182,9 +211,11 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Student Group
           <select value={form.groupId} onChange={(e) => handleChange('groupId', e.target.value)}>
-            <option value="">— Select Group —</option>
+            <option value="">- Select Group -</option>
             {dropdowns.groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.name} (batch {g.batchYear})</option>
+              <option key={g.id} value={g.id}>
+                {g.name} — {g.entryCount ?? 0} classes, {g.memberCount ?? 0} students
+              </option>
             ))}
           </select>
         </label>

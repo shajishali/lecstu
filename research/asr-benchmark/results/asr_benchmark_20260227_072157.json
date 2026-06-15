@@ -1,0 +1,86 @@
+{
+  "experiment_id": "20260227_072157",
+  "timestamp": "2026-02-27T07:22:09.109827Z",
+  "config": {
+    "num_utterances": 3,
+    "num_configs": 1,
+    "num_runs": 1,
+    "engine_filter": "whisper-finetuned",
+    "model_filter": null,
+    "language_filter": null
+  },
+  "raw_results": [
+    {
+      "utterance_id": "en_timetable_001",
+      "language": "en",
+      "engine": "whisper-finetuned",
+      "model": "tiny",
+      "run": 1,
+      "reference": "When is my next Data Structures lecture?",
+      "hypothesis": "you",
+      "wer": 1.0,
+      "cer": 0.9394,
+      "latency_ms": 11187.1,
+      "ref_length": 7,
+      "hyp_length": 1
+    },
+    {
+      "utterance_id": "en_timetable_002",
+      "language": "en",
+      "engine": "whisper-finetuned",
+      "model": "tiny",
+      "run": 1,
+      "reference": "What lectures do I have on Monday?",
+      "hypothesis": "you",
+      "wer": 1.0,
+      "cer": 0.963,
+      "latency_ms": 281.1,
+      "ref_length": 7,
+      "hyp_length": 1
+    },
+    {
+      "utterance_id": "en_timetable_003",
+      "language": "en",
+      "engine": "whisper-finetuned",
+      "model": "tiny",
+      "run": 1,
+      "reference": "When does Group B have Algorithm class?",
+      "hypothesis": "you",
+      "wer": 1.0,
+      "cer": 0.9375,
+      "latency_ms": 278.9,
+      "ref_length": 7,
+      "hyp_length": 1
+    }
+  ],
+  "wer_stats": {
+    "whisper-finetuned_tiny_en": {
+      "mean": 1.0,
+      "median": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "count": 3
+    }
+  },
+  "cer_stats": {
+    "whisper-finetuned_tiny_en": {
+      "mean": 0.9466,
+      "median": 0.9394,
+      "std": 0.0116,
+      "min": 0.9375,
+      "max": 0.963,
+      "count": 3
+    }
+  },
+  "latency_stats": {
+    "whisper-finetuned_tiny_en": {
+      "mean": 3915.7,
+      "median": 281.1,
+      "std": 5141.6563,
+      "min": 278.9,
+      "max": 11187.1,
+      "count": 3
+    }
+  }
+}

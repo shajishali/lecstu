@@ -1,19 +1,31 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@store/authStore';
 import { showToast } from '@components/Toast';
 import api from '@services/api';
-import { Search, User, Building, BookOpen, MapPin } from 'lucide-react';
+import { Search, User, Building, BookOpen, MapPin, Calendar } from 'lucide-react';
+
+interface TeachingHall {
+  name: string;
+  building: string;
+}
 
 interface LecturerItem {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  designation: string | null;
+  email: string | null;
   phone: string | null;
   profileImage: string | null;
+  timetableCode: string | null;
+  derivedFromName?: boolean;
+  bookable: boolean;
+  isFetOnly: boolean;
   department: { id: string; name: string; code: string } | null;
   lecturerOffice: { id: string; roomNumber: string; building: string; floor: number } | null;
-  _count: { timetableEntries: number };
+  teachingHalls: TeachingHall[];
+  _count: { scheduleSlots: number };
 }
 
 interface Department {
@@ -24,6 +36,7 @@ interface Department {
 
 export default function LecturerDirectory() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [lecturers, setLecturers] = useState<LecturerItem[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,11 +68,27 @@ export default function LecturerDirectory() {
   useEffect(() => { fetchDepartments(); }, [fetchDepartments]);
   useEffect(() => { fetchLecturers(); }, [fetchLecturers]);
 
+  const openProfile = (lec: LecturerItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    navigate(`/lecturers/${lec.id}`);
+  };
+
+  const bookAppointment = (lec: LecturerItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lec.bookable) {
+      showToast('info', 'This lecturer must register with a timetable code before students can book.');
+      return;
+    }
+    navigate(`/appointments/book/${lec.id}`);
+  };
+
   return (
     <div className="lecdir-page">
       <div className="lecdir-header">
         <h1>Lecturer Directory</h1>
-        <p className="lecdir-subtitle">Browse lecturers and view their availability</p>
+        <p className="lecdir-subtitle">
+          Browse lecturers, office locations, and book appointments using each lecturer&apos;s own schedule
+        </p>
       </div>
 
       <div className="lecdir-filters">
@@ -67,7 +96,7 @@ export default function LecturerDirectory() {
           <Search size={16} className="lecdir-search-icon" />
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email, or timetable code..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -93,21 +122,40 @@ export default function LecturerDirectory() {
           {lecturers.map((lec) => (
             <div
               key={lec.id}
-              className="lecdir-card"
-              onClick={() => navigate(`/lecturers/${lec.id}`)}
+              className="group lecdir-card"
+              onClick={() => openProfile(lec)}
+              onKeyDown={(e) => e.key === 'Enter' && openProfile(lec)}
+              role="button"
+              tabIndex={0}
             >
               <div className="lecdir-avatar">
                 {lec.profileImage ? (
                   <img src={`/uploads/avatars/${lec.profileImage}`} alt="" />
                 ) : (
                   <div className="lecdir-avatar-placeholder">
-                    {lec.firstName[0]}{lec.lastName[0]}
+                    {(lec.firstName[0] || '?')}{(lec.lastName[0] || '')}
                   </div>
                 )}
               </div>
               <div className="lecdir-card-body">
-                <h3>{lec.firstName} {lec.lastName}</h3>
-                <p className="lecdir-email">{lec.email}</p>
+                <h3>
+                  {lec.firstName} {lec.lastName}
+                  {lec.timetableCode && (
+                    <span className="lecdir-code-badge"> {lec.timetableCode}</span>
+                  )}
+                </h3>
+                {lec.timetableCode && lec.derivedFromName && (
+                  <p className="lecdir-designation text-slate-500">
+                    Short code from name (first + last initial → {lec.timetableCode})
+                  </p>
+                )}
+                {lec.timetableCode && !lec.derivedFromName && !lec.isFetOnly && (
+                  <p className="lecdir-designation">Timetable code: {lec.timetableCode}</p>
+                )}
+                {lec.designation && !lec.isFetOnly && (
+                  <p className="lecdir-designation">{lec.designation}</p>
+                )}
+                {lec.email && <p className="lecdir-email">{lec.email}</p>}
                 {lec.department && (
                   <span className="lecdir-dept">
                     <BookOpen size={12} /> {lec.department.name}
@@ -115,17 +163,38 @@ export default function LecturerDirectory() {
                 )}
                 {lec.lecturerOffice && (
                   <span className="lecdir-office">
-                    <MapPin size={12} /> {lec.lecturerOffice.building}, Room {lec.lecturerOffice.roomNumber}
+                    <MapPin size={12} /> Office: {lec.lecturerOffice.building}, Room {lec.lecturerOffice.roomNumber}
                   </span>
                 )}
-                {lec._count.timetableEntries > 0 && (
+                {lec.teachingHalls.length > 0 && (
+                  <span className="lecdir-office" title={lec.teachingHalls.map((h) => h.name).join(', ')}>
+                    <Building size={12} /> Teaches at: {lec.teachingHalls.slice(0, 2).map((h) => h.name).join(', ')}
+                    {lec.teachingHalls.length > 2 ? ` +${lec.teachingHalls.length - 2}` : ''}
+                  </span>
+                )}
+                {lec._count.scheduleSlots > 0 && (
                   <span className="lecdir-classes">
-                    <Building size={12} /> {lec._count.timetableEntries} class{lec._count.timetableEntries !== 1 ? 'es' : ''}/week
+                    <Calendar size={12} /> {lec._count.scheduleSlots} schedule block{lec._count.scheduleSlots !== 1 ? 's' : ''}/week
                   </span>
                 )}
               </div>
-              <div className="lecdir-card-action">
-                View Availability &rarr;
+              <div className="lecdir-card-actions">
+                <button
+                  type="button"
+                  className="lecdir-card-action"
+                  onClick={(e) => openProfile(lec, e)}
+                >
+                  View Availability <span className="lecdir-card-action-arrow">→</span>
+                </button>
+                {user?.role === 'STUDENT' && lec.bookable && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm lecdir-book-btn"
+                    onClick={(e) => bookAppointment(lec, e)}
+                  >
+                    Book Appointment
+                  </button>
+                )}
               </div>
             </div>
           ))}

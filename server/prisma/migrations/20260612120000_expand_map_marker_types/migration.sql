@@ -1,0 +1,53 @@
+-- Expand MapMarkerType with common faculty place types
+
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'LOBBY';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'STAIRS';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'LIFT';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'PARKING';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'LECTURE_HALL';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'SEMINAR_ROOM';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'AUDITORIUM';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'CONFERENCE_ROOM';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'WORKSHOP';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'LIBRARY';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'COUNTER';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'CAFETERIA';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'STORE';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'CLINIC';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'TOILET';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'PRAYER_ROOM';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'SPORTS';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

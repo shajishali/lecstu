@@ -1,0 +1,8 @@
+# Core — same stack as floorplan-vision (fast install, ~100MB EasyOCR model on first run)
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart>=0.0.9
+opencv-python-headless>=4.9.0
+numpy>=1.26.0
+networkx>=3.2.0
+easyocr>=1.7.1

@@ -1,0 +1,114 @@
+{
+  "experiment_id": "20260307_171219",
+  "timestamp": "2026-03-07T17:12:36.520472Z",
+  "config": {
+    "num_utterances": 5,
+    "num_configs": 1,
+    "num_runs": 1,
+    "engine_filter": "google",
+    "model_filter": null,
+    "language_filter": null
+  },
+  "raw_results": [
+    {
+      "utterance_id": "en_timetable_001",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "When is my next Data Structures lecture?",
+      "hypothesis": "",
+      "wer": 1.0,
+      "cer": 1.0,
+      "latency_ms": 6538.2,
+      "ref_length": 7,
+      "hyp_length": 0
+    },
+    {
+      "utterance_id": "en_timetable_002",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "What lectures do I have on Monday?",
+      "hypothesis": "",
+      "wer": 1.0,
+      "cer": 1.0,
+      "latency_ms": 2645.2,
+      "ref_length": 7,
+      "hyp_length": 0
+    },
+    {
+      "utterance_id": "en_timetable_003",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "When does Group B have Algorithm class?",
+      "hypothesis": "",
+      "wer": 1.0,
+      "cer": 1.0,
+      "latency_ms": 2728.1,
+      "ref_length": 7,
+      "hyp_length": 0
+    },
+    {
+      "utterance_id": "en_timetable_004",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "Is there a lecture at ten am tomorrow?",
+      "hypothesis": "",
+      "wer": 1.0,
+      "cer": 1.0,
+      "latency_ms": 2790.5,
+      "ref_length": 8,
+      "hyp_length": 0
+    },
+    {
+      "utterance_id": "en_timetable_005",
+      "language": "en",
+      "engine": "google",
+      "model": "default",
+      "run": 1,
+      "reference": "What are today's lectures for Group A?",
+      "hypothesis": "",
+      "wer": 1.0,
+      "cer": 1.0,
+      "latency_ms": 2404.0,
+      "ref_length": 7,
+      "hyp_length": 0
+    }
+  ],
+  "wer_stats": {
+    "google_default_en": {
+      "mean": 1.0,
+      "median": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "count": 5
+    }
+  },
+  "cer_stats": {
+    "google_default_en": {
+      "mean": 1.0,
+      "median": 1.0,
+      "std": 0.0,
+      "min": 1.0,
+      "max": 1.0,
+      "count": 5
+    }
+  },
+  "latency_stats": {
+    "google_default_en": {
+      "mean": 3421.2,
+      "median": 2728.1,
+      "std": 1564.016,
+      "min": 2404.0,
+      "max": 6538.2,
+      "count": 5
+    }
+  }
+}

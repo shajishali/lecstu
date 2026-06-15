@@ -1,19 +1,38 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@store/authStore';
 import { showToast } from '@components/Toast';
 import api from '@services/api';
 import { ArrowLeft, Mail, Phone, MapPin, BookOpen, Building } from 'lucide-react';
+
+interface TeachingHall {
+  name: string;
+  building: string;
+}
 
 interface LecturerData {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  designation: string | null;
+  email: string | null;
   phone: string | null;
   profileImage: string | null;
+  timetableCode?: string | null;
+  derivedFromName?: boolean;
+  bookable?: boolean;
+  isFetOnly?: boolean;
   department: { id: string; name: string; code: string } | null;
   office: { id: string; roomNumber: string; building: string; floor: number } | null;
-  courses: { id: string; name: string; code: string }[];
+  scheduleSlots?: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    slotType: string;
+    label: string | null;
+    location: string | null;
+  }[];
+  teachingHalls?: TeachingHall[];
 }
 
 interface TimeSlot {
@@ -21,10 +40,10 @@ interface TimeSlot {
   endTime: string;
 }
 
-interface TeachingSlot extends TimeSlot {
-  course: { id: string; name: string; code: string };
-  hall: { id: string; name: string; building: string };
-  group: { id: string; name: string };
+interface ScheduleSlot extends TimeSlot {
+  slotType: string;
+  label: string | null;
+  location: string | null;
 }
 
 interface AppointmentSlot extends TimeSlot {
@@ -35,17 +54,24 @@ interface AppointmentSlot extends TimeSlot {
 
 interface DayAvailability {
   day: string;
-  teaching: TeachingSlot[];
+  schedule: ScheduleSlot[];
   appointments: AppointmentSlot[];
   freeSlots: TimeSlot[];
 }
 
 const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const ACCENT_COLORS = ['blue', 'emerald', 'violet', 'amber', 'rose', 'cyan'] as const;
+
+function getAccentColor(id: string): (typeof ACCENT_COLORS)[number] {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash << 5) - hash + id.charCodeAt(i);
+  return ACCENT_COLORS[Math.abs(hash) % ACCENT_COLORS.length];
+}
 const DAY_SHORT: Record<string, string> = {
   MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thu', FRIDAY: 'Fri',
 };
 
-const HOUR_SLOTS = Array.from({ length: 10 }, (_, i) => i + 8); // 8–17
+const HOUR_SLOTS = Array.from({ length: 10 }, (_, i) => i + 8); // 8-17
 
 function formatTime(t: string): string {
   const [h, m] = t.split(':');
@@ -79,15 +105,21 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
   }
 
   for (const dayData of weekly) {
-    for (const slot of dayData.teaching) {
+    for (const slot of dayData.schedule || []) {
       const startH = Math.floor(timeToMinutes(slot.startTime) / 60);
       const endH = Math.ceil(timeToMinutes(slot.endTime) / 60);
       for (let h = startH; h < endH && h <= 17; h++) {
         if (h >= 8) {
           grid[dayData.day][h] = {
             type: 'teaching',
-            label: slot.course.code,
-            detail: `${slot.course.name}\n${slot.hall.name} (${slot.hall.building})\n${slot.group.name}`,
+            label: slot.label || (slot.slotType === 'BUSY' ? 'Busy' : 'Teaching'),
+            detail: [
+              slot.label,
+              slot.location,
+              `${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`,
+            ]
+              .filter(Boolean)
+              .join('\n'),
           };
         }
       }
@@ -100,7 +132,7 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
           grid[dayData.day][h] = {
             type: 'appointment',
             label: appt.status === 'PENDING' ? 'Pending' : 'Booked',
-            detail: `Appointment with ${appt.studentName}\n${formatTime(appt.startTime)} – ${formatTime(appt.endTime)}`,
+            detail: `Appointment with ${appt.studentName}\n${formatTime(appt.startTime)} - ${formatTime(appt.endTime)}`,
           };
         }
       }
@@ -113,6 +145,7 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
 export default function LecturerProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [lecturer, setLecturer] = useState<LecturerData | null>(null);
   const [weekly, setWeekly] = useState<DayAvailability[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,16 +189,27 @@ export default function LecturerProfile() {
   const grid = buildGrid(weekly);
 
   const totalFree = weekly.reduce((sum, d) => sum + d.freeSlots.length, 0);
-  const totalTeaching = weekly.reduce((sum, d) => sum + d.teaching.length, 0);
+  const totalBusy = weekly.reduce((sum, d) => sum + (d.schedule?.length ?? 0), 0);
 
   return (
     <div className="lecprof-page">
-      <button className="btn btn-secondary btn-sm lecprof-back" onClick={() => navigate('/lecturers')}>
-        <ArrowLeft size={16} /> Back to Directory
-      </button>
+      <div className="lecprof-nav">
+        <button className="btn btn-secondary btn-sm" onClick={() => navigate('/lecturers')}>
+          <ArrowLeft size={16} /> Back to Directory
+        </button>
+        {user?.role === 'STUDENT' && lecturer.bookable !== false && (
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`/appointments/book/${id}`)}
+          >
+            Book Appointment
+          </button>
+        )}
+      </div>
 
-      {/* Profile card */}
+      {/* Profile card - accent color varies per lecturer for visual distinction */}
       <div className="lecprof-card">
+        <div className={`lecprof-card-accent ${getAccentColor(lecturer.id)}`} />
         <div className="lecprof-avatar">
           {lecturer.profileImage ? (
             <img src={`/uploads/avatars/${lecturer.profileImage}`} alt="" />
@@ -177,29 +221,36 @@ export default function LecturerProfile() {
         </div>
         <div className="lecprof-info">
           <h1>{lecturer.firstName} {lecturer.lastName}</h1>
+          {lecturer.designation && (
+            <p className="lecprof-designation">{lecturer.designation}</p>
+          )}
           <div className="lecprof-meta">
-            <span><Mail size={14} /> {lecturer.email}</span>
+            {lecturer.timetableCode && (
+              <span>
+                <BookOpen size={14} /> Timetable code: {lecturer.timetableCode}
+                {lecturer.derivedFromName ? ' (from name initials)' : ''}
+              </span>
+            )}
+            {lecturer.email && <span><Mail size={14} /> {lecturer.email}</span>}
             {lecturer.phone && <span><Phone size={14} /> {lecturer.phone}</span>}
             {lecturer.department && (
               <span><BookOpen size={14} /> {lecturer.department.name}</span>
             )}
             {lecturer.office && (
-              <span><MapPin size={14} /> {lecturer.office.building}, Room {lecturer.office.roomNumber}, Floor {lecturer.office.floor}</span>
+              <span><MapPin size={14} /> Office: {lecturer.office.building}, Room {lecturer.office.roomNumber}, Floor {lecturer.office.floor}</span>
+            )}
+            {lecturer.teachingHalls && lecturer.teachingHalls.length > 0 && (
+              <span>
+                <Building size={14} /> Places:{' '}
+                {lecturer.teachingHalls.map((h) => `${h.name} (${h.building})`).join(' · ')}
+              </span>
             )}
           </div>
-          {lecturer.courses.length > 0 && (
-            <div className="lecprof-courses">
-              <Building size={14} />
-              {lecturer.courses.map((c) => (
-                <span key={c.id} className="lecprof-course-badge">{c.code}</span>
-              ))}
-            </div>
-          )}
         </div>
         <div className="lecprof-stats">
           <div className="lecprof-stat">
-            <span className="lecprof-stat-num">{totalTeaching}</span>
-            <span className="lecprof-stat-label">Classes/week</span>
+            <span className="lecprof-stat-num">{totalBusy}</span>
+            <span className="lecprof-stat-label">Busy blocks/week</span>
           </div>
           <div className="lecprof-stat">
             <span className="lecprof-stat-num free">{totalFree}</span>
@@ -213,7 +264,7 @@ export default function LecturerProfile() {
         <h2>Weekly Availability</h2>
         <div className="lecprof-legend">
           <span className="lecprof-legend-item"><span className="lecprof-dot free" /> Free</span>
-          <span className="lecprof-legend-item"><span className="lecprof-dot teaching" /> Teaching</span>
+          <span className="lecprof-legend-item"><span className="lecprof-dot teaching" /> Unavailable</span>
           <span className="lecprof-legend-item"><span className="lecprof-dot appointment" /> Booked</span>
         </div>
 
@@ -227,8 +278,8 @@ export default function LecturerProfile() {
 
             {/* Hour rows */}
             {HOUR_SLOTS.map((h) => (
-              <>
-                <div key={`label-${h}`} className="lecprof-grid-hour">
+              <React.Fragment key={h}>
+                <div className="lecprof-grid-hour">
                   {formatTime(`${String(h).padStart(2, '0')}:00`)}
                 </div>
                 {DAYS.map((d) => {
@@ -246,7 +297,7 @@ export default function LecturerProfile() {
                     </div>
                   );
                 })}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -264,7 +315,7 @@ export default function LecturerProfile() {
               ) : (
                 dayData.freeSlots.map((fs, i) => (
                   <span key={i} className="ha-slot-badge free">
-                    {formatTime(fs.startTime)} – {formatTime(fs.endTime)}
+                    {formatTime(fs.startTime)} - {formatTime(fs.endTime)}
                   </span>
                 ))
               )}

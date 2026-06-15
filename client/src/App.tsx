@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from '@store/authStore';
 import Layout from '@components/Layout';
@@ -9,16 +9,46 @@ import Register from '@pages/Register';
 import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
 import AdminDashboard from '@pages/admin/AdminDashboard';
+import AdminApprovals from '@pages/admin/AdminApprovals';
+import UserManagement from '@pages/admin/UserManagement';
 import TimetableManagement from '@pages/admin/TimetableManagement';
 import GroupManagement from '@pages/admin/GroupManagement';
 import HallManagement from '@pages/admin/HallManagement';
 import OfficeManagement from '@pages/admin/OfficeManagement';
-import BuildingManagement from '@pages/admin/BuildingManagement';
-import MarkerManagement from '@pages/admin/MarkerManagement';
-import MyTimetable from '@pages/MyTimetable';
+import IndoorNavigationAdmin from '@pages/admin/IndoorNavigationAdmin';
+import SimpleIndoorGuide from '@pages/SimpleIndoorGuide';
+import TimetableRoute from '@components/TimetableRoute';
+import LecturerMySchedule from '@pages/LecturerMySchedule';
 import HallAvailability from '@pages/HallAvailability';
 import LecturerDirectory from '@pages/LecturerDirectory';
 import LecturerProfile from '@pages/LecturerProfile';
+import Appointments from '@pages/Appointments';
+import BookAppointment from '@pages/BookAppointment';
+import Notifications from '@pages/Notifications';
+import GuidedMap from '@pages/GuidedMap';
+import VoiceAssistant from '@pages/VoiceAssistant';
+
+/** Preserve query params when redirecting legacy /map links to /navigate. */
+function MapLegacyRedirect() {
+  const [searchParams] = useSearchParams();
+  const buildingId = searchParams.get('buildingId');
+  const label =
+    searchParams.get('q') ||
+    searchParams.get('destination') ||
+    searchParams.get('guide');
+  const next = new URLSearchParams();
+  if (buildingId) next.set('buildingId', buildingId);
+  if (label) next.set('q', label);
+  const qs = next.toString();
+  return <Navigate to={qs ? `/navigate?${qs}` : '/navigate'} replace />;
+}
+
+/** Multi-leg “today” keeps Guided Map; other /map/guide links go to /navigate. */
+function MapGuideEntry() {
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('today') === '1') return <GuidedMap />;
+  return <MapLegacyRedirect />;
+}
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, getMe } = useAuthStore();
@@ -29,8 +59,8 @@ function AppRoutes() {
 
   if (isLoading) {
     return (
-      <div className="loading-screen">
-        <div className="spinner" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-slate-500">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--color-primary)]" />
         <p>Loading LECSTU...</p>
       </div>
     );
@@ -38,7 +68,6 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public routes */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -48,7 +77,6 @@ function AppRoutes() {
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
       />
 
-      {/* Protected routes inside Layout */}
       <Route
         element={
           <ProtectedRoute>
@@ -59,7 +87,6 @@ function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* Admin-only routes */}
         <Route
           path="/admin"
           element={
@@ -69,10 +96,18 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/admin/approvals"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminApprovals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/users"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <PlaceholderPage title="User Management" phase="3.5" />
+              <UserManagement />
             </ProtectedRoute>
           }
         />
@@ -117,35 +152,42 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/admin/buildings"
+          path="/admin/navigation"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <BuildingManagement />
+              <IndoorNavigationAdmin />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin/markers"
-          element={
-            <ProtectedRoute roles={['ADMIN']}>
-              <MarkerManagement />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin/buildings" element={<Navigate to="/admin/navigation" replace />} />
+        <Route path="/admin/markers" element={<Navigate to="/admin/navigation" replace />} />
+        <Route path="/admin/indoor-markers" element={<Navigate to="/admin/navigation" replace />} />
+        <Route path="/admin/indoor-nav" element={<Navigate to="/admin/navigation" replace />} />
+        <Route path="/admin/indoor-nav/graph" element={<Navigate to="/admin/navigation" replace />} />
 
-        {/* User-facing pages */}
-        <Route path="/timetable" element={<MyTimetable />} />
+        <Route path="/timetable" element={<TimetableRoute />} />
+        <Route
+          path="/lecturer/schedule"
+          element={
+            <ProtectedRoute roles={['LECTURER']}>
+              <LecturerMySchedule />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/halls/availability" element={<HallAvailability />} />
         <Route path="/lecturers" element={<LecturerDirectory />} />
         <Route path="/lecturers/:id" element={<LecturerProfile />} />
-        <Route path="/appointments" element={<PlaceholderPage title="Appointments" phase="5" />} />
-        <Route path="/assistant" element={<PlaceholderPage title="AI Assistant" phase="8" />} />
-        <Route path="/map" element={<PlaceholderPage title="Campus Map" phase="5" />} />
-        <Route path="/notifications" element={<PlaceholderPage title="Notifications" phase="6" />} />
+        <Route path="/appointments" element={<Appointments />} />
+        <Route path="/appointments/book/:lecturerId" element={<BookAppointment />} />
+        <Route path="/assistant" element={<VoiceAssistant />} />
+        <Route path="/navigate" element={<SimpleIndoorGuide />} />
+        <Route path="/map" element={<MapLegacyRedirect />} />
+        <Route path="/map/scan" element={<Navigate to="/navigate" replace />} />
+        <Route path="/map/guide" element={<MapGuideEntry />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<PlaceholderPage title="Settings" phase="6" />} />
       </Route>
 
-      {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
@@ -153,9 +195,9 @@ function AppRoutes() {
 
 function PlaceholderPage({ title, phase }: { title: string; phase: string }) {
   return (
-    <div className="placeholder-page">
-      <h2>{title}</h2>
-      <p>This feature will be implemented in Phase {phase}.</p>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center text-center text-slate-500">
+      <h2 className="mb-2 text-2xl text-slate-700">{title}</h2>
+      <p>This feature is under development.</p>
     </div>
   );
 }

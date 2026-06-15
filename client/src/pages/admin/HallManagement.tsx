@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import api from '@services/api';
+import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
 import DataTable from '@components/DataTable';
 import Modal from '@components/Modal';
@@ -36,7 +36,7 @@ export default function HallManagement() {
     try {
       const res = await api.get('/admin/halls');
       setHalls(res.data.data);
-    } catch { showToast('error', 'Failed to load halls'); }
+    } catch (err) { showApiErrorToast(err, 'Failed to load halls'); }
     finally { setLoading(false); }
   }, []);
 
@@ -82,7 +82,7 @@ export default function HallManagement() {
       setFormOpen(false);
       fetchHalls();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to save');
+      showApiErrorToast(err, 'Failed to save');
     } finally { setSaving(false); }
   };
 
@@ -95,7 +95,7 @@ export default function HallManagement() {
       setDeleteTarget(null);
       fetchHalls();
     } catch (err: any) {
-      showToast('error', err.response?.data?.message || 'Failed to delete');
+      showApiErrorToast(err, 'Failed to delete');
     } finally { setDeleting(false); }
   };
 
@@ -108,7 +108,7 @@ export default function HallManagement() {
       key: 'equipment', label: 'Equipment',
       render: (r: Hall) => r.equipment.length > 0
         ? <div className="equip-tags">{r.equipment.map((e) => <span key={e} className="equip-tag">{e}</span>)}</div>
-        : '—',
+        : '-',
     },
     {
       key: 'isActive', label: 'Status',

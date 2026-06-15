@@ -1,4 +1,7 @@
+import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '@store/authStore';
+import api from '@services/api';
 import {
   Calendar,
   Users,
@@ -9,8 +12,129 @@ import {
   BarChart3,
   Clock,
 } from 'lucide-react';
+import TodayOnCampus from '@components/TodayOnCampus';
+import IndoorNavigationPanel from '@components/IndoorNavigationPanel';
 
-const roleCards: Record<string, { title: string; desc: string; icon: React.ReactNode; color: string }[]> = {
+const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const DAY_LABELS: Record<string, string> = {
+  MONDAY: 'Monday',
+  TUESDAY: 'Tuesday',
+  WEDNESDAY: 'Wednesday',
+  THURSDAY: 'Thursday',
+  FRIDAY: 'Friday',
+};
+
+interface SlotData {
+  id: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  year?: number;
+  month?: number;
+  week?: number;
+  course: { name: string; code: string };
+}
+
+function getCurrentDay(): string {
+  const jsDay = new Date().getDay();
+  if (jsDay >= 1 && jsDay <= 5) return DAYS[jsDay - 1];
+  return '';
+}
+
+function getCurrentTimeStr(): string {
+  const now = new Date();
+  return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':');
+  const hr = parseInt(h, 10);
+  const suffix = hr >= 12 ? 'PM' : 'AM';
+  const display = hr > 12 ? hr - 12 : hr === 0 ? 12 : hr;
+  return `${display}:${m} ${suffix}`;
+}
+
+function getPeriodKey(s: SlotData): string {
+  const y = s.year ?? 2026;
+  const m = s.month ?? 1;
+  const w = s.week ?? 1;
+  return `${y}-${m}-${w}`;
+}
+
+function getAvailablePeriods(flat: SlotData[]): string[] {
+  const seen = new Set<string>();
+  for (const s of flat) {
+    seen.add(getPeriodKey(s));
+  }
+  return Array.from(seen);
+}
+
+function filterByPeriod(flat: SlotData[], periodKey: string): SlotData[] {
+  return flat.filter((s) => getPeriodKey(s) === periodKey);
+}
+
+function computeNextLectureAndTodayCount(flat: SlotData[]): { nextLecture: string; todayCount: number } {
+  const today = getCurrentDay();
+  const nowStr = getCurrentTimeStr();
+  if (!today || flat.length === 0) {
+    return { nextLecture: 'No classes scheduled', todayCount: 0 };
+  }
+  const periods = getAvailablePeriods(flat);
+  const periodKey = periods.sort((a, b) => {
+    const [ay, am, aw] = a.split('-').map(Number);
+    const [by, bm, bw] = b.split('-').map(Number);
+    if (ay !== by) return by - ay;
+    if (am !== bm) return bm - am;
+    return bw - aw;
+  })[0];
+  const filtered = periodKey ? filterByPeriod(flat, periodKey) : flat;
+  const todaySlots = filtered
+    .filter((s) => s.dayOfWeek === today)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const todayCount = todaySlots.length;
+  const nextSlot = todaySlots.find((s) => s.startTime > nowStr);
+  if (nextSlot) {
+    return {
+      nextLecture: `${nextSlot.course.name} - ${formatTime(nextSlot.startTime)}`,
+      todayCount,
+    };
+  }
+  const dayIdx = DAYS.indexOf(today);
+  const upcomingDays = DAYS.slice(dayIdx + 1).concat(DAYS.slice(0, dayIdx));
+  for (const day of upcomingDays) {
+    const daySlots = filtered
+      .filter((s) => s.dayOfWeek === day)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    if (daySlots.length > 0) {
+      const first = daySlots[0];
+      return {
+        nextLecture: `${first.course.name} - ${DAY_LABELS[day]} ${formatTime(first.startTime)}`,
+        todayCount,
+      };
+    }
+  }
+  return {
+    nextLecture: todayCount > 0 ? 'No more classes today' : 'No classes scheduled',
+    todayCount,
+  };
+}
+
+function computeLecturerTodayCount(flat: SlotData[]): number {
+  const today = getCurrentDay();
+  if (!today) return 0;
+  const periods = getAvailablePeriods(flat);
+  const periodKey = periods.sort((a, b) => {
+    const [ay, am, aw] = a.split('-').map(Number);
+    const [by, bm, bw] = b.split('-').map(Number);
+    if (ay !== by) return by - ay;
+    if (am !== bm) return bm - am;
+    return bw - aw;
+  })[0];
+  const filtered = periodKey ? filterByPeriod(flat, periodKey) : flat;
+  return filtered.filter((s) => s.dayOfWeek === today).length;
+}
+
+const roleCardsBase: Record<string, { title: string; desc: string; icon: React.ReactNode; color: string }[]> = {
   ADMIN: [
     { title: 'Total Users', desc: '122 registered', icon: <Users size={24} />, color: '#3b82f6' },
     { title: 'Timetable Entries', desc: '30 scheduled', icon: <Calendar size={24} />, color: '#8b5cf6' },
@@ -21,54 +145,161 @@ const roleCards: Record<string, { title: string; desc: string; icon: React.React
     { title: 'My Classes Today', desc: '3 lectures', icon: <Calendar size={24} />, color: '#3b82f6' },
     { title: 'Appointments', desc: '2 pending', icon: <Users size={24} />, color: '#8b5cf6' },
     { title: 'AI Assistant', desc: 'Ask anything', icon: <MessageSquare size={24} />, color: '#10b981' },
-    { title: 'Office Hours', desc: '2:00 – 4:00 PM', icon: <Clock size={24} />, color: '#f59e0b' },
+    { title: 'Office Hours', desc: '2:00 - 4:00 PM', icon: <Clock size={24} />, color: '#f59e0b' },
   ],
   STUDENT: [
-    { title: 'Next Lecture', desc: 'Data Structures — 10:00 AM', icon: <GraduationCap size={24} />, color: '#3b82f6' },
-    { title: 'My Schedule', desc: '5 classes today', icon: <Calendar size={24} />, color: '#8b5cf6' },
+    { title: 'Next Lecture', desc: '-', icon: <GraduationCap size={24} />, color: '#3b82f6' },
+    { title: 'My Schedule', desc: '-', icon: <Calendar size={24} />, color: '#8b5cf6' },
     { title: 'AI Assistant', desc: 'Ask about campus', icon: <MessageSquare size={24} />, color: '#10b981' },
     { title: 'Analytics', desc: 'Attendance: 92%', icon: <BarChart3 size={24} />, color: '#f59e0b' },
   ],
 };
 
+const roleBadgeColors: Record<string, string> = {
+  ADMIN: 'bg-amber-100 text-amber-800',
+  LECTURER: 'bg-violet-100 text-violet-800',
+  STUDENT: 'bg-[var(--color-primary-light)] text-[var(--color-primary-hover)]',
+};
+
 export default function Dashboard() {
   const { user } = useAuthStore();
-  const cards = user ? roleCards[user.role] || [] : [];
+  const studentGroupId =
+    user?.role === 'STUDENT' ? user?.studentGroupMemberships?.[0]?.group?.id : undefined;
+  const [cards, setCards] = useState<{ title: string; desc: string; icon: React.ReactNode; color: string }[]>([]);
+
+  const fetchTimetable = useCallback(async () => {
+    if (!user) return;
+    const base = roleCardsBase[user.role] || [];
+    if (user.role === 'ADMIN' || (user.role !== 'STUDENT' && user.role !== 'LECTURER')) {
+      setCards(base);
+      return;
+    }
+    try {
+      const res = await api.get<{ success: boolean; data?: { flat?: SlotData[] } }>('/timetable/my');
+      const flat = res.data?.data?.flat ?? [];
+      if (user.role === 'STUDENT') {
+        const { nextLecture, todayCount } = computeNextLectureAndTodayCount(flat);
+        setCards(
+          base.map((c) => {
+            if (c.title === 'Next Lecture') return { ...c, desc: nextLecture };
+            if (c.title === 'My Schedule') return { ...c, desc: `${todayCount} class${todayCount !== 1 ? 'es' : ''} today` };
+            return c;
+          })
+        );
+      } else if (user.role === 'LECTURER') {
+        const todayCount = computeLecturerTodayCount(flat);
+        setCards(
+          base.map((c) => {
+            if (c.title === 'My Classes Today') return { ...c, desc: `${todayCount} lecture${todayCount !== 1 ? 's' : ''}` };
+            return c;
+          })
+        );
+      } else {
+        setCards(base);
+      }
+    } catch {
+      setCards(base);
+    }
+  }, [user?.id, user?.role, studentGroupId]);
+
+  useEffect(() => {
+    if (!user) {
+      setCards([]);
+      return;
+    }
+    const base = roleCardsBase[user.role] || [];
+    if (user.role === 'ADMIN') {
+      setCards(base);
+      return;
+    }
+    setCards(base);
+    if (user.role === 'STUDENT' || user.role === 'LECTURER') {
+      fetchTimetable();
+    }
+  }, [user, fetchTimetable]);
+
+  useEffect(() => {
+    const onTimetableUpdated = () => fetchTimetable();
+    window.addEventListener('timetable-updated', onTimetableUpdated);
+    return () => window.removeEventListener('timetable-updated', onTimetableUpdated);
+  }, [fetchTimetable]);
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>Welcome back, {user?.firstName}!</h1>
-        <p className="dashboard-subtitle">
+    <div>
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.firstName}!</h1>
+        <p className="mt-1 text-slate-500">
           {user?.role === 'ADMIN' && 'System administration overview'}
-          {user?.role === 'LECTURER' && 'Here\'s your day at a glance'}
-          {user?.role === 'STUDENT' && 'Here\'s what\'s happening today'}
+          {user?.role === 'LECTURER' && "Here's your day at a glance"}
+          {user?.role === 'STUDENT' && "Here's what's happening today"}
         </p>
       </div>
 
-      <div className="dashboard-grid">
-        {cards.map((card) => (
-          <div key={card.title} className="dash-card">
-            <div className="dash-card-icon" style={{ backgroundColor: card.color + '18', color: card.color }}>
-              {card.icon}
+      <div className="mb-8 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+        {cards.map((card) => {
+          const cardBody = (
+            <>
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: card.color + '18', color: card.color }}
+              >
+                {card.icon}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700">{card.title}</h3>
+                <p className="mt-0.5 text-xs text-slate-500">{card.desc}</p>
+              </div>
+            </>
+          );
+          const className =
+            'flex items-center gap-4 rounded-lg bg-white p-5 shadow-sm transition-shadow hover:shadow-md no-underline text-inherit';
+          if (user?.role === 'STUDENT' && card.title === 'AI Assistant') {
+            return (
+              <Link key={card.title} to="/navigate" className={className}>
+                {cardBody}
+              </Link>
+            );
+          }
+          return (
+            <div key={card.title} className={className}>
+              {cardBody}
             </div>
-            <div className="dash-card-body">
-              <h3>{card.title}</h3>
-              <p>{card.desc}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="dashboard-info">
-        <div className="info-card">
-          <h3>Your Profile</h3>
-          <table className="info-table">
+      {user?.role === 'STUDENT' && (
+        <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <TodayOnCampus />
+          <IndoorNavigationPanel />
+        </div>
+      )}
+
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-base font-bold text-slate-800">Your Profile</h3>
+          <table className="w-full border-collapse">
             <tbody>
-              <tr><td>Name</td><td>{user?.firstName} {user?.lastName}</td></tr>
-              <tr><td>Email</td><td>{user?.email}</td></tr>
-              <tr><td>Role</td><td><span className={`badge badge-${user?.role?.toLowerCase()}`}>{user?.role}</span></td></tr>
-              <tr><td>Department</td><td>{user?.department?.name || '—'}</td></tr>
+              <tr>
+                <td className="w-[120px] border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Name</td>
+                <td className="border-b border-slate-100 py-2 text-sm">{user?.firstName} {user?.lastName}</td>
+              </tr>
+              <tr>
+                <td className="border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Email</td>
+                <td className="border-b border-slate-100 py-2 text-sm">{user?.email}</td>
+              </tr>
+              <tr>
+                <td className="border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Role</td>
+                <td className="border-b border-slate-100 py-2 text-sm">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${roleBadgeColors[user?.role || ''] || 'bg-slate-200 text-slate-600'}`}>
+                    {user?.role}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2 text-sm font-medium text-slate-500">Department</td>
+                <td className="py-2 text-sm">{user?.department?.name || '-'}</td>
+              </tr>
             </tbody>
           </table>
         </div>

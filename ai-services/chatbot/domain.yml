@@ -1,0 +1,106 @@
+# LECSTU Chatbot Domain — Phase 8.1
+# Intents, entities, slots, responses, and actions
+
+version: "3.1"
+
+intents:
+  - ask_timetable
+  - ask_hall_availability
+  - ask_lecturer_availability
+  - book_appointment
+  - cancel_appointment
+  - ask_directions
+  - ask_todays_classes
+  - guide_to_lecture_room
+  - guide_to_next_class
+  - ask_office_location
+  - greeting
+  - goodbye
+  - fallback
+  - out_of_scope
+
+entities:
+  - course_name
+  - lecturer_name
+  - hall_name
+  - day
+  - time
+  - building
+
+slots:
+  course_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: course_name
+  lecturer_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: lecturer_name
+  hall_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: hall_name
+  day:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: day
+  time:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: time
+  building:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: building
+
+responses:
+  utter_greeting:
+    - text: "Hello! I can help with timetables, today's classes on campus, indoor walking directions to lecture rooms, hall availability, and appointments."
+  utter_goodbye:
+    - text: "Goodbye! Have a great day."
+  utter_fallback:
+    - text: "I'm not sure I understood. Could you rephrase that? I can help with timetables, hall availability, appointments, and campus directions."
+  utter_out_of_scope:
+    - text: "I'm focused on academic help—timetables, halls, appointments, and campus info. Is there something in that area I can help with?"
+  utter_ask_timetable:
+    - text: "Let me check your timetable for you."
+  utter_ask_hall_availability:
+    - text: "Checking hall availability for you."
+  utter_ask_lecturer_availability:
+    - text: "Checking lecturer availability."
+  utter_book_appointment:
+    - text: "I'll help you book an appointment."
+  utter_cancel_appointment:
+    - text: "I'll help you cancel that appointment."
+  utter_ask_directions:
+    - text: "Finding directions for you."
+  utter_ask_todays_classes:
+    - text: "Checking your classes for today."
+  utter_guide_to_room:
+    - text: "Finding the walking route to that room."
+  utter_guide_to_next_class:
+    - text: "Finding your next class and how to get there."
+  utter_ask_office_location:
+    - text: "Looking up the office location."
+
+actions:
+  - action_query_timetable
+  - action_check_hall_availability
+  - action_check_lecturer_availability
+  - action_book_appointment
+  - action_cancel_appointment
+  - action_get_directions
+  - action_today_on_campus
+  - action_guide_to_room
+  - action_guide_to_next_class
+  - action_get_office_location
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

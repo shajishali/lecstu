@@ -3,6 +3,7 @@ import { authenticate, authorize } from '../middleware/auth';
 import { uploadCsv } from '../middleware/upload';
 import {
   listGroups,
+  listPathways,
   getGroup,
   createGroup,
   updateGroup,
@@ -18,6 +19,7 @@ const router = Router();
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 
+router.get('/pathways', listPathways);
 router.get('/', listGroups);
 router.get('/:id', getGroup);
 router.post('/', createGroup);

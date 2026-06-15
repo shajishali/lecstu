@@ -1,0 +1,81 @@
+{
+  "utterances": [
+    {
+      "audio_path": "../audio/ta/S01/ta_timetable_010.wav",
+      "text": "புதன்கிழமை கால்குலஸ் எந்த குழுவுக்கு?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_004.wav",
+      "text": "I need to discuss my project with Dr. Tennekoon",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_timetable_005.wav",
+      "text": "What are today's lectures for Group A?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_003.wav",
+      "text": "வானிலை எப்படி உள்ளது?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_004.wav",
+      "text": "ப்ரொஜெக்டர் உள்ள மண்டபங்களை காட்டுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_008.wav",
+      "text": "අද දහවල් හිස් සාකච්ඡා කාමර තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_appointments_003.wav",
+      "text": "ප්රොෆෙසර් චෙන් සමඟ ඉඩ පොයින්න",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_halls_010.wav",
+      "text": "மண்டபம் சி அடுத்து எப்போது கிடைக்கும்?",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_009.wav",
+      "text": "කුමන ගොඩනැගිල්ලට හිස් හෝල් තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_001.wav",
+      "text": "හෝල් බී පයින් දෙකට ලබා ගත හැකිද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_010.wav",
+      "text": "When is Hall C next available?",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_appointments_006.wav",
+      "text": "Schedule an appointment with my advisor",
+      "language": "en"
+    },
+    {
+      "audio_path": "../audio/ta/S01/ta_general_002.wav",
+      "text": "வளாக வரைபடத்தை காட்டுங்கள்",
+      "language": "ta"
+    },
+    {
+      "audio_path": "../audio/si/S01/si_halls_005.wav",
+      "text": "හෝල් ඒ පයින් තුනට පිරී තිබේද?",
+      "language": "si"
+    },
+    {
+      "audio_path": "../audio/en/S01/en_halls_002.wav",
+      "text": "Which halls are free right now?",
+      "language": "en"
+    }
+  ],
+  "version": "1.0",
+  "source": "LECSTU Phase 7.6"
+}

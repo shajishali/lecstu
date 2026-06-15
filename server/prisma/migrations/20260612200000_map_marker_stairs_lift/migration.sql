@@ -1,0 +1,3 @@
+DO $$ BEGIN
+  ALTER TYPE "MapMarkerType" ADD VALUE 'STAIRS_LIFT';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

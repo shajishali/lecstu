@@ -19,6 +19,9 @@ asr:
     google_speech:
       api_version: "v1"
       # credentials: set GOOGLE_APPLICATION_CREDENTIALS env var
+    azure_speech:
+      # credentials: set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION env vars
+      # see ai-services/asr/README.md for activation guide
   languages: ["en", "ta", "si"]      # English, Tamil, Sinhala
   audio_format: "wav"
   sample_rate: 16000

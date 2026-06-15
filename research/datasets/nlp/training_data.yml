@@ -1,0 +1,349 @@
+version: "3.1"
+nlu:
+- intent: ask_timetable
+  examples: |
+    - Show me my timetable
+    - What's my schedule for [Wednesday](day)?
+    - What lectures are scheduled [today](day)?
+    - Do I have any classes [today](day)?
+    - Do I have [Networks](course_name) [tomorrow](day)?
+    - Timetable for [next week](day)
+    - My classes for [today](day)
+    - Tell me my schedule for [Tuesday](day)
+    - When is [Operating Systems](course_name)?
+    - When is my [Data Structures](course_name) class?
+    - Check my schedule for [Monday](day)
+    - What lectures do I have [tomorrow](day)?
+    - I need to know my timetable for [Monday](day)
+    - What do I have [tomorrow](day)?
+    - What's my timetable for [Monday](day)?
+    - What classes do I have today?
+    - My timetable for [Friday](day) please
+    - Is there [Data Structures](course_name) [today](day)?
+    - When do I have [Database Systems](course_name)?
+    - Schedule for [Wednesday](day)
+    - When is [CS201](course_name)?
+    - When is my next [Database](course_name) lecture?
+    - What time is [Software Engineering](course_name)?
+    - What's on my timetable?
+    - When do I have [AI](course_name)?
+    - When is my next lecture?
+- intent: ask_lecturer_availability
+  examples: |
+    - Does [Dr. Perera](lecturer_name) have time [Thursday](day)?
+    - [Dr. Perera](lecturer_name) when free?
+    - Lecturer availability for [Dr. Dias](lecturer_name)
+    - When can I book [Dr. Dias](lecturer_name)?
+    - Check [Dr. Dias](lecturer_name)'s schedule
+    - Is [Dr. Perera](lecturer_name) available?
+    - Can I meet [Dr. Dias](lecturer_name) on [Monday](day)?
+    - Check [Dr. Chandrasena](lecturer_name) availability
+    - When is [Dr. Rajapaksha](lecturer_name) available?
+    - Is [Dr. Perera](lecturer_name) free [Wednesday](day)?
+    - Is [Dr. Chandrasena](lecturer_name) free [Tuesday](day)?
+    - Is [Dr. Tennekoon](lecturer_name) in [Monday](day)?
+    - Is [Dr. Chandrasena](lecturer_name) available [today](day)?
+    - Lecturer [Dr. Dias](lecturer_name) availability
+    - Is [Dr. Rajapaksha](lecturer_name) free?
+    - Available times for [Dr. Rajapaksha](lecturer_name)
+    - Can I see [Dr. Rajapaksha](lecturer_name) [Friday](day)?
+    - Is [Dr. Dias](lecturer_name) free [tomorrow](day)?
+    - Can I meet [Dr. Chandrasena](lecturer_name) [tomorrow](day)?
+    - Lecturer free time [Dr. Rajapaksha](lecturer_name)
+    - [Dr. Perera](lecturer_name) free slots
+    - When does [Dr. Tennekoon](lecturer_name) have office hours?
+    - [Dr. Dias](lecturer_name) when can I meet?
+    - When can I see [Dr. Perera](lecturer_name)?
+    - Lecturer availability [Dr. Rajapaksha](lecturer_name) [Thursday](day)
+    - Is [Dr. Tennekoon](lecturer_name) available [Tuesday](day)?
+- intent: book_appointment
+  examples: |
+    - I want to schedule with [Dr. Tennekoon](lecturer_name) [tomorrow](day)
+    - Book with [Dr. Tennekoon](lecturer_name) [Monday](day)
+    - Book a slot with [Dr. Perera](lecturer_name) [Thursday](day)
+    - Schedule appointment [Dr. Rajapaksha](lecturer_name)
+    - Want to meet [Dr. Tennekoon](lecturer_name) [tomorrow](day)
+    - I want to book [Dr. Chandrasena](lecturer_name) [Thursday](day)
+    - Book [Dr. Dias](lecturer_name) [Monday](day) [3pm](time)
+    - I want to book an appointment with [Dr. Tennekoon](lecturer_name)
+    - Can I book [Dr. Rajapaksha](lecturer_name) at [3pm](time)?
+    - Book meeting [Dr. Dias](lecturer_name)
+    - I want an appointment [Dr. Rajapaksha](lecturer_name) [Friday](day)
+    - Can I book [Dr. Perera](lecturer_name) [Friday](day)?
+    - Appointment with [Dr. Rajapaksha](lecturer_name) at [2pm](time)
+    - Appointment booking [Dr. Chandrasena](lecturer_name)
+    - I need appointment [Dr. Rajapaksha](lecturer_name) at [1pm](time)
+    - Book an appointment with [Dr. Dias](lecturer_name) at [2pm](time)
+    - I need to book [Dr. Chandrasena](lecturer_name) [Tuesday](day)
+    - Schedule slot [Dr. Perera](lecturer_name) [Tuesday](day)
+    - Book me with [Dr. Perera](lecturer_name) [Tuesday](day) at [10am](time)
+    - Schedule [Dr. Perera](lecturer_name) [Wednesday](day) [10am](time)
+    - Schedule a meeting with [Dr. Rajapaksha](lecturer_name) [tomorrow](day)
+    - Can I schedule with [Dr. Perera](lecturer_name) at [4pm](time)?
+    - Schedule meeting [Dr. Dias](lecturer_name) [Wednesday](day)
+    - I'd like to book a slot with [Dr. Dias](lecturer_name)
+    - I'd like to see [Dr. Dias](lecturer_name) on [Monday](day) at [11am](time)
+    - Make an appointment with [Dr. Rajapaksha](lecturer_name)
+    - Book me a meeting with [Dr. Dias](lecturer_name) [Wednesday](day)
+- intent: ask_hall_availability
+  examples: |
+    - Hall status for [Friday](day)
+    - Check availability [Hall A](hall_name) [Monday](day)
+    - Can [Hall B](hall_name) be used at [5pm](time)?
+    - Which halls are free [Wednesday](day)?
+    - Is [Hall C](hall_name) free?
+    - Free halls for [Thursday](day) at [2pm](time)
+    - [Hall C](hall_name) free at [2pm](time)?
+    - Check [Hall D](hall_name) availability
+    - Which halls can I use [today](day)?
+    - Is [Main Hall](hall_name) available [tomorrow](day)?
+    - Is [Hall A](hall_name) booked at [11am](time)?
+    - Any halls free [Friday](day)?
+    - Is [Hall B](hall_name) free at [2pm](time)?
+    - Free lecture halls [Wednesday](day) at [4pm](time)
+    - Check if [Hall B](hall_name) is free
+    - Are any halls available at [2pm](time)?
+    - [Hall B](hall_name) at [3pm](time) - is it free?
+    - Can I use [Hall C](hall_name) at [4pm](time)?
+    - Any available halls at [10am](time)?
+    - Which hall is free at [3pm](time)?
+    - Hall booking status for [Hall A](hall_name)
+    - Hall availability check
+    - Which halls are free now?
+    - Check availability for [Hall C](hall_name) at [3pm](time)
+    - Show me free halls [today](day)
+    - Check [Main Hall](hall_name) for [tomorrow](day)
+    - Which lecture halls are free now?
+- intent: cancel_appointment
+  examples: |
+    - Cancel booking with [Dr. Perera](lecturer_name)
+    - I'd like to cancel my meeting
+    - Please cancel appointment with [Dr. Rajapaksha](lecturer_name)
+    - Can I cancel my booking?
+    - I'd like to cancel appointment [Dr. Dias](lecturer_name)
+    - I need to cancel my appointment
+    - Cancel meeting with [Dr. Tennekoon](lecturer_name)
+    - Can you cancel my appointment with [Dr. Dias](lecturer_name)?
+    - Cancel my booking
+    - Cancel my slot with [Dr. Dias](lecturer_name)
+    - I want to cancel my appointment
+    - Cancel the appointment
+    - Cancel [Dr. Tennekoon](lecturer_name) booking
+    - Cancel appointment [Dr. Perera](lecturer_name)
+    - I need to cancel the appointment
+    - Cancel my appointment please
+    - Cancel [Dr. Chandrasena](lecturer_name) appointment
+    - I want to cancel [Dr. Rajapaksha](lecturer_name)
+    - Cancel [Dr. Rajapaksha](lecturer_name) meeting
+    - I need to cancel my meeting with [Dr. Rajapaksha](lecturer_name)
+    - Cancel the meeting
+    - Cancel that appointment
+    - I want to cancel my appointment with [Dr. Perera](lecturer_name)
+    - I'd like to cancel with [Dr. Tennekoon](lecturer_name)
+    - I need to cancel [Dr. Perera](lecturer_name)
+    - I need to cancel booking
+    - Cancel meeting please
+- intent: greeting
+  examples: |
+    - Hey how's it going
+    - Hello friend
+    - Evening
+    - Good morning
+    - Hello hi
+    - Hello
+    - Afternoon
+    - Hey there
+    - Good evening
+    - Hi
+    - Nice to meet you
+    - Hi again
+    - Good morning sir
+    - Hello there
+    - Morning
+    - Yo
+    - Hi ya
+    - Hi how are you
+    - Good day to you
+    - Hullo
+    - Hello how are you
+    - Good afternoon
+    - Wassup
+    - Heya
+    - Hello good afternoon
+    - Hi there
+    - Good day
+    - Howdy
+- intent: ask_todays_classes
+  examples: |
+    - What classes do I have today?
+    - Who are my lecturers today?
+    - Today on campus
+    - Show today's schedule
+- intent: guide_to_lecture_room
+  examples: |
+    - Guide me to [ELV ROOM](hall_name)
+    - How do I go to [Hall B](hall_name)?
+    - Take me to [Main Hall](hall_name)
+- intent: guide_to_next_class
+  examples: |
+    - Guide me to my next class
+    - Where is my next lecture?
+    - Next class directions
+- intent: ask_directions
+  examples: |
+    - [Engineering block](building) where?
+    - Get directions to [Admin block](building)
+    - Directions to [Engineering faculty](building)
+    - How to get to [CS building](building)?
+    - Where is [Engineering faculty](building)?
+    - Find [CS block](building) for me
+    - How do I get to [Engineering block](building)?
+    - Where's [Engineering block](building)?
+    - Where's the [Library](building)?
+    - Where can I find [CS building](building)?
+    - Find [Engineering faculty](building)
+    - Get me to [Engineering block](building)
+    - Directions to [CS building](building)
+    - Where is [Lab building](building)?
+    - Location [Library](building)
+    - Directions [Library](building)
+    - Where is [Main Hall](building)?
+    - [Main Hall](building) location please
+    - How to find [Main building](building)?
+    - How to reach [Computer Science building](building)?
+    - Directions for [Library](building)
+    - Where is [Admin block](building)?
+    - How to reach [Library](building)?
+    - Directions to [Library](building)
+    - How do I find [Main building](building)?
+    - [CS block](building) how to get there?
+    - Location of [CS block](building)
+    - Location of [Library](building)
+    - How do I go to [Engineering faculty](building)?
+- intent: ask_office_location
+  examples: |
+    - [Dr. Rajapaksha](lecturer_name) office please
+    - Where does [Dr. Dias](lecturer_name) have his office?
+    - Office [Dr. Perera](lecturer_name) where?
+    - Office [Dr. Tennekoon](lecturer_name)
+    - [Dr. Perera](lecturer_name) office
+    - [Dr. Rajapaksha](lecturer_name)'s office location
+    - Where is [Dr. Tennekoon](lecturer_name)'s office?
+    - Where is [Dr. Dias](lecturer_name) office?
+    - Where is [Dr. Perera](lecturer_name)'s office?
+    - [Dr. Perera](lecturer_name) office location
+    - Where is [Dr. Perera](lecturer_name)'s office?
+    - [Dr. Perera](lecturer_name)'s office
+    - Where is [Dr. Tennekoon](lecturer_name) office?
+    - Office location for [Dr. Rajapaksha](lecturer_name)
+    - [Dr. Rajapaksha](lecturer_name) office where is it?
+    - Where does [Dr. Rajapaksha](lecturer_name) work?
+    - Where does [Dr. Chandrasena](lecturer_name) sit?
+    - [Dr. Chandrasena](lecturer_name) where is office?
+    - Where does [Dr. Tennekoon](lecturer_name) sit?
+    - Where does [Dr. Perera](lecturer_name) sit?
+    - Office of [Dr. Dias](lecturer_name)
+    - Where's [Dr. Chandrasena](lecturer_name)'s office?
+    - Where does [Dr. Rajapaksha](lecturer_name) sit?
+    - Where's [Dr. Perera](lecturer_name) office?
+    - Office location [Dr. Chandrasena](lecturer_name)
+    - Office of [Dr. Tennekoon](lecturer_name) location
+    - Office of [Dr. Rajapaksha](lecturer_name)
+    - [Dr. Perera](lecturer_name) office location
+    - [Dr. Perera](lecturer_name) office where?
+- intent: fallback
+  examples: |
+    - Unclear
+    - I'm lost
+    - I didn't get that
+    - Come again
+    - What did you say
+    - Not clear
+    - Confused
+    - Could you explain
+    - Not following
+    - Repeat please
+    - Lost me
+    - Mmm
+    - What do you mean
+    - What was that
+    - I don't understand
+    - Can you say that again
+    - I didn't catch that
+    - What does that mean
+    - Hmm
+    - Pardon
+    - I'm confused
+    - Sorry?
+    - Eh
+    - Huh?
+    - Can you repeat
+    - Sorry lost you
+    - Could you rephrase
+    - Not sure what you mean
+    - Huh
+- intent: goodbye
+  examples: |
+    - Thanks a lot
+    - See ya
+    - Goodbye
+    - Thanks got it
+    - See you next time
+    - Thanks
+    - Cheers
+    - Alright thanks
+    - Thank you very much
+    - Ok bye
+    - Good night
+    - Ta
+    - Bye take care
+    - Great thanks
+    - See you
+    - Thank you got it
+    - Ok thank you
+    - See you tomorrow
+    - Thanks bye
+    - Alright bye
+    - Bye for now
+    - Thank you so much
+    - Bye bye
+    - Alright goodbye
+    - Got it thanks
+    - Bye
+    - Ok goodbye
+    - Goodbye for now
+    - That will be all thanks
+    - Thank you that's all
+    - Thank you bye
+- intent: out_of_scope
+  examples: |
+    - Random question
+    - What's the news today?
+    - What's the weather?
+    - How are you feeling?
+    - What's your name?
+    - What's the best restaurant?
+    - Who won the match?
+    - Who is the president?
+    - What's the exchange rate?
+    - Tell me a story
+    - What's 2 plus 2?
+    - Are you a robot?
+    - Can you dance?
+    - What can you do?
+    - What time is it in New York?
+    - Who invented the internet?
+    - Who's the richest person?
+    - Can you cook?
+    - What's the score?
+    - Tell me something interesting
+    - How old are you?
+    - Sing me a song
+    - What's the capital of France?
+    - What's the fastest car?
+    - What's the temperature?
+    - Do you like pizza?
+    - What's the population of Sri Lanka?
+    - Tell me about yourself
+    - Do you have a girlfriend?
+    - Play some music

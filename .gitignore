@@ -12,6 +12,9 @@ build/
 .env.local
 .env.*.local
 
+# API keys (service account JSON, etc.)
+keys/
+
 # IDE
 .vscode/
 .idea/
@@ -49,3 +52,10 @@ server/src/generated/
 # Models (large binary files)
 ai-services/*/models/*.bin
 ai-services/*/models/*.pt
+research/asr-finetuning/models/
+*.safetensors
+**/optimizer.pt
+
+# Rasa
+.rasa/cache/
+ai-services/chatbot/.rasa/cache/

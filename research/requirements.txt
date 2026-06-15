@@ -1,0 +1,8 @@
+# Research scripts (Phase 7.2, 7.3, 7.4)
+# Install: pip install -r requirements.txt
+
+pyyaml>=6.0
+gtts>=2.4.0
+scipy>=1.11.0
+matplotlib>=3.8.0
+numpy>=1.24.0

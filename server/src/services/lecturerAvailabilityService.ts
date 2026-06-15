@@ -1,14 +1,16 @@
 import prisma from '../config/database';
+import { isFetVirtualLecturerId } from './lecturerDirectoryService';
+import { getLecturerBusySlots } from './lecturerScheduleService';
 
 interface TimeSlot {
   startTime: string;
   endTime: string;
 }
 
-interface TeachingSlot extends TimeSlot {
-  course: { id: string; name: string; code: string };
-  hall: { id: string; name: string; building: string };
-  group: { id: string; name: string };
+interface ScheduleSlot extends TimeSlot {
+  slotType: string;
+  label: string | null;
+  location: string | null;
 }
 
 interface AppointmentSlot extends TimeSlot {
@@ -19,7 +21,8 @@ interface AppointmentSlot extends TimeSlot {
 
 export interface DayAvailability {
   day: string;
-  teaching: TeachingSlot[];
+  /** Lecturer-managed busy/teaching blocks (not from FET import) */
+  schedule: ScheduleSlot[];
   appointments: AppointmentSlot[];
   freeSlots: TimeSlot[];
 }
@@ -63,20 +66,21 @@ function computeFreeSlots(occupied: TimeSlot[]): TimeSlot[] {
   return free;
 }
 
-export async function getLecturerWeeklyAvailability(lecturerId: string): Promise<WeeklyAvailability> {
-  const timetableEntries = await prisma.masterTimetable.findMany({
-    where: { lecturerId, isActive: true },
-    select: {
-      dayOfWeek: true,
-      startTime: true,
-      endTime: true,
-      course: { select: { id: true, name: true, code: true } },
-      hall: { select: { id: true, name: true, building: true } },
-      group: { select: { id: true, name: true } },
-    },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-  });
+function getStartOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
+export async function getLecturerWeeklyAvailability(lecturerId: string): Promise<WeeklyAvailability> {
+  if (isFetVirtualLecturerId(lecturerId)) {
+    return DAYS.map((day) => ({ day, schedule: [], appointments: [], freeSlots: [] }));
+  }
+
+  const scheduleRows = await getLecturerBusySlots(lecturerId);
   const now = new Date();
   const startOfWeek = getStartOfWeek(now);
   const endOfWeek = new Date(startOfWeek);
@@ -85,7 +89,7 @@ export async function getLecturerWeeklyAvailability(lecturerId: string): Promise
   const appointments = await prisma.appointment.findMany({
     where: {
       lecturerId,
-      status: { in: ['ACCEPTED', 'PENDING'] },
+      status: { in: ['ACCEPTED', 'SCHEDULED', 'PENDING', 'CANCELLATION_REQUESTED'] },
       dateTime: { gte: startOfWeek, lt: endOfWeek },
     },
     select: {
@@ -101,24 +105,21 @@ export async function getLecturerWeeklyAvailability(lecturerId: string): Promise
   const result: WeeklyAvailability = [];
 
   for (const day of DAYS) {
-    const dayTeaching = timetableEntries
+    const daySchedule = scheduleRows
       .filter((e) => e.dayOfWeek === day)
       .map((e) => ({
         startTime: e.startTime,
         endTime: e.endTime,
-        course: e.course,
-        hall: e.hall as { id: string; name: string; building: string },
-        group: e.group,
+        slotType: e.slotType,
+        label: e.label,
+        location: e.location,
       }));
 
     const dayIdx = DAYS.indexOf(day);
-    const dayDate = new Date(startOfWeek);
-    dayDate.setDate(dayDate.getDate() + dayIdx);
-
     const dayAppts = appointments
       .filter((a) => {
         const d = new Date(a.dateTime);
-        return d.getDay() === dayIdx + 1; // Mon=1
+        return d.getDay() === dayIdx + 1;
       })
       .map((a) => {
         const dt = new Date(a.dateTime);
@@ -134,13 +135,13 @@ export async function getLecturerWeeklyAvailability(lecturerId: string): Promise
       });
 
     const allOccupied: TimeSlot[] = [
-      ...dayTeaching.map((t) => ({ startTime: t.startTime, endTime: t.endTime })),
+      ...daySchedule.map((t) => ({ startTime: t.startTime, endTime: t.endTime })),
       ...dayAppts.map((a) => ({ startTime: a.startTime, endTime: a.endTime })),
     ];
 
     result.push({
       day,
-      teaching: dayTeaching,
+      schedule: daySchedule,
       appointments: dayAppts,
       freeSlots: computeFreeSlots(allOccupied),
     });
@@ -151,23 +152,24 @@ export async function getLecturerWeeklyAvailability(lecturerId: string): Promise
 
 export async function getLecturerDateAvailability(
   lecturerId: string,
-  date: string
+  date: string,
 ): Promise<DayAvailability> {
   const targetDate = new Date(date);
   const jsDay = targetDate.getDay();
   const dayName = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][jsDay];
 
-  const timetableEntries = await prisma.masterTimetable.findMany({
-    where: { lecturerId, dayOfWeek: dayName as any, isActive: true },
-    select: {
-      startTime: true,
-      endTime: true,
-      course: { select: { id: true, name: true, code: true } },
-      hall: { select: { id: true, name: true, building: true } },
-      group: { select: { id: true, name: true } },
-    },
-    orderBy: { startTime: 'asc' },
-  });
+  if (isFetVirtualLecturerId(lecturerId)) {
+    return { day: dayName, schedule: [], appointments: [], freeSlots: [] };
+  }
+
+  const scheduleRows = await getLecturerBusySlots(lecturerId, dayName as never);
+  const schedule = scheduleRows.map((e) => ({
+    startTime: e.startTime,
+    endTime: e.endTime,
+    slotType: e.slotType,
+    label: e.label,
+    location: e.location,
+  }));
 
   const dayStart = new Date(targetDate);
   dayStart.setHours(0, 0, 0, 0);
@@ -177,7 +179,7 @@ export async function getLecturerDateAvailability(
   const appointments = await prisma.appointment.findMany({
     where: {
       lecturerId,
-      status: { in: ['ACCEPTED', 'PENDING'] },
+      status: { in: ['ACCEPTED', 'SCHEDULED', 'PENDING', 'CANCELLATION_REQUESTED'] },
       dateTime: { gte: dayStart, lte: dayEnd },
     },
     select: {
@@ -189,14 +191,6 @@ export async function getLecturerDateAvailability(
     },
     orderBy: { dateTime: 'asc' },
   });
-
-  const teaching = timetableEntries.map((e) => ({
-    startTime: e.startTime,
-    endTime: e.endTime,
-    course: e.course,
-    hall: e.hall as { id: string; name: string; building: string },
-    group: e.group,
-  }));
 
   const dayAppts = appointments.map((a) => {
     const dt = new Date(a.dateTime);
@@ -212,23 +206,14 @@ export async function getLecturerDateAvailability(
   });
 
   const allOccupied: TimeSlot[] = [
-    ...teaching.map((t) => ({ startTime: t.startTime, endTime: t.endTime })),
+    ...schedule.map((t) => ({ startTime: t.startTime, endTime: t.endTime })),
     ...dayAppts.map((a) => ({ startTime: a.startTime, endTime: a.endTime })),
   ];
 
   return {
     day: dayName,
-    teaching,
+    schedule,
     appointments: dayAppts,
     freeSlots: computeFreeSlots(allOccupied),
   };
-}
-
-function getStartOfWeek(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // Monday = start
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
 }

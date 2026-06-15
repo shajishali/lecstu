@@ -1,7 +1,7 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — Project Structure Reference
 # ════════════════════════════════════════════════════════════════
-# Last Updated : 2026-02-18 (After Sub-Phase 4.3)
+# Last Updated : 2026-03-11 (Phase 9.1 — Translation service)
 # Update Rule  : This file MUST be updated whenever files/folders
 #                are added, moved, or removed from the project.
 # ════════════════════════════════════════════════════════════════
@@ -47,7 +47,9 @@ lecstu/
 │       │   ├── 📄 DataTable.tsx     ← Generic data table: pagination, sorting, search, column rendering
 │       │   ├── 📄 Modal.tsx         ← Reusable modal dialog (overlay, ESC close, configurable width)
 │       │   ├── 📄 ConfirmDialog.tsx ← Confirmation dialog for destructive actions (danger/warning variants)
-│       │   └── 📄 Toast.tsx         ← Toast notification system (success/error/info, auto-dismiss 4s)
+│       │   ├── 📄 Toast.tsx         ← Toast notification system (success/error/info, auto-dismiss 4s)
+│       │   ├── 📄 NotificationCenter.tsx ← Bell icon + dropdown (recent notifications, unread badge, mark read)
+│       │   └── 📄 VoiceInput.tsx         ← Phase 7.1: Mic record, send to ASR, display result
 │       │
 │       ├── 📁 pages/                ← Page-level components (one per route)
 │       │   ├── 📄 Login.tsx         ← Email/password form, validation, error display, show/hide password
@@ -57,14 +59,19 @@ lecstu/
 │       │   ├── 📄 MyTimetable.tsx   ← Weekly timetable grid (color-coded, current time line, slot details, CSV export)
 │       │   ├── 📄 HallAvailability.tsx ← Hall availability explorer (search/available-now tabs, filters, timeline)
 │       │   ├── 📄 LecturerDirectory.tsx ← Searchable lecturer card grid with department filter
-│       │   ├── 📄 LecturerProfile.tsx  ← Lecturer profile card + weekly availability grid + daily breakdown
+│       │   ├── 📄 LecturerProfile.tsx  ← Lecturer profile + availability grid + Book Appointment button
+│       │   ├── 📄 Appointments.tsx    ← Appointment list: student (book, cancel) / lecturer (accept, reject, reschedule)
+│       │   ├── 📄 BookAppointment.tsx ← 3-step booking flow (date, slot, reason)
+│       │   ├── 📄 Notifications.tsx   ← Full notification history, mark read, pagination
+│       │   ├── 📄 CampusMap.tsx       ← Leaflet campus map: search (autocomplete, fly-to), live status, filters, admin edit mode (Phase 6.1–6.3)
+│       │   ├── 📄 VoiceAssistant.tsx  ← Phase 7.1: Voice input with language/engine selector, transcription display
 │       │   │
 │       │   └── 📁 admin/            ← Admin-only pages
 │       │       ├── 📄 AdminDashboard.tsx     ← Admin stats, quick-action buttons, academic summary
 │       │       ├── 📄 TimetableManagement.tsx ← Master timetable CRUD: table/calendar/import views, filters
 │       │       ├── 📄 TimetableForm.tsx       ← Create/edit form modal with conflict display
 │       │       ├── 📄 TimetableCalendar.tsx   ← Weekly calendar grid view (Mon–Fri, color-coded courses)
-│       │       ├── 📄 TimetableBulkImport.tsx ← CSV file upload, preview, validation, import
+│       │       ├── 📄 TimetableBulkImport.tsx ← CSV or PDF upload, flexible format, auto-create stats, unassigned notice
 │       │       ├── 📄 GroupManagement.tsx     ← Student group CRUD, member list, assign/remove students
 │       │       ├── 📄 HallManagement.tsx      ← Lecture hall CRUD with equipment tags, active status
 │       │       ├── 📄 OfficeManagement.tsx    ← Lecturer office CRUD with lecturer linking
@@ -73,10 +80,11 @@ lecstu/
 │       │       └── 📄 MapPreview.tsx          ← Leaflet map preview showing all markers with popups
 │       │
 │       ├── 📁 hooks/                ← Custom React hooks
-│       │   └── .gitkeep
+│       │   └── 📄 useNotificationStream.ts ← SSE listener for real-time notifications (EventSource)
 │       │
 │       ├── 📁 store/                ← Zustand state management stores
-│       │   └── 📄 authStore.ts      ← Auth state: user, isAuthenticated, login, register, logout, getMe
+│       │   ├── 📄 authStore.ts      ← Auth state: user, isAuthenticated, login, register, logout, getMe
+│       │   └── 📄 notificationStore.ts ← Unread count, recent, mark read, add (from SSE)
 │       │
 │       ├── 📁 services/             ← API service layer
 │       │   └── 📄 api.ts            ← Axios instance (baseURL: /api, credentials, smart 401 refresh interceptor)
@@ -118,7 +126,7 @@ lecstu/
 │       │   ├── 📄 authController.ts ← register, login, refresh, logout, getMe
 │       │   ├── 📄 profileController.ts  ← getProfile, updateProfile, uploadAvatar, getDepartments
 │       │   ├── 📄 adminController.ts   ← getDashboardStats (aggregated counts for admin panel)
-│       │   ├── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport
+│       │   ├── 📄 timetableController.ts ← list, get, create, update, delete, dropdowns, bulkImport (CSV/PDF), assignLecturer
 │       │   ├── 📄 groupController.ts    ← CRUD + assignStudents, removeStudent, bulkAssign, availableStudents
 │       │   ├── 📄 hallController.ts      ← CRUD + getBuildings (distinct building names)
 │       │   ├── 📄 officeController.ts   ← CRUD + getAvailableLecturers
@@ -126,13 +134,16 @@ lecstu/
 │       │   ├── 📄 markerController.ts   ← CRUD + getMarkerDropdowns (buildings, halls, offices)
 │       │   ├── 📄 userTimetableController.ts ← /timetable/my, /student/:id, /lecturer/:id, cache invalidate
 │       │   ├── 📄 hallAvailabilityController.ts ← /halls/available, /available-now, /:id/schedule, /filters
-│       │   └── 📄 lecturerController.ts ← Lecturer list, profile, availability, departments
+│       │   ├── 📄 lecturerController.ts ← Lecturer list, profile, availability, departments
+│       │   ├── 📄 appointmentController.ts ← Appointment CRUD: create, list, get, accept, reject, reschedule, cancel
+│       │   ├── 📄 notificationController.ts ← Notifications: list, unread-count, mark read, mark-all-read, SSE stream
+│       │   └── 📄 mapController.ts   ← Map data: listMapBuildings, listMapMarkers, searchMap, getMapLiveStatus (any authenticated user, for Campus Map)
 │       │
 │       ├── 📁 models/               ← Data models (Prisma schema is source of truth)
 │       │   └── .gitkeep
 │       │
 │       ├── 📁 routes/
-│       │   ├── 📄 index.ts          ← API router (health + auth + profile + admin + timetable)
+│       │   ├── 📄 index.ts          ← API router (health + auth + profile + admin + timetable + appointments + notifications)
 │       │   ├── 📄 auth.ts           ← Auth routes: register, login, refresh, logout, me
 │       │   ├── 📄 profile.ts        ← Profile routes: GET, PATCH, POST avatar, GET departments
 │       │   ├── 📄 admin.ts          ← Admin routes: GET stats (ADMIN role guard)
@@ -144,22 +155,29 @@ lecstu/
 │       │   ├── 📄 markers.ts        ← Marker routes: CRUD + dropdowns (ADMIN guard)
 │       │   ├── 📄 userTimetable.ts  ← User timetable routes: /my, /student/:id, /lecturer/:id, cache
 │       │   ├── 📄 hallAvailability.ts ← Hall availability routes: /available, /available-now, /:id/schedule, /filters
-│       │   └── 📄 lecturers.ts       ← Lecturer routes: list, profile, availability, departments
+│       │   ├── 📄 lecturers.ts       ← Lecturer routes: list, profile, availability, departments
+│       │   ├── 📄 appointments.ts   ← Appointment routes: POST, GET, PATCH accept/reject/reschedule, DELETE
+│       │   ├── 📄 notifications.ts ← Notification routes: GET list/unread-count/stream, PATCH :id/read, POST mark-all-read
+│       │   └── 📄 map.ts           ← Map routes: GET /buildings, GET /markers, GET /search, GET /live-status (authenticated, any role, for Campus Map)
 │       │
 │       ├── 📁 middleware/
 │       │   ├── 📄 errorHandler.ts   ← AppError class + global error handler middleware
 │       │   ├── 📄 auth.ts           ← authenticate (JWT verification) + authorize (RBAC roles)
 │       │   ├── 📄 validate.ts       ← express-validator rules: registerRules, loginRules, profileUpdateRules
-│       │   ├── 📄 upload.ts         ← Multer config: disk storage, file filter (JPEG/PNG/WebP), 5MB limit
+│       │   ├── 📄 upload.ts         ← Multer: avatar, uploadCsv, uploadTimetableFile (CSV/PDF), floorPlan, audio
 │       │   └── 📄 rateLimiter.ts    ← Rate limiting: authLimiter (20/15min), generalLimiter (200/15min)
 │       │
 │       ├── 📁 services/             ← Business logic layer (one file per domain)
 │       │   ├── 📄 conflictDetector.ts ← Timetable conflict detection (hall, lecturer, group overlap)
+│       │   ├── 📄 timetableParserService.ts ← Parse CSV/PDF with flexible columns, day/time normalization (no ML — pdf-parse/PDF.js)
+│       │   ├── 📄 timetableImportService.ts ← Auto-create courses/halls/groups, Unassigned lecturer, resolve & import
 │       │   ├── 📄 auditLogger.ts     ← Audit log service (logs admin actions to AuditLog table)
 │       │   ├── 📄 timetableService.ts ← Timetable generation (student groups → weekly grid, lecturer schedule)
 │       │   ├── 📄 timetableCache.ts  ← In-memory cache (5-min TTL, invalidate on master timetable changes)
 │       │   ├── 📄 hallAvailabilityService.ts ← Hall occupancy, free slot computation, available-now detection
-│       │   └── 📄 lecturerAvailabilityService.ts ← Lecturer weekly/date availability (teaching + appointments → free slots)
+│       │   ├── 📄 lecturerAvailabilityService.ts ← Lecturer weekly/date availability (teaching + appointments → free slots)
+│       │   ├── 📄 appointmentBookingService.ts ← Booking validation (lecturer free, student conflict, notice period, status flow)
+│       │   └── 📄 notificationService.ts ← createNotification, SSE push to clients, notifyTimetableChange for affected students
 │       │
 │       └── 📁 utils/                ← Utility/helper functions
 │           ├── 📄 jwt.ts            ← JWT token generation, verification, cookie helpers
@@ -173,9 +191,23 @@ lecstu/
 │
 │
 ├── 📁 ai-services/                  ← AI MODULES — Implemented in Phases 7–9
-│   ├── 📁 asr/                      ← Phase 7: ASR (Whisper + Google Speech)
+│   ├── 📁 asr/                      ← Phase 7.1: ASR (Whisper + Google + Azure)
+│   │   ├── 📄 asr_service.py        ← Unified interface, preprocessing
+│   │   ├── 📄 run_transcribe.py     ← CLI entry (Node spawns this)
+│   │   ├── 📄 server.py             ← Optional FastAPI HTTP service
+│   │   ├── 📄 README.md              ← Setup + Azure activation guide
+│   │   ├── 📄 requirements.txt      ← Python deps (whisper, google-cloud-speech, azure-cognitiveservices-speech)
+│   │   ├── 📁 engines/              ← whisper_engine.py, google_engine.py, azure_engine.py
+│   │   └── 📁 preprocessing/         ← audio_processor.py (normalize, WebM support)
 │   ├── 📁 chatbot/                  ← Phase 8: NLP Chatbot (Rasa)
-│   └── 📁 translation/              ← Phase 9: Translation (MarianMT + Cloud API)
+│   └── 📁 translation/              ← Phase 9.1: Translation (MarianMT + Google/Azure)
+│       ├── 📄 translation_service.py  ← Unified interface
+│       ├── 📄 run_translate.py       ← CLI entry (Node spawns this)
+│       ├── 📄 requirements.txt
+│       ├── 📄 README.md
+│       └── 📁 engines/
+│           ├── cloud_translator.py   ← Google / Azure
+│           └── transformer_engine.py ← MarianMT
 │
 │
 └── 📁 research/                     ← RESEARCH — Experiments, datasets, reports
@@ -192,13 +224,21 @@ lecstu/
     │   ├── 📄 experiment_report_template.md   ← Standard experiment report (methodology, results, stats)
     │   └── 📄 usability_report_template.md    ← Usability study report (SUS, tasks, qualitative themes)
     │
-    ├── 📁 asr-benchmark/            ← RO-1: ASR evaluation
-    │   ├── 📁 scripts/              ← Experiment runner scripts
-    │   └── 📁 results/              ← Raw benchmark output
-    │
-    ├── 📁 nlp-evaluation/           ← RO-2: Chatbot evaluation
+    ├── 📁 asr-benchmark/            ← Phase 7.3–7.4: ASR benchmark + statistical analysis (RO-1)
+    │   ├── 📄 README.md             ← Usage, ffmpeg prerequisite
     │   ├── 📁 scripts/
-    │   └── 📁 results/
+    │   │   ├── 📄 run_benchmark.py  ← Load manifest, transcribe, WER/CER, 3 runs
+    │   │   └── 📄 analyze_benchmark.py ← Stats (mean/median/std), Wilcoxon, Cohen's d, plots, report
+    │   └── 📁 results/              ← Raw benchmark JSON + generated plots
+    │
+    ├── 📁 asr-finetuning/           ← Phase 7.6–7.8: Whisper finetuning (En/Ta/Si)
+    │   ├── 📄 train_whisper.py     ← Finetuning script (Hugging Face transformers)
+    │   ├── 📄 FINETUNING_DATASETS.md ← Dataset sources, licenses
+    │   └── 📁 models/               ← Saved finetuned checkpoints (lecstu-whisper-*)
+    │
+├── 📁 nlp-evaluation/           ← RO-2: Chatbot evaluation (Phase 8.3–8.4)
+│   ├── 📁 scripts/              ← run_nlp_evaluation.ps1 (CV + held-out)
+│   └── 📁 results/               ← cv-5fold/, heldout/ (reports, confusion matrices, errors)
     │
     ├── 📁 translation-eval/         ← RO-3: Translation evaluation
     │   ├── 📁 scripts/
@@ -210,12 +250,16 @@ lecstu/
     │   └── 📁 raw-data/             ← Collected participant data
     │
     ├── 📁 datasets/                 ← Shared test datasets
-    │   ├── 📁 asr/                  ← Audio files + ground truth transcriptions
+    │   ├── 📁 asr/                  ← Phase 7.2 + 7.6: 150 utterances + finetuning data
+    │   │   ├── utterances.yaml, dataset_manifest.json, METHODOLOGY.md, scripts/
+    │   │   └── 📁 finetuning/       ← Phase 7.6: train_manifest.json, val_manifest.json, audio/
     │   ├── 📁 nlp/                  ← Intent/entity training & test data
     │   └── 📁 translation/          ← Parallel corpus + human evaluation scores
     │
-    ├── 📁 logs/                     ← Structured experiment logs (JSON, auto-generated by logger.js)
+    ├── 📁 logs/                     ← Structured experiment logs (JSON, auto-generated)
     └── 📁 reports/                  ← Generated evaluation reports (Markdown)
+        ├── 📄 asr_benchmark_report.md     ← Phase 7.4: ASR benchmark report (methodology, results, H1 conclusion)
+        └── 📄 nlp_evaluation_report.md   ← Phase 8.4: NLP evaluation report (F1, confusion matrix, error analysis, H2 conclusion)
 ```
 
 
@@ -226,13 +270,13 @@ lecstu/
 | File | Purpose |
 |------|---------|
 | `package.json` (root) | Monorepo scripts: `npm run dev` starts client + server via concurrently |
-| `client/package.json` | Frontend deps: react, react-dom, react-router-dom, axios, zustand |
+| `client/package.json` | Frontend deps: react, react-dom, react-router-dom, axios, zustand, leaflet, react-leaflet, react-leaflet-cluster, leaflet.markercluster |
 | `server/package.json` | Backend deps: express, cors, cookie-parser, dotenv, prisma, pg, bcrypt; dev: tsx watch |
 | `server/prisma/schema.prisma` | Database schema: 14 models, 6 enums, composite indexes for performance |
 | `server/prisma/seed.ts` | Seed script: 122 users, 15 courses, 30 timetable entries, map data |
 | `server/prisma.config.ts` | Prisma config: datasource URL, migration path |
 | `server/src/config/database.ts` | Prisma client singleton with PG adapter |
-| `client/vite.config.ts` | React plugin, `/api` proxy to `:5000`, path aliases (`@components`, etc.) |
+| `client/vite.config.ts` | React plugin, `/api` and `/uploads` proxy to `:5000`, path aliases (`@components`, etc.) |
 | `client/tsconfig.json` | JSX: react-jsx, path aliases, strict mode |
 | `server/tsconfig.json` | CommonJS output, path aliases (`@controllers`, etc.), strict mode |
 | `.prettierrc` | Shared formatting: single quotes, trailing commas, 90 char width |
@@ -240,6 +284,7 @@ lecstu/
 | `research/research-config.yaml` | Master experiment config: random seeds, model versions, dataset paths, evaluation thresholds |
 | `research/lib/logger.js` | Experiment logging: structured JSON, auto experiment IDs, hardware capture, summary stats |
 | `research/lib/wer_calculator.py` | WER/CER computation for ASR benchmarks (RO-1) |
+| `research/asr-benchmark/scripts/run_benchmark.py` | ASR benchmark runner (Phase 7.3): load manifest, transcribe, WER/CER, 3 runs |
 | `research/lib/classification_metrics.py` | Precision/Recall/F1 for chatbot intent classification (RO-2) |
 | `research/lib/bleu_calculator.py` | BLEU score for translation evaluation (RO-3) |
 | `research/lib/latency_profiler.js` | Response latency measurement with percentile stats |
@@ -272,7 +317,8 @@ lecstu/
 | POST | `/api/admin/timetable` | Create timetable entry (conflict check) | JWT + ADMIN | No |
 | PATCH | `/api/admin/timetable/:id` | Update timetable entry (conflict check) | JWT + ADMIN | No |
 | DELETE | `/api/admin/timetable/:id` | Delete timetable entry | JWT + ADMIN | No |
-| POST | `/api/admin/timetable/bulk-import` | Bulk import timetable via CSV (multipart) | JWT + ADMIN | No |
+| POST | `/api/admin/timetable/bulk-import` | Bulk import timetable via CSV or PDF (multipart) | JWT + ADMIN | No |
+| PATCH | `/api/admin/timetable/:id/assign-lecturer` | Assign lecturer to unassigned slot (body: lecturerId) | JWT + ADMIN | No |
 | GET | `/api/admin/groups` | List student groups (filterable) | JWT + ADMIN | No |
 | GET | `/api/admin/groups/:id` | Get group with members | JWT + ADMIN | No |
 | POST | `/api/admin/groups` | Create student group | JWT + ADMIN | No |
@@ -319,6 +365,24 @@ lecstu/
 | GET | `/api/lecturers/departments` | Department list for filter dropdowns | JWT | No |
 | GET | `/api/lecturers/:id` | Lecturer profile (courses, office, department) | JWT | No |
 | GET | `/api/lecturers/:id/availability` | Weekly or date-specific availability | JWT | No |
+| POST | `/api/appointments` | Create appointment request (lecturerId, dateTime, duration, reason) | JWT + STUDENT | No |
+| GET | `/api/appointments` | List own appointments (status, from, to filters) | JWT | No |
+| GET | `/api/appointments/:id` | Get single appointment | JWT | No |
+| PATCH | `/api/appointments/:id/accept` | Lecturer accepts appointment | JWT + LECTURER | No |
+| PATCH | `/api/appointments/:id/reject` | Lecturer rejects (with reason) | JWT + LECTURER | No |
+| PATCH | `/api/appointments/:id/reschedule` | Lecturer proposes new time | JWT + LECTURER | No |
+| DELETE | `/api/appointments/:id` | Cancel appointment | JWT | No |
+| GET | `/api/notifications` | List notifications (paginated) | JWT | No |
+| GET | `/api/notifications/unread-count` | Unread count for badge | JWT | No |
+| GET | `/api/notifications/stream` | SSE stream for real-time notifications | JWT | No |
+| PATCH | `/api/notifications/:id/read` | Mark as read | JWT | No |
+| POST | `/api/notifications/mark-all-read` | Mark all as read | JWT | No |
+| GET | `/api/map/buildings` | List map buildings with coordinates, floors, floor plans | JWT | No |
+| GET | `/api/map/markers` | List map markers (filter: buildingId, floor, type) | JWT | No |
+| GET | `/api/map/search` | Search buildings, halls, lecturers, rooms by name (q=) | JWT | No |
+| GET | `/api/map/live-status` | Hall free/occupied + next slot, office availability | JWT | No |
+| POST | `/api/ai/asr/transcribe` | ASR transcription (audio file + language + engine) | JWT | No |
+| POST | `/api/ai/translation/translate` | Translation (text + src + tgt + engine: google/azure/marian) | JWT | No |
 
 
 ---
@@ -390,6 +454,18 @@ lecstu/
 
 ---
 
+## Technology / ML Disclosure
+
+| Component | Technology | ML Used? |
+|-----------|------------|----------|
+| **Timetable Import (CSV)** | csv-parser | No |
+| **Timetable Import (PDF)** | pdf-parse (PDF.js) — rule-based text/table extraction | **No** |
+| **ASR (Voice)** | Whisper, Google Speech, Azure, finetuned Whisper | Yes (see ai-services/asr) |
+| **Chatbot** | Rasa (DIET classifier) | Yes (see ai-services/chatbot) |
+| **Translation** | MarianMT / Cloud API (Phase 9) | Yes (see ai-services/translation) |
+
+---
+
 ## Change Log
 
 | Date | Sub-Phase | Changes |
@@ -407,6 +483,25 @@ lecstu/
 | 2026-02-18 | **4.1** | Student timetable generation engine: timetableService (student groups → weekly grid, lecturer schedule), in-memory cache (5-min TTL, invalidated on master timetable CRUD + bulk import), user timetable API (GET /my, /student/:id, /lecturer/:id, POST cache/invalidate), MyTimetable frontend (weekly grid Mon–Fri 08–18, color-coded courses, current time red indicator, click-to-detail modal, print + CSV export) |
 | 2026-02-18 | **4.2** | Hall availability detection system: hallAvailabilityService (occupancy queries, free-slot gap detection 08–18, available-now with current time check, filter options), hallAvailabilityController + routes (GET /available, /available-now, /filters, /:id/schedule), HallAvailability frontend (Available Now tab with pulse indicator, Search tab with filters for day/time/capacity/building/equipment, result cards with free-slot badges, expandable visual timeline bar, schedule detail rows), sidebar updated for all roles |
 | 2026-02-18 | **4.3** | Lecturer availability & frontend views: lecturerAvailabilityService (weekly/date availability from timetable minus accepted/pending appointments), lecturerController + routes (GET /lecturers, /:id, /:id/availability, /departments), LecturerDirectory (searchable card grid, department filter), LecturerProfile (avatar, contact, course badges, stats, weekly availability grid green/blue/red with hover tooltips, daily breakdown with free-slot badges), sidebar Lecturers link for all roles |
+| 2026-02-18 | **5.1** | Appointment booking backend: appointmentBookingService (validate lecturer free, student conflict, 24h notice, status flow), appointmentController + routes (POST /api/appointments, GET list/get, PATCH accept/reject/reschedule, DELETE cancel), express-validator rules (create, reschedule, reject), role-based access (student create, lecturer accept/reject/reschedule, student/lecturer cancel) |
+| 2026-02-18 | **5.2** | Notification system: notificationService (createNotification, SSE register/unregister, pushToUser, notifyTimetableChange), notificationController + routes (GET /api/notifications, /unread-count, /stream, PATCH :id/read, POST mark-all-read), SSE real-time delivery, auto-triggers on appointment create/accept/reject/cancel and timetable CRUD/bulk-import |
+| 2026-02-18 | **5.3** | Appointment & notification frontend: Appointments page (student: book new, list, cancel; lecturer: incoming requests, accept/reject/reschedule, upcoming accepted), BookAppointment flow (date picker, slot selection, reason/notes), LecturerProfile "Book Appointment" button, NotificationCenter (bell + dropdown in navbar, unread badge), Notifications page, useNotificationStream SSE listener, notificationStore (Zustand) |
+| 2026-02-18 | **6.1** | Leaflet map integration & building markers: react-leaflet + leaflet, map API (GET /api/map/buildings, /api/map/markers) for any authenticated user, CampusMap page (OpenStreetMap tiles, campus center 7.29/80.63, zoom 14–20), building markers with popups (name, code, floors), room markers by type (HALL blue, OFFICE green, LAB orange, AMENITY gray, ENTRANCE red), floor plan image overlay with bounds, floor switcher per building, legend, mapController + map routes |
+| 2026-02-18 | **6.2** | Map search, navigation & live status: map search API (GET /api/map/search?q=) for buildings, halls, lecturers, rooms with coordinates; live status API (GET /api/map/live-status) for hall free/occupied + next slot and office availability; CampusMap search bar with debounced autocomplete, fly-to on select, popup open; hall markers green (free) / red (occupied) with next-slot in popup; office popups with lecturer, department, availability, Book Appointment button; marker type filter toggles; markers API supports multi-type filter (type=HALL,OFFICE) |
+| 2026-02-18 | **6.3** | Admin map tools & mobile: admin edit mode toggle (click-to-place marker, drag to reposition, delete); MarkerClusterGroup for zoomed-out clustering; mobile bottom sheet for popup content, collapsible search bar, responsive map height & floor switcher; react-leaflet-cluster + leaflet.markercluster |
+| 2026-02-19 | **7.1** | ASR service: ai-services/asr/ Python module (Whisper + Google + Azure engines), audio preprocessing (16kHz WAV, WebM support), unified interface; Node POST /api/ai/asr/transcribe; VoiceInput component (MediaRecorder, language/engine/model selectors); VoiceAssistant page at /assistant |
+| 2026-02-26 | **7.1** | Azure Speech engine: azure_engine.py, AZURE_SPEECH_KEY/REGION env vars, VoiceAssistant + benchmark support, README activation guide |
+| 2026-02-19 | **7.2** | ASR dataset: utterances.yaml (50 per language × 3 = 150), dataset_manifest.json, METHODOLOGY.md, scripts (generate_manifest_template, validate_manifest, create_sample_audio), audio/ + ground_truth/ dirs |
+| 2026-02-19 | **7.3** | ASR benchmark: run_benchmark.py (load manifest, transcribe per config, WER/CER/latency, 3 runs), results + logs to asr-benchmark/results/ and logs/ |
+| 2026-02-19 | **7.4** | ASR statistical analysis: analyze_benchmark.py (descriptive stats, Wilcoxon, Cohen's d, 95% CI, matplotlib plots), asr_benchmark_report.md in reports/ |
+| 2026-02-26 | **7.5** | Decision: Finetune Whisper — rationale, alternatives (cloud retained), success criteria |
+| 2026-02-26 | **7.6** | Finetuning dataset acquisition: OpenSLR, Common Voice, Hugging Face (En/Ta/Si) + Phase 7.2 merge |
+| 2026-02-26 | **7.7** | Whisper finetuning: train_whisper.py, Hugging Face transformers, LoRA/full config |
+| 2026-02-26 | **7.8** | Finetuned model: whisper-finetuned engine, benchmark integration, report update |
+| 2026-02-28 | **3.2** | Smart timetable import: CSV + PDF, flexible columns, auto-create courses/halls/groups, Unassigned lecturer, PATCH assign-lecturer, Assign Lecturer modal |
+| 2026-03-03 | **3.2** | Timetable PDF import: pdf-parse (getTable + getText fallback), no ML; projectStructure.md Technology/ML disclosure table |
+| 2026-03-11 | **8.4** | NLP error analysis & report: nlp_evaluation_report.md (error categorization, confusion matrix analysis, H2 Accept), reports/ + nlp-evaluation/results/ |
+| 2026-03-11 | **9.1** | Translation service: ai-services/translation/ (cloud_translator, transformer_engine, run_translate.py), POST /api/ai/translation/translate, LanguageSwitcher, ChatWidget + timetable + notification translation |
 
 
 ---

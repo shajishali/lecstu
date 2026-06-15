@@ -10,22 +10,37 @@ import {
   deleteTimetableEntry,
   getDropdownData,
   bulkImport,
+  bulkImportPreview,
+  bulkImportConfirm,
+  bulkImportTemplate,
+  listTimetableTables,
+  getTimetableTable,
+  updateTimetableTable,
+  assignLecturer,
+  reresolveLecturers,
 } from '../controllers/timetableController';
-import { uploadCsv } from '../middleware/upload';
+import { uploadTimetableFile } from '../middleware/upload';
 
 const router = Router();
 
 router.use(authenticate);
-
-router.get('/', listTimetable);
-router.get('/dropdowns', authorize('ADMIN'), getDropdownData);
-router.get('/:id', getTimetableEntry);
-
 router.use(authorize('ADMIN'));
 
+router.get('/', listTimetable);
+router.get('/dropdowns', getDropdownData);
+router.get('/bulk-import/template', bulkImportTemplate);
+router.get('/tables', listTimetableTables);
+router.get('/tables/:id', getTimetableTable);
+router.patch('/tables/:id', updateTimetableTable);
+router.get('/:id', getTimetableEntry);
+
 router.post('/', timetableCreateRules, createTimetableEntry);
+router.patch('/:id/assign-lecturer', assignLecturer);
 router.patch('/:id', timetableUpdateRules, updateTimetableEntry);
 router.delete('/:id', deleteTimetableEntry);
-router.post('/bulk-import', uploadCsv, bulkImport);
+router.post('/reresolve-lecturers', reresolveLecturers);
+router.post('/bulk-import/preview', uploadTimetableFile, bulkImportPreview);
+router.post('/bulk-import/confirm', bulkImportConfirm);
+router.post('/bulk-import', uploadTimetableFile, bulkImport);
 
 export default router;
