@@ -13,6 +13,7 @@ import {
   deriveTimetableCodeFromName,
 } from '../services/lecturerInitialsMatch';
 import { userProfileSelect } from '../constants/userProfileSelect';
+import { comparePassword, hashPassword } from '../utils/password';
 
 const FCT_BUILDING_DEFAULT =
   'Faculty of Computing and Technology, University of Kelaniya';
@@ -255,6 +256,35 @@ export async function getGroups(_req: Request, res: Response, next: NextFunction
     }));
 
     res.json({ success: true, data: { groups: groupsWithCounts } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user!.userId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+    if (!user) throw new AppError('User not found', 404);
+
+    const valid = await comparePassword(currentPassword, user.password);
+    if (!valid) throw new AppError('Current password is incorrect', 400);
+
+    if (currentPassword === newPassword) {
+      throw new AppError('New password must be different from the current password', 400);
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: await hashPassword(newPassword) },
+    });
+
+    res.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     next(err);
   }

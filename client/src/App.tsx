@@ -27,6 +27,7 @@ import BookAppointment from '@pages/BookAppointment';
 import Notifications from '@pages/Notifications';
 import GuidedMap from '@pages/GuidedMap';
 import VoiceAssistant from '@pages/VoiceAssistant';
+import Settings from '@pages/admin/Settings';
 
 /** Preserve query params when redirecting legacy /map links to /navigate. */
 function MapLegacyRedirect() {
@@ -185,7 +186,14 @@ function AppRoutes() {
         <Route path="/map/scan" element={<Navigate to="/navigate" replace />} />
         <Route path="/map/guide" element={<MapGuideEntry />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/settings" element={<PlaceholderPage title="Settings" phase="6" />} />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

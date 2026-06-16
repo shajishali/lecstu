@@ -24,6 +24,49 @@ export type BuildingConnectorNode = {
   y: number;
 };
 
+type LockedMarkerSnapshotEntry = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+};
+
+async function getLockedMarkerSnapshotById(
+  buildingId: string,
+  floor: number
+): Promise<Map<string, LockedMarkerSnapshotEntry>> {
+  const plan = await prisma.floorPlan.findUnique({
+    where: { buildingId_floor: { buildingId, floor } },
+    select: { locationsLockedAt: true, lockedMarkerSnapshot: true },
+  });
+  const map = new Map<string, LockedMarkerSnapshotEntry>();
+  if (!plan?.locationsLockedAt) return map;
+  const snap = plan.lockedMarkerSnapshot as LockedMarkerSnapshotEntry[] | null;
+  for (const m of snap ?? []) map.set(m.id, m);
+  return map;
+}
+
+function placeDisplayCoords(
+  node: {
+    id: string;
+    label: string;
+    x: number;
+    y: number;
+    mapMarkerId: string | null;
+    mapMarker?: { id: string; label: string; x: number; y: number } | null;
+  },
+  lockedByMarkerId: Map<string, LockedMarkerSnapshotEntry>
+): { x: number; y: number; label: string } {
+  if (node.mapMarkerId) {
+    const locked = lockedByMarkerId.get(node.mapMarkerId);
+    if (locked) return { x: locked.x, y: locked.y, label: locked.label };
+    if (node.mapMarker) {
+      return { x: node.mapMarker.x, y: node.mapMarker.y, label: node.mapMarker.label };
+    }
+  }
+  return { x: node.x, y: node.y, label: node.label };
+}
+
 export type FloorLinkRow = {
   floor: number;
   allowed: boolean;
@@ -204,12 +247,12 @@ export async function createCrossBuildingNavEdge(fromNodeId: string, toNodeId: s
   if (from.floor !== to.floor) {
     throw new AppError('Building links must be on the same floor number', 400);
   }
-  if (!isConnectorNavType(from.type) || !isConnectorNavType(to.type)) {
-    throw new AppError('Link corridor or entrance/exit nodes at the doorway', 400);
+  if (!from.mapMarkerId || !to.mapMarkerId) {
+    throw new AppError('Select place markers on each floor (not path points)', 400);
   }
   if (!isSameFloorLinkAllowed(from.building.code, to.building.code, from.floor)) {
     throw new AppError(
-      `${from.building.code} and ${to.building.code} are not connected on floor ${from.floor}. LAB floors 10–11 link to Academic only, not Administration.`,
+      `${from.building.code} and ${to.building.code} cannot be linked on floor ${from.floor}. Administration ↔ Laboratory links are only allowed on floors 0–9.`,
       400
     );
   }
@@ -367,6 +410,173 @@ export async function suggestBuildingFloorPairs(buildingId: string): Promise<Flo
 
 export async function pairBuildingFloorNodes(fromNodeId: string, toNodeId: string) {
   return createCrossBuildingNavEdge(fromNodeId, toNodeId);
+}
+
+export async function listConnectorNodesOnFloor(
+  buildingId: string,
+  floor: number
+): Promise<BuildingConnectorNode[]> {
+  const lockedByMarkerId = await getLockedMarkerSnapshotById(buildingId, floor);
+  const nodes = await prisma.navNode.findMany({
+    where: {
+      buildingId,
+      floor,
+      mapMarkerId: { not: null },
+    },
+    include: {
+      mapMarker: { select: { id: true, label: true, x: true, y: true } },
+    },
+    orderBy: [{ label: 'asc' }],
+  });
+
+  return nodes.map((n) => {
+    const display = placeDisplayCoords(n, lockedByMarkerId);
+    return {
+      markerId: n.mapMarker!.id,
+      nodeId: n.id,
+      label: display.label,
+      floor: n.floor,
+      x: display.x,
+      y: display.y,
+    };
+  });
+}
+
+export type CrossBuildingEdgeRow = {
+  edgeId: string;
+  localNode: { nodeId: string; label: string; x: number; y: number };
+  remoteNode: { nodeId: string; label: string; buildingCode: string; x: number; y: number };
+};
+
+async function listCrossBuildingEdgesOnFloor(
+  localBuildingId: string,
+  remoteBuildingId: string,
+  floor: number,
+  remoteBuildingCode: string
+): Promise<CrossBuildingEdgeRow[]> {
+  const [localLocked, remoteLocked] = await Promise.all([
+    getLockedMarkerSnapshotById(localBuildingId, floor),
+    getLockedMarkerSnapshotById(remoteBuildingId, floor),
+  ]);
+
+  const edges = await prisma.navEdge.findMany({
+    where: {
+      label: CROSS_BUILDING_EDGE_LABEL,
+      OR: [
+        {
+          from: { buildingId: localBuildingId, floor },
+          to: { buildingId: remoteBuildingId, floor },
+        },
+        {
+          from: { buildingId: remoteBuildingId, floor },
+          to: { buildingId: localBuildingId, floor },
+        },
+      ],
+    },
+    include: {
+      from: {
+        select: {
+          id: true,
+          label: true,
+          buildingId: true,
+          x: true,
+          y: true,
+          mapMarkerId: true,
+          mapMarker: { select: { id: true, label: true, x: true, y: true } },
+        },
+      },
+      to: {
+        select: {
+          id: true,
+          label: true,
+          buildingId: true,
+          x: true,
+          y: true,
+          mapMarkerId: true,
+          mapMarker: { select: { id: true, label: true, x: true, y: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return edges.map((e) => {
+    const localIsFrom = e.from.buildingId === localBuildingId;
+    const local = localIsFrom ? e.from : e.to;
+    const remote = localIsFrom ? e.to : e.from;
+    const localDisplay = placeDisplayCoords(local, localLocked);
+    const remoteDisplay = placeDisplayCoords(remote, remoteLocked);
+    return {
+      edgeId: e.id,
+      localNode: {
+        nodeId: local.id,
+        label: localDisplay.label,
+        x: localDisplay.x,
+        y: localDisplay.y,
+      },
+      remoteNode: {
+        nodeId: remote.id,
+        label: remoteDisplay.label,
+        buildingCode: remoteBuildingCode,
+        x: remoteDisplay.x,
+        y: remoteDisplay.y,
+      },
+    };
+  });
+}
+
+export async function getFloorConnectorLinkOptions(
+  buildingId: string,
+  floor: number,
+  neighborCode?: string
+) {
+  const building = await getBuildingOrThrow(buildingId);
+  const allBuildings = await prisma.mapBuilding.findMany({
+    where: { code: { in: [...FACULTY_BUILDING_CODES] } },
+    select: { id: true, code: true, name: true },
+  });
+
+  const connectableNeighbors = getNeighborBuildingCodes(building.code, floor)
+    .filter((code) => isSameFloorLinkAllowed(building.code, code, floor))
+    .map((code) => allBuildings.find((b) => b.code === code))
+    .filter((b): b is NonNullable<typeof b> => !!b)
+    .map((b) => ({ id: b.id, code: b.code, name: b.name }));
+
+  const localNodes = await listConnectorNodesOnFloor(building.id, floor);
+
+  const normalizedNeighbor = neighborCode?.toUpperCase();
+  const selectedNeighbor = normalizedNeighbor
+    ? allBuildings.find((b) => b.code === normalizedNeighbor)
+    : undefined;
+
+  let remoteNodes: (BuildingConnectorNode & { buildingCode: string })[] = [];
+  let existingLinks: CrossBuildingEdgeRow[] = [];
+
+  if (
+    selectedNeighbor &&
+    isSameFloorLinkAllowed(building.code, selectedNeighbor.code, floor)
+  ) {
+    const remote = await listConnectorNodesOnFloor(selectedNeighbor.id, floor);
+    remoteNodes = remote.map((n) => ({ ...n, buildingCode: selectedNeighbor.code }));
+    existingLinks = await listCrossBuildingEdgesOnFloor(
+      building.id,
+      selectedNeighbor.id,
+      floor,
+      selectedNeighbor.code
+    );
+  }
+
+  return {
+    building: { id: building.id, code: building.code, name: building.name },
+    floor,
+    connectableNeighbors,
+    localNodes,
+    remoteNodes,
+    existingLinks,
+    selectedNeighbor: selectedNeighbor
+      ? { id: selectedNeighbor.id, code: selectedNeighbor.code, name: selectedNeighbor.name }
+      : null,
+  };
 }
 
 export async function autoPairBuildingFloorConnectors(buildingId: string, dryRun = false) {

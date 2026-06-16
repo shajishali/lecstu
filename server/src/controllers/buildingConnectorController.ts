@@ -4,6 +4,7 @@ import { logActionForRequest } from '../services/auditLogger';
 import {
   autoPairBuildingFloorConnectors,
   deleteCrossBuildingEdge,
+  getFloorConnectorLinkOptions,
   listBuildingFloorConnectors,
   pairBuildingFloorNodes,
   suggestBuildingFloorPairs,
@@ -30,6 +31,26 @@ export async function getBuildingConnectorSuggestionsHandler(
     if (!buildingId) throw new AppError('buildingId is required', 400);
     const suggestions = await suggestBuildingFloorPairs(buildingId);
     res.json({ success: true, data: suggestions });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getFloorConnectorOptionsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const buildingId = req.params.id as string;
+    const floor = parseInt(String(req.query.floor ?? ''), 10);
+    const neighborCode = req.query.neighborCode as string | undefined;
+    if (!buildingId) throw new AppError('buildingId is required', 400);
+    if (!Number.isFinite(floor) || floor < 0) {
+      throw new AppError('floor query parameter is required', 400);
+    }
+    const data = await getFloorConnectorLinkOptions(buildingId, floor, neighborCode);
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }

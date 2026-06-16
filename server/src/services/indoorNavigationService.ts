@@ -111,6 +111,7 @@ export async function getNavEditorContext(buildingId: string, floor: number) {
     floorPlan: {
       id: floorPlan.id,
       imagePath: floorPlan.imagePath,
+      lockedImagePath: floorPlan.lockedImagePath,
       bounds: floorPlan.bounds,
     },
     nodes,

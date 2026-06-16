@@ -43,6 +43,7 @@ import {
   deleteBuildingEdgeHandler,
   getBuildingConnectorSuggestionsHandler,
   getBuildingConnectorsHandler,
+  getFloorConnectorOptionsHandler,
   pairBuildingFloorNodesHandler,
 } from '../controllers/buildingConnectorController';
 import {
@@ -67,6 +68,7 @@ router.post('/:id/vertical-connectors/auto-pair', autoPairVerticalHandler);
 router.post('/:id/vertical-connectors/pair', pairVerticalNodesHandler);
 router.delete('/:id/vertical-connectors/:edgeId', deleteVerticalEdgeHandler);
 router.get('/:id/building-connectors/suggestions', getBuildingConnectorSuggestionsHandler);
+router.get('/:id/building-connectors/floor-options', getFloorConnectorOptionsHandler);
 router.get('/:id/building-connectors', getBuildingConnectorsHandler);
 router.post('/:id/building-connectors/auto-pair', autoPairBuildingHandler);
 router.post('/:id/building-connectors/pair', pairBuildingFloorNodesHandler);

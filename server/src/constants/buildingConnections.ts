@@ -4,8 +4,8 @@ export const CROSS_BUILDING_EDGE_LABEL = 'cross-building';
 
 const FACULTY_ADJACENCY: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
   ADMIN: ['ACAD', 'LAB'],
-  ACAD: ['ADMIN', 'LAB'],
-  LAB: ['ADMIN', 'ACAD'],
+  ACAD: ['ADMIN'],
+  LAB: ['ADMIN'],
 };
 
 function isFacultyCode(code: string): code is FacultyBuildingCode {
@@ -73,11 +73,10 @@ export function getNeighborBuildingCodes(code: string, floor: number): FacultyBu
     return neighbors;
   }
   if (c === 'ACAD') {
-    return ['ADMIN', 'LAB'];
+    return ['ADMIN'];
   }
   if (c === 'LAB') {
-    if (floor >= 10) return ['ACAD'];
-    return ['ACAD', 'ADMIN'];
+    return ['ADMIN'];
   }
   return [];
 }
@@ -112,14 +111,6 @@ export function isSameFloorLinkAllowed(
   if (from === to) return false;
   if (!isFacultyCode(from) || !isFacultyCode(to)) return false;
   if (!isDirectBuildingLinkAllowed(from, to)) return false;
-
-  // LAB floors 10–11 connect to Academic only (not Administration).
-  if (floor >= 10) {
-    const involvesLab = from === 'LAB' || to === 'LAB';
-    if (involvesLab) {
-      return from === 'ACAD' || to === 'ACAD';
-    }
-  }
 
   // ADMIN ↔ LAB only on floors both buildings share (0–9).
   if (

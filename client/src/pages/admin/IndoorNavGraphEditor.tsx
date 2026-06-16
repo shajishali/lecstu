@@ -188,7 +188,6 @@ export default function IndoorNavGraphEditor({
   const mapImgRef = useRef<HTMLImageElement>(null);
   const floorPlanRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
-
   const [buildings, setBuildings] = useState<
     { id: string; name: string; code: string; floors: number; floorPlans: { floor: number }[] }[]
   >([]);
