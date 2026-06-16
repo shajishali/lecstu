@@ -10,8 +10,8 @@ import { isMarkerVisibleToStudents } from '../utils/markerMetadata';
 import { getBuildingOrThrow, normalizeMarkerCoord } from './indoorMarkerService';
 import { isValidFloorIndex } from './floorPlanStorage';
 import { getStudentTodayOnCampus } from './studentTodayCampusService';
-import { FACULTY_BUILDING_CODES, findBuildingPath } from '../constants/campusTopology';
-import { autoPairBuildingFloorConnectors } from './buildingConnectorService';
+import { FACULTY_BUILDING_CODES } from '../constants/campusTopology';
+import { filterRoutingEdges } from './routingGraphFilter';
 
 const NODE_INCLUDE = {
   mapMarker: {
@@ -534,9 +534,12 @@ async function runPathfinding(
 
   const goal = goalResult.node;
   let graphNodes = await prisma.navNode.findMany({ where: { buildingId } });
+  const buildingCodeById = new Map<string, string>([[buildingId, building.code]]);
+
   let graphEdges = await prisma.navEdge.findMany({
     where: { fromNodeId: { in: graphNodes.map((n) => n.id) } },
   });
+  graphEdges = filterRoutingEdges(graphNodes, graphEdges, buildingCodeById);
 
   const pathResult = findShortestPath(graphNodes, graphEdges, start.id, goal.id);
 
@@ -741,39 +744,26 @@ async function loadFacultyCampusGraph() {
   });
   const buildingIds = buildings.map((b) => b.id);
   const buildingById = new Map(buildings.map((b) => [b.id, b]));
+  const buildingCodeById = new Map(buildings.map((b) => [b.id, b.code]));
 
   const nodes = await prisma.navNode.findMany({
     where: { buildingId: { in: buildingIds } },
   });
   const nodeIds = nodes.map((n) => n.id);
-  const edges = await prisma.navEdge.findMany({
+  const allEdges = await prisma.navEdge.findMany({
     where: {
       fromNodeId: { in: nodeIds },
       toNodeId: { in: nodeIds },
     },
   });
+  const edges = filterRoutingEdges(nodes, allEdges, buildingCodeById);
 
   return { nodes, edges, buildingById };
 }
 
-async function ensureCampusConnectors(fromBuildingId: string, toBuildingId: string) {
-  const buildings = await prisma.mapBuilding.findMany({
-    where: { id: { in: [fromBuildingId, toBuildingId] } },
-    select: { id: true, code: true },
-  });
-  const byId = Object.fromEntries(buildings.map((b) => [b.id, b]));
-  const from = byId[fromBuildingId];
-  const to = byId[toBuildingId];
-  if (!from || !to) return;
-
-  const pathHint = findBuildingPath(from.code, to.code) ?? [from.code, to.code];
-  const involved = await prisma.mapBuilding.findMany({
-    where: { code: { in: pathHint } },
-    select: { id: true },
-  });
-  for (const b of involved) {
-    await autoPairBuildingFloorConnectors(b.id);
-  }
+/** Admin-configured horizontal links are used as-is — no auto-pair during student routing. */
+async function ensureCampusConnectors(_fromBuildingId: string, _toBuildingId: string) {
+  /* no-op */
 }
 
 async function computeCampusIndoorRoute(options: {
@@ -820,7 +810,7 @@ async function computeCampusIndoorRoute(options: {
       building: { id: toBuilding.id, name: toBuilding.name, code: toBuilding.code },
       fromBuilding: { id: fromBuilding.id, name: fromBuilding.name, code: fromBuilding.code },
       message:
-        'No cross-building path found. In Admin → Buildings, pair same-floor building links, then draw walking paths.',
+        'No cross-building path found. Academic ↔ Laboratory routes go through Administration — pair ACAD↔ADMIN and ADMIN↔LAB horizontal links on the same floor, plus stairs/lift where floors differ.',
     };
   }
 

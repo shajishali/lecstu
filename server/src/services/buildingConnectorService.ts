@@ -592,8 +592,12 @@ export async function autoPairBuildingFloorConnectors(buildingId: string, dryRun
       await pairBuildingFloorNodes(s.fromNodeId, s.toNodeId);
       created.push(s);
     } catch (err) {
-      const code = (err as { statusCode?: number })?.statusCode;
+      const e = err as { statusCode?: number; message?: string };
+      const code = e.statusCode;
+      const msg = e.message ?? '';
+      // Skip duplicates and legacy path-point links without blocking routing.
       if (code === 409) continue;
+      if (code === 400 && msg.includes('Select place markers on each floor')) continue;
       throw err;
     }
   }

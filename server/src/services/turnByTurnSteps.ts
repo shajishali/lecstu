@@ -134,7 +134,7 @@ export function buildTurnByTurnSteps(
 
     if (prev.buildingId && cur.buildingId && prev.buildingId !== cur.buildingId) {
       steps.push({
-        instruction: `Cross into ${cur.buildingName || 'the next building'}`,
+        instruction: `Use ${prev.label} to enter ${cur.buildingName || 'the next building'}`,
         floor: cur.floor,
         polylineIndex: i,
       });

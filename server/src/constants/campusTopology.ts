@@ -4,8 +4,8 @@ import { getNeighborBuildingCodes } from './buildingConnections';
 /** Buildings that may connect when at least one same-floor link exists. */
 export const FACULTY_BUILDING_ADJACENCY: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
   ADMIN: ['ACAD', 'LAB'],
-  ACAD: ['ADMIN', 'LAB'],
-  LAB: ['ADMIN', 'ACAD'],
+  ACAD: ['ADMIN'],
+  LAB: ['ADMIN'],
 };
 
 export const FACULTY_BUILDING_CODES: FacultyBuildingCode[] = ['ADMIN', 'ACAD', 'LAB'];
