@@ -114,9 +114,9 @@ efficiency barriers in multilingual university environments.
 | **10.5** | Final Combined Research Report | Research | ALL | ⬜ |
 | **11.1** | Floor Plan Processing & Structured Location Storage | Engineering | RO-5 | ✅ |
 | **11.2** | Navigation Graph Creation & Validation | Engineering | RO-5 | ✅ |
-| **11.3** | Same-Floor Navigation | Engineering | RO-5 | ⚠️ |
-| **11.4** | Multi-Floor Navigation | Engineering | RO-5 | ⬜ |
-| **11.5** | Multi-Building Navigation | Engineering | RO-5 | ⬜ |
+| **11.3** | Same-Floor Navigation | Engineering | RO-5 | ✅ |
+| **11.4** | Multi-Floor Navigation | Engineering | RO-5 | ✅ |
+| **11.5** | Multi-Building Navigation | Engineering | RO-5 | ⚠️ |
 | **11.6** | Natural Language Guidance (Unified Pipeline) | Engineering | RO-2, RO-5 | ⚠️ |
 | **11.7** | Route Visualization on Floor Plans | Engineering | RO-5 | ⚠️ |
 | **11.8** | Admin Consolidation & Publish Workflow | Engineering | RO-5 | ⬜ |
@@ -1796,48 +1796,48 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 11.3 — Same-Floor Navigation
-**Type**: Engineering | **Effort**: ~1 day | **Depends on**: 11.2 | **Status**: ⚠️ Partial
+**Type**: Engineering | **Effort**: ~1 day | **Depends on**: 11.2 | **Status**: ✅
 
-- [ ] Resolve start/end: marker ID, hall ID, office ID, or NL query → `NavNode`
-- [ ] Run A* (Dijkstra fallback) on single-floor subgraph
-- [ ] Generate turn-by-turn steps: exit room → walk straight → turn left/right → destination
-- [ ] Compute `distanceMeters` and `estimatedMinutes` from scale
-- [ ] Unify API responses: `POST /api/indoor-nav/route` and `GET /api/map/indoor-route`
-- [ ] Handle edge cases: same room, blocked graph, missing marker
-- [ ] Integration test: Lecture Hall A → Lecture Hall B (each building)
+- [x] Resolve start/end: marker ID, hall ID, office ID, or NL query → `NavNode`
+- [x] Run A* (Dijkstra fallback) on single-floor subgraph
+- [x] Generate turn-by-turn steps: exit room → walk straight → turn left/right → destination
+- [x] Compute `distanceMeters` and `estimatedMinutes` from scale
+- [x] Unify API responses: `POST /api/indoor-nav/route` and `GET /api/map/indoor-route`
+- [x] Handle edge cases: same room, blocked graph, missing marker
+- [x] Integration test: Lecture Hall A → Lecture Hall B (each building)
 
 **Checkpoint:** Same-floor routing works for all buildings with human-readable steps.
 
 ---
 
 ### Sub-Phase 11.4 — Multi-Floor Navigation
-**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.3 | **Status**: ⬜
+**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.3 | **Status**: ✅
 
-- [ ] **Vertical connector wizard** (admin): pair STAIRS/LIFT nodes across floors
-- [ ] Create bidirectional cross-floor `NavEdge` with labels (`stairs`, `lift`)
-- [ ] Extend pathfinding: prefer labeled vertical edges; apply floor-change penalty
-- [ ] Turn-by-turn: "Walk to staircase" → "Go up one floor" → "Exit staircase" → continue
-- [ ] Route response: `segments[]` per floor with `floor`, `buildingId`, `polyline`
-- [ ] UI floor switcher: auto-switch floor when step crosses boundary
-- [ ] Test: Ground floor entrance → First floor room (each building)
+- [x] **Vertical connector wizard** (admin): pair STAIRS/LIFT nodes across floors
+- [x] Create bidirectional cross-floor `NavEdge` with labels (`stairs`, `lift`)
+- [x] Extend pathfinding: prefer labeled vertical edges; apply floor-change penalty
+- [x] Turn-by-turn: "Walk to staircase" → "Go up one floor" → "Exit staircase" → continue
+- [x] Route response: `segments[]` per floor with `floor`, `buildingId`, `polyline`
+- [x] UI floor switcher: auto-switch floor when step crosses boundary
+- [x] Test: Ground floor entrance → First floor room (each building)
 
 **Checkpoint:** Any two floors within one building route correctly with floor transition instructions.
 
 ---
 
 ### Sub-Phase 11.5 — Multi-Building Navigation
-**Type**: Engineering | **Effort**: ~3 days | **Depends on**: 11.4 | **Status**: ⬜
+**Type**: Engineering | **Effort**: ~3 days | **Depends on**: 11.4 | **Status**: ⚠️ Partial
 
-- [ ] Define **campus connector model**: outdoor waypoints OR indoor exit→enter pairs
-- [ ] Pair ACAD↔ADMIN and ACAD↔LAB connection nodes (4 pairs minimum)
-- [ ] Implement **multi-leg router**: ADMIN→LAB = ADMIN→ACAD + ACAD→LAB
-- [ ] Enforce topology: reject direct ADMIN→LAB path; ACAD as intermediary only
-- [ ] Building transition steps: "Exit Administration" → "Enter Academic" → … → "Enter Laboratory"
+- [x] Define **campus connector model**: outdoor waypoints OR indoor exit→enter pairs *(indoor doorway pairs: `FACULTY_BUILDING_CONNECTIONS`, `buildingConnectorService`, admin wizard)*
+- [x] Pair ACAD↔ADMIN and ACAD↔LAB connection nodes (4 pairs minimum) *(4 defs + floor pairing; DB ~9–10/10 floors linked per neighbor)*
+- [ ] Implement **multi-leg router**: ADMIN→LAB = ADMIN→ACAD + ACAD→LAB *(single shortest path on full graph; no `legs[]` in response)*
+- [ ] Enforce topology: reject direct ADMIN→LAB path; ACAD as intermediary only *(code allows direct ADMIN↔LAB on floors 0–9)*
+- [x] Building transition steps: "Exit Administration" → "Enter Academic" → … → "Enter Laboratory" *(steps work; wording is "Use {door} to enter {building}")*
 - [ ] Optional outdoor segment on campus Leaflet map between building exits
-- [ ] Chained timetable routes: class in ADMIN then LAB → full day route
-- [ ] Test: Administration office → Laboratory (via Academic)
+- [ ] Chained timetable routes: class in ADMIN then LAB → full day route *(chains `fromNodeId` only within same building)*
+- [ ] Test: Administration office → Laboratory (via Academic) *(cross-building route works ADMIN→LAB direct; smoke test fails step-regex; not routed via ACAD)*
 
-**Checkpoint:** Any two locations in the faculty complex route correctly, respecting building topology.
+**Checkpoint:** Any two locations in the faculty complex route correctly, respecting building topology. ⚠️ Not met — direct ADMIN↔LAB shortcuts bypass ACAD hub; cross-building timetable chaining incomplete.
 
 ---
 

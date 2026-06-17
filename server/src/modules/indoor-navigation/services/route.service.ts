@@ -14,8 +14,10 @@ export async function computeRouteRequest(options: {
   toBuildingId?: string;
   toHallId?: string;
   toMarkerId?: string;
+  toOfficeId?: string;
   fromNodeId?: string;
   fromMarkerId?: string;
+  fromOfficeId?: string;
   q?: string;
   sourceQ?: string;
   floor?: number;
@@ -49,11 +51,13 @@ export async function computeRouteRequest(options: {
     toBuildingId: options.toBuildingId,
     toHallId: options.toHallId,
     toMarkerId: options.toMarkerId,
+    toOfficeId: options.toOfficeId,
     q: options.q,
     floor: options.floor,
     fromFloor: options.fromFloor,
     fromNodeId,
     fromMarkerId: options.fromMarkerId,
+    fromOfficeId: options.fromOfficeId,
   });
 
   const formatted = formatIndoorRouteResponse(raw);

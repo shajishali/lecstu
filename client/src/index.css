@@ -852,6 +852,47 @@
 .entity-form {
   @apply flex flex-col gap-4;
 }
+.entity-form-field {
+  @apply flex flex-col gap-1.5;
+}
+.entity-form-field > label,
+.entity-form > label:not(.checkbox-label) {
+  @apply text-sm font-semibold text-slate-700;
+}
+.entity-form-field input,
+.entity-form-field select,
+.entity-form-field textarea,
+.entity-form > label:not(.checkbox-label) input,
+.entity-form > label:not(.checkbox-label) select {
+  @apply w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)];
+}
+.entity-form-hint {
+  @apply text-xs font-normal text-slate-500;
+}
+.entity-form .checkbox-label {
+  @apply flex flex-row items-center gap-2 text-sm font-medium text-slate-700;
+}
+.entity-form .checkbox-label input {
+  @apply h-4 w-4 rounded border-slate-300;
+}
+.equip-input-row {
+  @apply flex items-stretch gap-2;
+}
+.equip-input-row input {
+  @apply min-w-0 flex-1;
+}
+.equip-input-row .btn-secondary {
+  @apply shrink-0 px-4;
+}
+.equip-tags {
+  @apply mt-2 flex flex-wrap gap-2;
+}
+.equip-tag {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700;
+}
+.equip-tag.removable {
+  @apply cursor-pointer transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700;
+}
 .form-row-2 {
   @apply grid gap-3 sm:grid-cols-2;
 }
@@ -859,8 +900,10 @@
   @apply flex flex-col gap-1.5 text-sm font-semibold text-slate-700;
 }
 .form-row-2 input,
-.form-row-2 select {
-  @apply rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)];
+.form-row-2 select,
+.entity-form-field input,
+.entity-form-field select {
+  @apply w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)];
 }
 .tt-form-actions {
   @apply mt-4 flex justify-end gap-2;
@@ -1453,33 +1496,158 @@
     --tt-grid-rows: 10;
     --tt-hour-height: 68px;
     --tt-body-height: calc(var(--tt-hour-height) * var(--tt-visible-hours));
-    @apply flex-none gap-3;
+    @apply flex min-h-0 w-full flex-1 flex-col gap-3;
   }
   .lecturer-schedule-page .tt-grid-wrapper {
-    @apply w-full max-w-none flex-none;
+    @apply flex min-h-0 w-full max-w-none flex-1 flex-col;
   }
   .lecturer-schedule-page .tt-grid-scroll {
-    @apply min-h-0 overflow-y-auto overflow-x-auto md:flex;
+    @apply min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-lg;
     max-height: min(88vh, calc(100vh - 160px));
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    touch-action: pan-y;
   }
   .lecturer-schedule-page .tt-grid-scroll .tt-grid {
     min-height: calc(var(--tt-hour-height) * var(--tt-grid-rows));
-    min-width: 1200px;
+    min-width: 0;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  .lecturer-schedule-page .tt-grid {
+    @apply w-full min-w-0;
+  }
+  .lecturer-schedule-page .tt-day-col {
+    @apply min-w-0;
+  }
+  .lecturer-schedule-page .tt-time-col {
+    contain: layout style paint;
   }
   .lecturer-schedule-page .tt-day-body {
-    overflow: visible;
+    overflow: hidden;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(var(--tt-hour-height) - 1px),
+      rgb(226 232 240 / 0.9) calc(var(--tt-hour-height) - 1px),
+      rgb(226 232 240 / 0.9) var(--tt-hour-height)
+    );
+    background-attachment: local;
   }
-  .lecturer-schedule-page .tt-slot-group-merged {
-    @apply z-[1];
+  .lecturer-schedule-page .tt-slot-group-merged,
+  .lecturer-schedule-page .tt-lecture-card-wrap {
+    @apply z-[1] overflow-hidden;
+    contain: layout paint;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap:hover {
+    @apply z-[2];
+  }
+  .lecturer-schedule-page .tt-lecture-card {
+    @apply flex h-full min-h-0 cursor-default flex-col items-stretch justify-start gap-0 overflow-hidden rounded-md px-0 py-0 shadow-sm transition-none hover:shadow-sm;
+  }
+  .lecturer-schedule-page .tt-lecture-card-top {
+    @apply flex shrink-0 items-start justify-between gap-1.5 border-b border-slate-200/80 bg-white/95 px-2 py-1.5;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-compact .tt-lecture-card-top {
+    @apply px-1.5 py-1;
+  }
+  .lecturer-schedule-page .tt-lecture-time-block {
+    @apply flex min-w-0 flex-1 items-start gap-1.5;
+  }
+  .lecturer-schedule-page .tt-lecture-time-texts {
+    @apply min-w-0;
+  }
+  .lecturer-schedule-page .tt-lecture-time-icon {
+    @apply mt-0.5 shrink-0 text-slate-600;
+  }
+  .lecturer-schedule-page .tt-lecture-time-main {
+    @apply text-[11px] font-bold leading-tight text-slate-900;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-compact .tt-lecture-time-main {
+    @apply text-[10px];
+  }
+  .lecturer-schedule-page .tt-lecture-time-sub {
+    @apply mt-0.5 text-[10px] font-medium leading-tight text-slate-600;
+  }
+  .lecturer-schedule-page .tt-lecture-card-scroll {
+    @apply min-h-0 flex-1 overflow-hidden;
+    pointer-events: none;
+  }
+  .lecturer-schedule-page .tt-lecture-card-top,
+  .lecturer-schedule-page .tt-lecture-edit-btn {
+    pointer-events: auto;
+  }
+  .lecturer-schedule-page .tt-grid-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .lecturer-schedule-page .tt-grid-scroll::-webkit-scrollbar-track {
+    @apply rounded-lg bg-slate-100;
+  }
+  .lecturer-schedule-page .tt-grid-scroll::-webkit-scrollbar-thumb {
+    @apply rounded-lg bg-slate-300;
+  }
+  .lecturer-schedule-page .tt-grid-scroll::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+  .lecturer-schedule-page .tt-lecture-edit-btn {
+    @apply inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-primary)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary)] shadow-sm transition-colors hover:bg-[var(--color-primary)] hover:text-white;
+  }
+  .lecturer-schedule-page .tt-lecture-edit-btn-compact {
+    @apply h-6 w-6 justify-center p-0;
+  }
+  .lecturer-schedule-page .tt-lecture-edit-btn-inline {
+    @apply mt-1.5 self-end;
+  }
+  .lecturer-schedule-page .tt-lecture-card-body {
+    @apply flex flex-col gap-1 px-2 py-1.5;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-compact .tt-lecture-card-body {
+    @apply gap-0.5 px-1.5 py-1;
+  }
+  .lecturer-schedule-page .tt-lecture-row {
+    @apply grid grid-cols-[44px_1fr] items-start gap-x-1.5 gap-y-0 text-[10px] leading-snug;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-compact .tt-lecture-row {
+    @apply grid-cols-[38px_1fr] text-[9px];
+  }
+  .lecturer-schedule-page .tt-lecture-label {
+    @apply font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .lecturer-schedule-page .tt-lecture-value {
+    @apply min-w-0 whitespace-normal break-words text-slate-800;
+  }
+  .lecturer-schedule-page .tt-lecture-course {
+    @apply font-bold;
   }
   .tt-slot-merged {
-    @apply h-full min-h-[120px] cursor-default gap-1.5 overflow-y-auto px-2 py-2;
+    @apply h-full min-h-[165px] cursor-default gap-2 overflow-y-auto px-2.5 py-2.5;
+  }
+  .tt-merged-block-header {
+    @apply mb-1.5 flex items-start justify-between gap-2;
+  }
+  .tt-merged-time-banner {
+    @apply flex min-w-0 flex-1 items-start gap-1.5 rounded-md border border-slate-300/80 bg-white px-2 py-1.5 shadow-sm;
+  }
+  .tt-merged-time-stack {
+    @apply min-w-0 flex-1;
+  }
+  .tt-merged-time-text {
+    @apply block text-xs font-bold leading-snug text-slate-900;
+  }
+  .tt-merged-time-24 {
+    @apply mt-0.5 block text-[10px] font-medium leading-snug text-slate-600;
+  }
+  .tt-merged-session-titles {
+    @apply min-w-0 flex-1;
   }
   .tt-merged-time {
     @apply mb-1 w-full border-b border-slate-200/80 pb-1 text-[11px] font-semibold text-slate-800;
   }
   .tt-merged-session {
-    @apply mt-1 w-full rounded-md border border-slate-200/70 bg-white/60 px-2 py-1.5;
+    @apply mt-1 w-full rounded-md border border-slate-200/70 bg-white/60 px-2.5 py-2;
   }
   .tt-merged-session + .tt-merged-session {
     @apply mt-2;
@@ -1490,11 +1658,20 @@
   .tt-merged-session .tt-slot-code {
     @apply whitespace-normal text-xs font-bold leading-snug;
   }
+  .tt-slot-time.tt-merged-time,
+  .tt-merged-time-banner .tt-merged-time-text,
+  .tt-merged-time-banner .tt-merged-time-24 {
+    @apply whitespace-normal overflow-visible;
+    text-overflow: clip;
+  }
   .tt-merged-session .tt-slot-meta {
     @apply mt-0.5 whitespace-normal text-[11px] leading-snug;
   }
   .tt-merged-edit-btn {
-    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded bg-white/90 text-slate-600 shadow-sm hover:text-[var(--color-primary)];
+    @apply relative z-[3] flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)];
+  }
+  .tt-merged-edit-btn-header {
+    @apply mt-0.5;
   }
   .tt-merged-classes {
     @apply mt-1 block text-[11px] leading-relaxed text-slate-700;
@@ -1504,6 +1681,59 @@
   }
   .tt-slot-merged .tt-slot-door {
     @apply mt-0.5 whitespace-normal text-[11px];
+  }
+  .tt-create-modal {
+    @apply max-w-lg;
+  }
+  .timetable-page .tt-create-modal,
+  .timetable-page .tt-edit-modal {
+    @apply flex max-h-[92vh] min-h-0 flex-col;
+    max-width: 560px;
+  }
+  .timetable-page .tt-create-modal .modal-body,
+  .timetable-page .tt-edit-modal .modal-body {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timetable-page .tt-create-modal .modal-header,
+  .timetable-page .tt-edit-modal .modal-header,
+  .timetable-page .tt-create-modal .modal-footer,
+  .timetable-page .tt-edit-modal .modal-footer {
+    @apply shrink-0 bg-white;
+  }
+  .tt-last-updated {
+    @apply rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5;
+  }
+  .lecturer-batch-picker {
+    @apply rounded-lg border border-slate-200 bg-slate-50/80;
+  }
+  .lecturer-batch-picker-head {
+    @apply flex flex-col gap-2 border-b border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .lecturer-batch-search {
+    @apply w-full rounded border border-slate-300 bg-white px-2.5 py-1.5 text-sm sm:max-w-[220px];
+  }
+  .lecturer-batch-scroll {
+    @apply max-h-40 overflow-y-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .lecturer-batch-row {
+    @apply flex cursor-pointer items-start gap-2.5 border-b border-slate-100 px-3 py-2.5 text-sm transition-colors last:border-b-0 hover:bg-white;
+  }
+  .lecturer-batch-row-selected {
+    @apply bg-white ring-1 ring-inset ring-[var(--color-primary)]/30;
+  }
+  .lecturer-batch-row input {
+    @apply mt-0.5 shrink-0;
+  }
+  .lecturer-batch-row-main {
+    @apply min-w-0 flex-1;
+  }
+  .lecturer-batch-name {
+    @apply block font-medium text-slate-800 leading-snug;
+  }
+  .lecturer-batch-meta {
+    @apply mt-0.5 block text-xs text-slate-500 leading-snug;
   }
   .tt-slot-group:has(.tt-slot:only-child) .tt-slot {
     @apply min-h-[28px] py-1;
@@ -1550,9 +1780,12 @@
     max-width: 520px;
     max-height: 92vh;
   }
+  .timetable-page .tt-edit-modal,
+  .timetable-page .tt-create-modal {
+    min-height: auto;
+  }
   .timetable-page .tt-edit-modal {
     max-width: 560px;
-    min-height: auto;
   }
   .timetable-page .modal-header {
     @apply flex items-center justify-between border-b border-slate-200 px-4 py-3;

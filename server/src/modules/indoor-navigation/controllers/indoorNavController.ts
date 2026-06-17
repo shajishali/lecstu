@@ -113,8 +113,10 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
       toBuildingId,
       toHallId,
       toMarkerId,
+      toOfficeId,
       fromNodeId,
       fromMarkerId,
+      fromOfficeId,
       q,
       sourceQ,
       floor,
@@ -123,8 +125,8 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
       saveSession,
     } = req.body ?? {};
 
-    if (!toHallId && !toMarkerId && !q?.trim()) {
-      throw new AppError('Provide toHallId, toMarkerId, or q (destination)', 400);
+    if (!toHallId && !toMarkerId && !toOfficeId && !q?.trim()) {
+      throw new AppError('Provide toHallId, toMarkerId, toOfficeId, or q (destination)', 400);
     }
 
     const destBuildingId = toBuildingId || buildingId;
@@ -144,7 +146,9 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
       toBuildingId,
       toHallId,
       toMarkerId,
+      toOfficeId,
       fromMarkerId,
+      fromOfficeId,
       fromNodeId: effectiveFromNodeId,
       q: q?.trim(),
       sourceQ: sourceQ?.trim(),
@@ -237,6 +241,7 @@ export async function postNavigation(req: Request, res: Response, next: NextFunc
       buildingId: room.buildingId,
       toMarkerId: room.markerId,
       toHallId: room.hallId,
+      toOfficeId: room.kind === 'office' ? room.id : undefined,
       q: destQuery,
       sourceQ: sourceQ ?? undefined,
       floor: room.floor,

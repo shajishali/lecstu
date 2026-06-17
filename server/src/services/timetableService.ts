@@ -74,9 +74,20 @@ function deduplicateEntries(entries: TimetableSlot[]): TimetableSlot[] {
   });
 }
 
+async function getEntriesLastUpdated(
+  where: Parameters<typeof prisma.masterTimetable.aggregate>[0]['where'],
+): Promise<string | null> {
+  const result = await prisma.masterTimetable.aggregate({
+    where: { ...where, isActive: true },
+    _max: { updatedAt: true },
+  });
+  return result._max.updatedAt?.toISOString() ?? null;
+}
+
 export type StudentTimetableResult = {
   weekly: WeeklyTimetable;
   flat: TimetableSlot[];
+  lastUpdated: string | null;
   enrollment?: { programCode: string; studyYear: string; pathwayCode: string; groupName: string };
   /** Faithful FET grid for the student's batch (preferred for My Timetable UI) */
   grid?: TimetableGridSnapshot | null;
@@ -96,7 +107,7 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
   const groupIds = await resolveGroupIdsForStudent(studentId);
 
   if (groupIds.length === 0) {
-    return { weekly: organizeByDay([]), flat: [], enrollment };
+    return { weekly: organizeByDay([]), flat: [], lastUpdated: null, enrollment };
   }
 
   const entries = await prisma.masterTimetable.findMany({
@@ -106,6 +117,7 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
   }) as TimetableSlot[];
 
   const flat = deduplicateEntries(entries);
+  const lastUpdated = await getEntriesLastUpdated({ groupId: { in: groupIds } });
 
   let grid: TimetableGridSnapshot | null = null;
   if (primaryGroup?.name) {
@@ -134,13 +146,14 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
     grid = enrichGridFromSlots(grid, slotRefs, { lecturerDisplay });
   }
 
-  return { weekly: organizeByDay(flat), flat, enrollment, grid };
+  return { weekly: organizeByDay(flat), flat, lastUpdated, enrollment, grid };
 }
 
-/** Lecturer weekly timetable from admin import (matched by lecturerId + FET initials). */
+/** Lecturer teaching timetable from admin import (matched by lecturerId + FET initials). */
 export async function getLecturerTimetable(lecturerId: string): Promise<{
   weekly: WeeklyTimetable;
   flat: TimetableSlot[];
+  lastUpdated: string | null;
   timetableCodes: string[];
   scheduleSlots: {
     id: string;
@@ -163,12 +176,21 @@ export async function getLecturerTimetable(lecturerId: string): Promise<{
 
   const deduped = deduplicateEntries(flat);
 
+  const orConditions: Array<{ lecturerId: string } | { lecturerInitials: { in: string[] } }> = [
+    { lecturerId },
+  ];
+  if (timetableCodes.length > 0) {
+    orConditions.push({ lecturerInitials: { in: timetableCodes } });
+  }
+  const lastUpdated = await getEntriesLastUpdated({ OR: orConditions });
+
   // Keep appointment availability in sync with assigned teaching slots.
   await syncTeachingScheduleFromMaster(lecturerId);
 
   return {
     weekly: organizeByDay(deduped),
     flat: deduped,
+    lastUpdated,
     timetableCodes,
     scheduleSlots: personalSlots.map((s) => ({
       id: s.id,

@@ -54,41 +54,13 @@ function formatTime(t: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
-function getPeriodKey(s: SlotData): string {
-  const y = s.year ?? 2026;
-  const m = s.month ?? 1;
-  const w = s.week ?? 1;
-  return `${y}-${m}-${w}`;
-}
-
-function getAvailablePeriods(flat: SlotData[]): string[] {
-  const seen = new Set<string>();
-  for (const s of flat) {
-    seen.add(getPeriodKey(s));
-  }
-  return Array.from(seen);
-}
-
-function filterByPeriod(flat: SlotData[], periodKey: string): SlotData[] {
-  return flat.filter((s) => getPeriodKey(s) === periodKey);
-}
-
 function computeNextLectureAndTodayCount(flat: SlotData[]): { nextLecture: string; todayCount: number } {
   const today = getCurrentDay();
   const nowStr = getCurrentTimeStr();
   if (!today || flat.length === 0) {
     return { nextLecture: 'No classes scheduled', todayCount: 0 };
   }
-  const periods = getAvailablePeriods(flat);
-  const periodKey = periods.sort((a, b) => {
-    const [ay, am, aw] = a.split('-').map(Number);
-    const [by, bm, bw] = b.split('-').map(Number);
-    if (ay !== by) return by - ay;
-    if (am !== bm) return bm - am;
-    return bw - aw;
-  })[0];
-  const filtered = periodKey ? filterByPeriod(flat, periodKey) : flat;
-  const todaySlots = filtered
+  const todaySlots = flat
     .filter((s) => s.dayOfWeek === today)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
   const todayCount = todaySlots.length;
@@ -102,7 +74,7 @@ function computeNextLectureAndTodayCount(flat: SlotData[]): { nextLecture: strin
   const dayIdx = DAYS.indexOf(today);
   const upcomingDays = DAYS.slice(dayIdx + 1).concat(DAYS.slice(0, dayIdx));
   for (const day of upcomingDays) {
-    const daySlots = filtered
+    const daySlots = flat
       .filter((s) => s.dayOfWeek === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
     if (daySlots.length > 0) {
@@ -122,16 +94,7 @@ function computeNextLectureAndTodayCount(flat: SlotData[]): { nextLecture: strin
 function computeLecturerTodayCount(flat: SlotData[]): number {
   const today = getCurrentDay();
   if (!today) return 0;
-  const periods = getAvailablePeriods(flat);
-  const periodKey = periods.sort((a, b) => {
-    const [ay, am, aw] = a.split('-').map(Number);
-    const [by, bm, bw] = b.split('-').map(Number);
-    if (ay !== by) return by - ay;
-    if (am !== bm) return bm - am;
-    return bw - aw;
-  })[0];
-  const filtered = periodKey ? filterByPeriod(flat, periodKey) : flat;
-  return filtered.filter((s) => s.dayOfWeek === today).length;
+  return flat.filter((s) => s.dayOfWeek === today).length;
 }
 
 const roleCardsBase: Record<string, { title: string; desc: string; icon: React.ReactNode; color: string }[]> = {

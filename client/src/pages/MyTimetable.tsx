@@ -49,45 +49,6 @@ const TIME_SLOTS = Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i
   return `${String(h).padStart(2, '0')}:00`;
 });
 
-type PeriodKey = string; // "year-month-week"
-
-function getPeriodKey(s: SlotData): PeriodKey {
-  const y = s.year ?? 2026;
-  const m = s.month ?? 1;
-  const w = s.week ?? 1;
-  return `${y}-${m}-${w}`;
-}
-
-function getAvailablePeriods(flat: SlotData[]): { key: PeriodKey; label: string }[] {
-  const seen = new Set<PeriodKey>();
-  const periods: { key: PeriodKey; label: string }[] = [];
-  for (const s of flat) {
-    const key = getPeriodKey(s);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const m = s.month ?? 1;
-    periods.push({
-      key,
-      label: `${s.year} · ${MONTH_NAMES[m - 1] ?? m} · Week ${s.week ?? 1}`,
-    });
-  }
-  // Sort: most recent first (March before January)
-  periods.sort((a, b) => {
-    const [ay, am, aw] = a.key.split('-').map(Number);
-    const [by, bm, bw] = b.key.split('-').map(Number);
-    if (ay !== by) return by - ay;
-    if (am !== bm) return bm - am;
-    return bw - aw;
-  });
-  return periods;
-}
-
-function filterByPeriod(flat: SlotData[], periodKey: PeriodKey): SlotData[] {
-  return flat.filter((s) => getPeriodKey(s) === periodKey);
-}
-
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
 const COURSE_COLORS = [
   '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626',
   '#7c3aed', '#db2777', '#0d9488', '#ea580c', '#2563eb',
@@ -189,7 +150,7 @@ export default function MyTimetable() {
   const [flat, setFlat] = useState<SlotData[]>([]);
   const [gridSnapshot, setGridSnapshot] = useState<TimetableGridSnapshot | null>(null);
   const [enrollment, setEnrollment] = useState<TimetableEnrollment | null>(null);
-  const [selectedPeriodKey, setSelectedPeriodKey] = useState<PeriodKey | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
@@ -231,7 +192,7 @@ export default function MyTimetable() {
       setFlat([]);
       setGridSnapshot(null);
       setEnrollment(null);
-      setSelectedPeriodKey(null);
+      setLastUpdated(null);
       colorMap.current.clear();
       hasLoadedOnceRef.current = false;
     }
@@ -248,17 +209,8 @@ export default function MyTimetable() {
       setFlat(data.flat || []);
       setGridSnapshot(data.grid ?? null);
       setEnrollment(data.enrollment ?? null);
+      setLastUpdated(data.lastUpdated ?? null);
       colorMap.current.clear();
-      const periods = getAvailablePeriods(data.flat || []);
-      if (periods.length > 0) {
-        setSelectedPeriodKey((prev) => {
-          if (prev && periods.some((p) => p.key === prev)) return prev;
-          // Default to the most recent period (sorted newest-first in getAvailablePeriods)
-          return periods[0].key;
-        });
-      } else {
-        setSelectedPeriodKey(null);
-      }
       hasLoadedOnceRef.current = true;
     } catch {
       const now = Date.now();
@@ -305,9 +257,9 @@ export default function MyTimetable() {
   const handlePrint = () => window.print();
 
   const handleExport = () => {
-    if (filteredFlat.length === 0) return;
+    if (flat.length === 0) return;
     const header = 'Day,Start,End,Course,Lecturer,Hall,Group';
-    const rows = filteredFlat.map(
+    const rows = flat.map(
       (s) =>
         `${s.dayOfWeek},${s.startTime},${s.endTime},${s.course.code} - ${s.course.name},${formatTimetableLecturer(s)},${s.hall.name} (${s.hall.building}),${s.group.name}`
     );
@@ -323,28 +275,27 @@ export default function MyTimetable() {
 
   const todayDayName = getCurrentDayName(); // e.g. "MONDAY" or null on Sunday
 
-  const filteredFlat = useMemo(
-    () => (selectedPeriodKey ? filterByPeriod(flat, selectedPeriodKey) : flat),
-    [flat, selectedPeriodKey]
-  );
-  const filteredWeekly = useMemo(() => {
+  const scheduleByDay = useMemo(() => {
     const byDay: WeeklyTimetable = {};
     for (const day of DAYS) byDay[day] = [];
-    for (const s of filteredFlat) {
+    for (const s of flat) {
       if (byDay[s.dayOfWeek]) byDay[s.dayOfWeek].push(s);
     }
     for (const day of DAYS) byDay[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
     return byDay;
-  }, [filteredFlat]);
+  }, [flat]);
 
   const safeMobileIdx = Math.min(mobileDayIndex, DAYS.length - 1);
 
-  const gridPeriodKey = gridSnapshot
-    ? `${gridSnapshot.year}-${gridSnapshot.month}-${gridSnapshot.week}`
-    : null;
-  const showStoredFetGrid = Boolean(
-    gridSnapshot && (!selectedPeriodKey || selectedPeriodKey === gridPeriodKey),
-  );
+  const showStoredFetGrid = Boolean(gridSnapshot);
+
+  function formatLastUpdated(iso: string | null | undefined): string {
+    if (!iso) return 'Not updated yet';
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
 
   if (initialLoading) {
     return (
@@ -361,7 +312,7 @@ export default function MyTimetable() {
           <h1>My Timetable</h1>
           <p className="tt-subtitle">
             {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule —{' '}
-            {filteredFlat.length} slot{filteredFlat.length !== 1 ? 's' : ''}
+            {flat.length} slot{flat.length !== 1 ? 's' : ''}
             {displayEnrollment?.groupName && (
               <> · Class: <strong>{displayEnrollment.groupName}</strong>
                 {displayEnrollment.pathwayCode
@@ -371,6 +322,8 @@ export default function MyTimetable() {
                     : ''}
               </>
             )}
+            {' · '}
+            Last updated: <strong>{formatLastUpdated(lastUpdated)}</strong>
           </p>
         </div>
         <div className="tt-actions">
@@ -385,7 +338,7 @@ export default function MyTimetable() {
           <button className="btn btn-secondary btn-sm" onClick={handlePrint} title="Print">
             <Printer size={16} />
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={filteredFlat.length === 0}>
+          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={flat.length === 0}>
             <Download size={16} /> Export CSV
           </button>
         </div>
@@ -435,12 +388,12 @@ export default function MyTimetable() {
               ))}
             </div>
             <div className="tt-mobile-slots">
-              {(filteredWeekly[DAYS[safeMobileIdx]] || []).length === 0 ? (
+              {(scheduleByDay[DAYS[safeMobileIdx]] || []).length === 0 ? (
                 <p className="tt-mobile-empty">
                   No classes on <TranslatableText text={DAY_LABELS[DAYS[safeMobileIdx]]} />
                 </p>
               ) : (
-                (filteredWeekly[DAYS[safeMobileIdx]] || [])
+                (scheduleByDay[DAYS[safeMobileIdx]] || [])
                   .sort((a, b) => a.startTime.localeCompare(b.startTime))
                   .map((slot) => {
                     const color = getCourseColor(slot.course.id, colorMap.current);
@@ -489,7 +442,7 @@ export default function MyTimetable() {
             </div>
 
             {DAYS.map((day) => {
-              const slots = filteredWeekly[day] || [];
+              const slots = scheduleByDay[day] || [];
               const isToday = day === todayDayName;
               return (
                 <div key={day} className={`tt-day-col ${isToday ? 'tt-today' : ''}`}>
@@ -559,7 +512,7 @@ export default function MyTimetable() {
         <div className="tt-legend-wrapper">
           <div className="tt-legend">
             {Array.from(colorMap.current.entries()).map(([courseId, color]) => {
-              const course = filteredFlat.find((s) => s.course.id === courseId)?.course;
+              const course = flat.find((s) => s.course.id === courseId)?.course;
               if (!course) return null;
               return (
                 <div key={courseId} className="tt-legend-item">

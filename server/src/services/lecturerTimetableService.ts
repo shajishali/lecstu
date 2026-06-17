@@ -1,7 +1,9 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { detectConflicts } from './conflictDetector';
-import { lecturerCodesFromName } from './lecturerInitialsMatch';
+import { lecturerCodesFromName, effectiveTimetableCode } from './lecturerInitialsMatch';
+import { resolveGroupIdToCanonical } from './studentGroupResolver';
+import { formatShortCourseDisplay } from './timetableParserService';
 import { invalidateAll } from './timetableCache';
 import { notifyTimetableChange } from './notificationService';
 import type { DayOfWeek } from '../generated/prisma/client';
@@ -230,4 +232,221 @@ export async function updateLecturerMasterSlot(
   await notifyTimetableChange([existing.group.id]);
 
   return updated as TimetableSlot;
+}
+
+export async function getLecturerTimetableCreateOptions(lecturerId: string) {
+  const lecturer = await prisma.user.findUnique({
+    where: { id: lecturerId },
+    select: {
+      firstName: true,
+      lastName: true,
+      timetableCode: true,
+      departmentId: true,
+      department: { select: { id: true, code: true, name: true } },
+    },
+  });
+  if (!lecturer) throw new AppError('Lecturer not found', 404);
+
+  const groups = await prisma.studentGroup.findMany({
+    select: {
+      id: true,
+      name: true,
+      batchYear: true,
+      batchLabel: true,
+      department: { select: { id: true, code: true, name: true } },
+      pathway: { select: { id: true, code: true, name: true } },
+      _count: { select: { members: true } },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const courses = await prisma.course.findMany({
+    where: { isActive: true },
+    select: { id: true, code: true, name: true },
+    orderBy: { code: 'asc' },
+  });
+
+  const halls = await prisma.lectureHall.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, building: true, doorPassword: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return {
+    timetableCode: effectiveTimetableCode(
+      lecturer.firstName,
+      lecturer.lastName,
+      lecturer.timetableCode,
+    ),
+    department: lecturer.department,
+    groups: groups.map(({ _count, ...g }) => ({
+      ...g,
+      memberCount: _count.members,
+    })),
+    courses,
+    halls,
+  };
+}
+
+async function resolveOrCreateCourse(
+  courseCode: string,
+  courseName: string | undefined,
+  departmentId: string | null,
+): Promise<string> {
+  const code = courseCode.trim().toUpperCase();
+  if (!code) throw new AppError('Course code is required', 400);
+
+  const existing = await prisma.course.findUnique({ where: { code } });
+  if (existing) {
+    const name = formatShortCourseDisplay(courseName || existing.name, code);
+    if (name !== existing.name) {
+      await prisma.course.update({ where: { id: existing.id }, data: { name } });
+    }
+    return existing.id;
+  }
+
+  if (!departmentId) {
+    throw new AppError('Your profile needs a department before creating new courses', 400);
+  }
+
+  const created = await prisma.course.create({
+    data: {
+      code,
+      name: formatShortCourseDisplay(courseName || code, code),
+      credits: 3,
+      semester: 1,
+      departmentId,
+    },
+  });
+  return created.id;
+}
+
+export interface CreateLecturerTimetableInput {
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  year?: number;
+  month?: number;
+  week?: number;
+  semester?: number;
+  courseCode: string;
+  courseName?: string;
+  courseId?: string;
+  hallName: string;
+  hallDoorPassword?: string | null;
+  groupIds: string[];
+  notes?: string | null;
+}
+
+export async function createLecturerTimetableEntries(
+  lecturerId: string,
+  input: CreateLecturerTimetableInput,
+): Promise<TimetableSlot[]> {
+  if (!input.groupIds?.length) {
+    throw new AppError('Select at least one batch (class group)', 400);
+  }
+
+  const { startTime, endTime, dayOfWeek } = input;
+  if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
+    throw new AppError('Times must be HH:mm (24h)', 400);
+  }
+  if (startTime >= endTime) throw new AppError('Start time must be before end time', 400);
+
+  const lecturer = await prisma.user.findUnique({
+    where: { id: lecturerId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      timetableCode: true,
+      departmentId: true,
+    },
+  });
+  if (!lecturer) throw new AppError('Lecturer not found', 404);
+
+  const lecturerInitials =
+    effectiveTimetableCode(lecturer.firstName, lecturer.lastName, lecturer.timetableCode) ?? null;
+
+  let courseId = input.courseId?.trim();
+  if (!courseId) {
+    courseId = await resolveOrCreateCourse(
+      input.courseCode,
+      input.courseName,
+      lecturer.departmentId,
+    );
+  } else {
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) throw new AppError('Course not found', 404);
+  }
+
+  const hallId = await resolveHallIdByName(input.hallName);
+  if (input.hallDoorPassword !== undefined) {
+    await prisma.lectureHall.update({
+      where: { id: hallId },
+      data: { doorPassword: input.hallDoorPassword?.trim() || null },
+    });
+  }
+
+  const year = input.year ?? 2026;
+  const month = input.month ?? 1;
+  const week = input.week ?? 1;
+  const semester = input.semester ?? 1;
+  const notes = input.notes?.trim() || null;
+
+  const created: TimetableSlot[] = [];
+  const notifiedGroupIds = new Set<string>();
+
+  for (const rawGroupId of input.groupIds) {
+    const groupId = await resolveGroupIdToCanonical(rawGroupId);
+    const conflicts = await detectConflicts({
+      year,
+      month,
+      week,
+      dayOfWeek,
+      startTime,
+      endTime,
+      hallId,
+      lecturerId,
+      groupId,
+    });
+    if (conflicts.length > 0) {
+      const group = await prisma.studentGroup.findUnique({
+        where: { id: groupId },
+        select: { name: true },
+      });
+      throw new AppError(
+        `Conflict for ${group?.name ?? 'batch'}: ${conflicts[0].message}`,
+        409,
+      );
+    }
+
+    const entry = await prisma.masterTimetable.create({
+      data: {
+        year,
+        month,
+        week,
+        dayOfWeek,
+        startTime,
+        endTime,
+        semester,
+        courseId,
+        lecturerId,
+        hallId,
+        groupId,
+        lecturerInitials,
+        notes,
+      },
+      select: SLOT_SELECT,
+    });
+    created.push(entry as TimetableSlot);
+    notifiedGroupIds.add(groupId);
+  }
+
+  await syncTeachingScheduleFromMaster(lecturerId);
+  invalidateAll();
+  if (notifiedGroupIds.size > 0) {
+    await notifyTimetableChange([...notifiedGroupIds]);
+  }
+
+  return created;
 }

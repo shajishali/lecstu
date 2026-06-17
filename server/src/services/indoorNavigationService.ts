@@ -518,6 +518,77 @@ export async function resolveGoalNodeForHall(buildingId: string, hallId: string)
   return { node: nearest, viaNearest: true, marker };
 }
 
+export async function resolveGoalNodeForOffice(buildingId: string, officeId: string) {
+  const office = await prisma.lecturerOffice.findUnique({ where: { id: officeId } });
+  if (!office) throw new AppError('Office not found', 404);
+
+  const marker = await prisma.mapMarker.findFirst({
+    where: { officeId, buildingId },
+  });
+  if (!marker) {
+    throw new AppError(
+      'Office has no map marker on this building. Place it in Admin → Room map editor first.',
+      404
+    );
+  }
+
+  return resolveGoalNodeForMarker(buildingId, marker.id);
+}
+
+function filterSameFloorSubgraph<
+  T extends { id: string; buildingId: string; floor: number },
+  E extends { fromNodeId: string; toNodeId: string },
+>(nodes: T[], edges: E[], buildingId: string, floor: number): { nodes: T[]; edges: E[] } {
+  const nodeIds = new Set(
+    nodes.filter((n) => n.buildingId === buildingId && n.floor === floor).map((n) => n.id)
+  );
+  return {
+    nodes: nodes.filter((n) => nodeIds.has(n.id)),
+    edges: edges.filter((e) => nodeIds.has(e.fromNodeId) && nodeIds.has(e.toNodeId)),
+  };
+}
+
+function buildSameRoomRouteResult(
+  building: { id: string; name: string; code: string },
+  start: { id: string; label: string; floor: number; x: number; y: number; type: NavNodeType },
+  goalResult: { node: { id: string }; marker?: { id: string; label: string; floor: number } | null },
+  destinationLabel: string
+) {
+  const destLabel = destinationLabel || goalResult.marker?.label || start.label;
+  const step = { instruction: `You are already at ${destLabel}`, floor: start.floor, polylineIndex: 0 };
+  return {
+    found: true as const,
+    alreadyHere: true as const,
+    message: `You are already at ${destLabel}`,
+    building: { id: building.id, name: building.name, code: building.code },
+    destinationLabel: destLabel,
+    startLabel: start.label,
+    startFloor: start.floor,
+    marker: goalResult.marker
+      ? { id: goalResult.marker.id, label: goalResult.marker.label, floor: goalResult.marker.floor }
+      : null,
+    startNodeId: start.id,
+    goalNodeId: goalResult.node.id,
+    pathNodeIds: [start.id],
+    polyline: [
+      {
+        x: start.x,
+        y: start.y,
+        floor: start.floor,
+        nodeId: start.id,
+        label: start.label,
+        type: start.type,
+      },
+    ],
+    steps: [step.instruction],
+    stepDetails: [step],
+    distance: 0,
+    distanceMeters: 0,
+    estimatedMinutes: 0,
+    pathfindingAlgorithm: 'same-room' as const,
+  };
+}
+
 async function runPathfinding(
   buildingId: string,
   goalResult: Awaited<ReturnType<typeof resolveGoalNodeForHall>>,
@@ -533,6 +604,16 @@ async function runPathfinding(
   if (start.buildingId !== building.id) throw new AppError('Start node is not in this building', 400);
 
   const goal = goalResult.node;
+
+  if (start.id === goal.id) {
+    const destLabel =
+      destinationLabel ||
+      goalResult.marker?.label ||
+      start.label ||
+      'destination';
+    return buildSameRoomRouteResult(building, start, goalResult, destLabel);
+  }
+
   let graphNodes = await prisma.navNode.findMany({ where: { buildingId } });
   const buildingCodeById = new Map<string, string>([[buildingId, building.code]]);
 
@@ -540,6 +621,12 @@ async function runPathfinding(
     where: { fromNodeId: { in: graphNodes.map((n) => n.id) } },
   });
   graphEdges = filterRoutingEdges(graphNodes, graphEdges, buildingCodeById);
+
+  if (start.floor === goal.floor) {
+    const subgraph = filterSameFloorSubgraph(graphNodes, graphEdges, buildingId, start.floor);
+    graphNodes = subgraph.nodes;
+    graphEdges = subgraph.edges;
+  }
 
   const pathResult = findShortestPath(graphNodes, graphEdges, start.id, goal.id);
 
@@ -670,6 +757,31 @@ export async function computeIndoorRouteToMarker(options: {
   return result;
 }
 
+export async function computeIndoorRouteToOffice(options: {
+  buildingId: string;
+  toOfficeId: string;
+  fromNodeId?: string;
+}) {
+  const goalResult = await resolveGoalNodeForOffice(options.buildingId, options.toOfficeId);
+  const office = await prisma.lecturerOffice.findUnique({
+    where: { id: options.toOfficeId },
+    select: { id: true, roomNumber: true, building: true, floor: true },
+  });
+  const result = await runPathfinding(
+    options.buildingId,
+    goalResult,
+    options.fromNodeId,
+    goalResult.marker?.label ?? `Office ${office?.roomNumber ?? ''}`.trim()
+  );
+  if (!result.found) return result;
+  return {
+    ...result,
+    office: office
+      ? { id: office.id, roomNumber: office.roomNumber, building: office.building, floor: office.floor }
+      : null,
+  };
+}
+
 /** Resolve destination from search text; optional building/floor hints */
 export async function resolveIndoorDestinationFromQuery(
   q: string,
@@ -700,6 +812,7 @@ export async function resolveIndoorDestinationFromQuery(
       buildingId: room.buildingId,
       toMarkerId: room.markerId,
       toHallId: room.hallId,
+      toOfficeId: room.kind === 'office' ? room.id : undefined,
       label: room.label,
       floor: room.floor ?? 0,
       buildingName: building.name,
@@ -904,23 +1017,41 @@ async function computeCampusIndoorRoute(options: {
   };
 }
 
+async function resolveFromOffice(fromOfficeId: string) {
+  const office = await prisma.lecturerOffice.findUnique({ where: { id: fromOfficeId } });
+  if (!office) throw new AppError('Start office not found', 404);
+  const marker = await prisma.mapMarker.findFirst({ where: { officeId: fromOfficeId } });
+  if (!marker) throw new AppError('Start office has no map marker', 404);
+  const resolved = await resolveGoalNodeForMarker(marker.buildingId, marker.id);
+  return {
+    buildingId: marker.buildingId,
+    nodeId: resolved.node.id,
+    marker,
+    label: marker.label,
+    floor: marker.floor,
+  };
+}
+
 export async function computeIndoorRouteFlexible(options: {
   buildingId?: string;
   fromBuildingId?: string;
   toBuildingId?: string;
   toHallId?: string;
   toMarkerId?: string;
+  toOfficeId?: string;
   q?: string;
   floor?: number;
   fromFloor?: number;
   fromNodeId?: string;
   fromMarkerId?: string;
+  fromOfficeId?: string;
 }) {
   let destBuildingId = options.toBuildingId || options.buildingId;
   let toHallId = options.toHallId;
   let toMarkerId = options.toMarkerId;
+  let toOfficeId = options.toOfficeId;
 
-  if (!toHallId && !toMarkerId && options.q) {
+  if (!toHallId && !toMarkerId && !toOfficeId && options.q) {
     const resolved = await resolveIndoorDestinationFromQuery(options.q, {
       buildingId: destBuildingId,
       floor: options.floor,
@@ -928,6 +1059,7 @@ export async function computeIndoorRouteFlexible(options: {
     destBuildingId = resolved.buildingId;
     toHallId = resolved.toHallId;
     toMarkerId = resolved.toMarkerId;
+    toOfficeId = resolved.toOfficeId;
   }
 
   if (!destBuildingId) throw new AppError('buildingId is required', 400);
@@ -936,7 +1068,12 @@ export async function computeIndoorRouteFlexible(options: {
   let fromNodeId = options.fromNodeId;
   let fromMarker: { id: string; label: string; floor: number } | null = null;
 
-  if (options.fromMarkerId) {
+  if (options.fromOfficeId) {
+    const from = await resolveFromOffice(options.fromOfficeId);
+    fromBuildingId = from.buildingId;
+    fromNodeId = from.nodeId;
+    fromMarker = { id: from.marker.id, label: from.label, floor: from.floor };
+  } else if (options.fromMarkerId) {
     const from = await resolveFromMarker(options.fromMarkerId);
     fromBuildingId = from.buildingId;
     fromNodeId = from.nodeId;
@@ -973,11 +1110,18 @@ export async function computeIndoorRouteFlexible(options: {
       fromNodeId: effectiveFromNodeId,
     });
   }
+  if (toOfficeId) {
+    return computeIndoorRouteToOffice({
+      buildingId: destBuildingId,
+      toOfficeId,
+      fromNodeId: effectiveFromNodeId,
+    });
+  }
   if (toHallId) {
     return computeIndoorRoute({ buildingId: destBuildingId, toHallId, fromNodeId: effectiveFromNodeId });
   }
 
-  throw new AppError('Provide toHallId, toMarkerId, or q (room name)', 400);
+  throw new AppError('Provide toHallId, toMarkerId, toOfficeId, or q (room name)', 400);
 }
 
 export type RoutePolylinePoint = {
@@ -1129,6 +1273,8 @@ export function formatIndoorRouteResponse(raw: RawRouteResult) {
     distanceMeters: 'distanceMeters' in raw ? (raw as { distanceMeters?: number }).distanceMeters : undefined,
     estimatedMinutes: 'estimatedMinutes' in raw ? (raw as { estimatedMinutes?: number }).estimatedMinutes : undefined,
     pathfindingAlgorithm: 'pathfindingAlgorithm' in raw ? (raw as { pathfindingAlgorithm?: string }).pathfindingAlgorithm : undefined,
+    alreadyHere: 'alreadyHere' in raw ? (raw as { alreadyHere?: boolean }).alreadyHere : false,
+    message: 'message' in raw ? (raw as { message?: string }).message : undefined,
     pathNodeIds: raw.pathNodeIds,
     crossBuilding: 'crossBuilding' in raw ? (raw as { crossBuilding?: boolean }).crossBuilding : false,
     buildingPath: 'buildingPath' in raw ? (raw as { buildingPath?: string[] }).buildingPath : [raw.building.code],

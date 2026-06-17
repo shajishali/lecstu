@@ -276,6 +276,7 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
   const results: MapSearchResult[] = [];
   const seenMarker = new Set<string>();
   const seenHall = new Set<string>();
+  const seenOffice = new Set<string>();
 
   const markerInclude = {
     building: { select: { id: true, name: true, code: true, latitude: true, longitude: true } },
@@ -402,7 +403,62 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
     }
   }
 
-  // Prefer markers/halls over buildings — rank by match quality
+  const officeTerms = [...roomTerms, legacyQ].filter((t, i, arr) => t.length >= 2 && arr.indexOf(t) === i);
+  for (const term of officeTerms) {
+    const offices = await prisma.lecturerOffice.findMany({
+      where: {
+        OR: [
+          { roomNumber: { contains: term, mode: 'insensitive' } },
+          {
+            lecturer: {
+              OR: [
+                { firstName: { contains: term, mode: 'insensitive' } },
+                { lastName: { contains: term, mode: 'insensitive' } },
+              ],
+            },
+          },
+        ],
+      },
+      include: {
+        lecturer: { select: { id: true, firstName: true, lastName: true } },
+      },
+      take: 10,
+    });
+    if (offices.length === 0) continue;
+
+    const officeIds = offices.map((o) => o.id);
+    const officeMarkers = await prisma.mapMarker.findMany({
+      where: {
+        officeId: { in: officeIds },
+        ...(buildingFilterId ? { buildingId: buildingFilterId } : {}),
+      },
+      include: {
+        building: { select: { id: true, name: true, code: true, latitude: true, longitude: true } },
+      },
+    });
+
+    for (const m of officeMarkers) {
+      if (!m.officeId || !m.building || seenOffice.has(m.officeId)) continue;
+      const office = offices.find((o) => o.id === m.officeId);
+      if (!office) continue;
+      seenOffice.add(m.officeId);
+      results.push({
+        kind: 'office',
+        id: office.id,
+        label: `Room ${office.roomNumber}`,
+        sublabel: `${office.lecturer.firstName} ${office.lecturer.lastName} • ${m.building.name}`,
+        latitude: m.building.latitude + ((m.y - 50) * OFFSET),
+        longitude: m.building.longitude + ((m.x - 50) * OFFSET),
+        buildingId: m.building.id,
+        floor: m.floor,
+        markerId: m.id,
+        officeId: office.id,
+        lecturerId: office.lecturer.id,
+      });
+    }
+  }
+
+  // Prefer markers/halls/offices over buildings — rank by match quality
   const roomLike = results.filter((r) => r.kind !== 'building');
   if (roomLike.length > 0) {
     const ranked = [...roomLike].sort(

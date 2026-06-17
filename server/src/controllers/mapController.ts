@@ -17,6 +17,7 @@ export interface MapSearchResult {
   floor?: number;
   markerId?: string;
   hallId?: string;
+  officeId?: string;
   lecturerId?: string;
 }
 

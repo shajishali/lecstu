@@ -3,7 +3,7 @@ import { useAuthStore } from '@store/authStore';
 import api from '@services/api';
 import { showToast } from '@components/Toast';
 import { formatCourseLabel } from '@utils/courseDisplay';
-import { Calendar, Pencil, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Pencil, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 
 type DayOfWeek =
   | 'MONDAY'
@@ -39,6 +39,24 @@ interface PersonalSlot {
   slotType: SlotType;
   label: string;
   location: string;
+}
+
+interface BatchGroup {
+  id: string;
+  name: string;
+  batchYear: number;
+  batchLabel?: string | null;
+  memberCount: number;
+  department: { id: string; code: string; name: string };
+  pathway?: { id: string; code: string; name: string } | null;
+}
+
+interface CreateOptions {
+  timetableCode: string | null;
+  department?: { id: string; code: string; name: string } | null;
+  groups: BatchGroup[];
+  courses: { id: string; code: string; name: string }[];
+  halls: { id: string; name: string; building: string; doorPassword?: string | null }[];
 }
 
 const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
@@ -92,32 +110,22 @@ function buildTimeSlots(endHour: number): string[] {
   });
 }
 
-function getSlotPosition(startTime: string, endTime: string, gridEndHour: number) {
+function getSlotPositionPx(startTime: string, endTime: string) {
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
   const startMin = (sh - GRID_START_HOUR) * 60 + sm;
   const endMin = (eh - GRID_START_HOUR) * 60 + em;
-  const totalRange = (gridEndHour - GRID_START_HOUR) * 60;
-  return {
-    top: (startMin / totalRange) * 100,
-    height: ((endMin - startMin) / totalRange) * 100,
-  };
+  const topPx = (startMin / 60) * LECTURER_HOUR_HEIGHT_PX;
+  const heightPx = ((endMin - startMin) / 60) * LECTURER_HOUR_HEIGHT_PX;
+  return { topPx, heightPx: Math.max(heightPx, 4) };
 }
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-const COURSE_COLORS = [
-  '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626',
-  '#7c3aed', '#db2777', '#0d9488', '#ea580c', '#2563eb',
-];
-
-type PeriodKey = string;
-
-function getPeriodKey(s: TimetableSlot): PeriodKey {
-  return `${s.year ?? 2026}-${s.month ?? 1}-${s.week ?? 1}`;
+function formatLastUpdated(iso: string | null | undefined): string {
+  if (!iso) return 'Not updated yet';
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 function formatTime(t: string): string {
@@ -127,6 +135,19 @@ function formatTime(t: string): string {
   const display = hr > 12 ? hr - 12 : hr === 0 ? 12 : hr;
   return `${display}:${m} ${suffix}`;
 }
+
+function formatTimeRange(startTime: string, endTime: string): string {
+  return `${formatTime(startTime)} – ${formatTime(endTime)}`;
+}
+
+function formatTimeRange24(startTime: string, endTime: string): string {
+  return `${startTime} – ${endTime}`;
+}
+
+const COURSE_COLORS = [
+  '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626',
+  '#7c3aed', '#db2777', '#0d9488', '#ea580c', '#2563eb',
+];
 
 function groupOverlappingSlots(slots: TimetableSlot[]): TimetableSlot[][] {
   if (slots.length === 0) return [];
@@ -193,35 +214,11 @@ function buildMergedBlocks(slots: TimetableSlot[]): MergedTimeBlock[] {
 
 function layoutMergedBlocks(
   slots: TimetableSlot[],
-  gridEndHour: number,
-): { block: MergedTimeBlock; top: number; height: number; minHeightPx: number }[] {
+): { block: MergedTimeBlock; topPx: number; heightPx: number }[] {
   return buildMergedBlocks(slots).map((block) => ({
     block,
-    ...getSlotPosition(block.startTime, block.endTime, gridEndHour),
-    minHeightPx: mergedBlockMinHeight(block),
+    ...getSlotPositionPx(block.startTime, block.endTime),
   }));
-}
-
-/** Ensure merged boxes are tall enough to read all pathways. */
-function mergedBlockMinHeight(block: MergedTimeBlock): number {
-  let px = 40;
-  for (const session of block.sessions) {
-    px += 62;
-    px += Math.max(0, session.slots.length - 1) * 14;
-  }
-  return Math.min(Math.max(px, 130), 300);
-}
-
-function dayBodyHeightPx(slots: TimetableSlot[], gridEndHour: number): number {
-  const defaultBody = (gridEndHour - GRID_START_HOUR) * LECTURER_HOUR_HEIGHT_PX;
-  const blocks = layoutMergedBlocks(slots, gridEndHour);
-  let needed = defaultBody;
-  for (const { top, height, minHeightPx } of blocks) {
-    const topPx = (top / 100) * defaultBody;
-    const blockPx = Math.max((height / 100) * defaultBody, minHeightPx);
-    needed = Math.max(needed, topPx + blockPx + 12);
-  }
-  return needed;
 }
 
 function getCourseColor(courseId: string, colorMap: Map<string, string>): string {
@@ -244,8 +241,8 @@ export default function LecturerMySchedule() {
   const { user } = useAuthStore();
   const [flat, setFlat] = useState<TimetableSlot[]>([]);
   const [timetableCodes, setTimetableCodes] = useState<string[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [personalSlots, setPersonalSlots] = useState<PersonalSlot[]>([]);
-  const [selectedPeriodKey, setSelectedPeriodKey] = useState<PeriodKey | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
@@ -253,83 +250,54 @@ export default function LecturerMySchedule() {
   const [editDay, setEditDay] = useState<DayOfWeek>('MONDAY');
   const [editStart, setEditStart] = useState('09:00');
   const [editEnd, setEditEnd] = useState('10:00');
-  const [editYear, setEditYear] = useState(2026);
-  const [editMonth, setEditMonth] = useState(1);
-  const [editWeek, setEditWeek] = useState(1);
   const [editCourseName, setEditCourseName] = useState('');
   const [editHallName, setEditHallName] = useState('');
   const [editDoorPassword, setEditDoorPassword] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editMergedClasses, setEditMergedClasses] = useState<string[]>([]);
   const [savingSlot, setSavingSlot] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createOptions, setCreateOptions] = useState<CreateOptions | null>(null);
+  const [loadingCreateOptions, setLoadingCreateOptions] = useState(false);
+  const [savingCreate, setSavingCreate] = useState(false);
+  const [createDay, setCreateDay] = useState<DayOfWeek>('MONDAY');
+  const [createStart, setCreateStart] = useState('09:00');
+  const [createEnd, setCreateEnd] = useState('10:00');
+  const [createCourseId, setCreateCourseId] = useState('');
+  const [createCourseCode, setCreateCourseCode] = useState('');
+  const [createCourseName, setCreateCourseName] = useState('');
+  const [createHallName, setCreateHallName] = useState('');
+  const [createDoorPassword, setCreateDoorPassword] = useState('');
+  const [createNotes, setCreateNotes] = useState('');
+  const [createGroupIds, setCreateGroupIds] = useState<string[]>([]);
+  const [batchSearch, setBatchSearch] = useState('');
   const colorMap = useRef(new Map<string, string>());
 
-  const periods = useMemo(() => {
-    const seen = new Set<PeriodKey>();
-    const list: { key: PeriodKey; label: string }[] = [];
-    for (const s of flat) {
-      const key = getPeriodKey(s);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const m = s.month ?? 1;
-      list.push({
-        key,
-        label: `${s.year} · ${MONTH_NAMES[m - 1] ?? m} · Week ${s.week ?? 1}`,
-      });
-    }
-    list.sort((a, b) => {
-      const [ay, am, aw] = a.key.split('-').map(Number);
-      const [by, bm, bw] = b.key.split('-').map(Number);
-      if (ay !== by) return by - ay;
-      if (am !== bm) return bm - am;
-      return bw - aw;
-    });
-    return list;
-  }, [flat]);
-
-  const filteredFlat = useMemo(
-    () => (selectedPeriodKey ? flat.filter((s) => getPeriodKey(s) === selectedPeriodKey) : flat),
-    [flat, selectedPeriodKey],
-  );
-
-  const filteredWeekly = useMemo(() => {
+  const scheduleByDay = useMemo(() => {
     const byDay: Record<string, TimetableSlot[]> = {};
     for (const day of DAYS) byDay[day] = [];
-    for (const s of filteredFlat) {
+    for (const s of flat) {
       if (byDay[s.dayOfWeek]) byDay[s.dayOfWeek].push(s);
     }
     for (const day of DAYS) {
       byDay[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
     }
     return byDay;
-  }, [filteredFlat]);
+  }, [flat]);
 
-  const gridEndHour = useMemo(() => computeGridEndHour(filteredFlat), [filteredFlat]);
+  const gridEndHour = useMemo(() => computeGridEndHour(flat), [flat]);
   const visibleHours = gridEndHour - GRID_START_HOUR;
   const timeSlots = useMemo(() => buildTimeSlots(gridEndHour), [gridEndHour]);
-  const gridRows = useMemo(() => {
-    let maxBody = visibleHours * LECTURER_HOUR_HEIGHT_PX;
-    for (const day of DAYS) {
-      maxBody = Math.max(maxBody, dayBodyHeightPx(filteredWeekly[day] || [], gridEndHour));
-    }
-    return Math.ceil(maxBody / LECTURER_HOUR_HEIGHT_PX) + 1;
-  }, [filteredWeekly, gridEndHour, visibleHours]);
-
-  const maxDayBodyHeight = useMemo(() => {
-    let max = visibleHours * LECTURER_HOUR_HEIGHT_PX;
-    for (const day of DAYS) {
-      max = Math.max(max, dayBodyHeightPx(filteredWeekly[day] || [], gridEndHour));
-    }
-    return max;
-  }, [filteredWeekly, gridEndHour, visibleHours]);
+  const gridBodyHeight = visibleHours * LECTURER_HOUR_HEIGHT_PX;
+  const gridRows = visibleHours + 1;
 
   const mergedTimeBlocks = useMemo(() => {
     let count = 0;
     for (const day of DAYS) {
-      count += buildMergedBlocks(filteredWeekly[day] || []).length;
+      count += buildMergedBlocks(scheduleByDay[day] || []).length;
     }
     return count;
-  }, [filteredWeekly]);
+  }, [scheduleByDay]);
 
   const fetchAll = useCallback(async (silent = false) => {
     if (silent) setRefreshing(true);
@@ -343,14 +311,8 @@ export default function LecturerMySchedule() {
       const slots = (ttData.flat || []) as TimetableSlot[];
       setFlat(slots);
       setTimetableCodes(ttData.timetableCodes || []);
+      setLastUpdated(ttData.lastUpdated ?? null);
       colorMap.current.clear();
-
-      const periodList = [...new Set(slots.map(getPeriodKey))];
-      if (periodList.length > 0) {
-        setSelectedPeriodKey((prev) => (prev && periodList.includes(prev) ? prev : periodList[0]));
-      } else {
-        setSelectedPeriodKey(null);
-      }
 
       const allSched = (schedRes.data.data || []) as PersonalSlot[];
       setPersonalSlots(
@@ -382,7 +344,7 @@ export default function LecturerMySchedule() {
   }, [fetchAll]);
 
   const openEditModal = (slot: TimetableSlot) => {
-    const mergedPeers = filteredFlat
+    const mergedPeers = flat
       .filter(
         (s) =>
           s.dayOfWeek === slot.dayOfWeek &&
@@ -398,13 +360,138 @@ export default function LecturerMySchedule() {
     setEditDay(slot.dayOfWeek as DayOfWeek);
     setEditStart(slot.startTime);
     setEditEnd(slot.endTime);
-    setEditYear(slot.year ?? 2026);
-    setEditMonth(slot.month ?? 1);
-    setEditWeek(slot.week ?? 1);
     setEditCourseName(slot.course.name);
     setEditHallName(slot.hall.name);
     setEditDoorPassword(slot.hall.doorPassword || '');
     setEditNotes(slot.notes || '');
+  };
+
+  const openCreateModal = async () => {
+    setShowCreateModal(true);
+    setLoadingCreateOptions(true);
+    setCreateGroupIds([]);
+    setBatchSearch('');
+    setCreateDay('MONDAY');
+    setCreateStart('09:00');
+    setCreateEnd('10:00');
+    setCreateCourseId('__new__');
+    setCreateCourseCode('');
+    setCreateCourseName('');
+    setCreateHallName('');
+    setCreateDoorPassword('');
+    setCreateNotes('');
+    try {
+      const res = await api.get('/lecturers/me/timetable/options');
+      const opts = res.data.data as CreateOptions;
+      setCreateOptions(opts);
+      setCreateCourseId('__new__');
+      setCreateCourseCode('');
+      setCreateCourseName('');
+      if (opts.halls.length > 0) {
+        setCreateHallName(opts.halls[0].name);
+        setCreateDoorPassword(opts.halls[0].doorPassword || '');
+      }
+    } catch {
+      showToast('error', 'Failed to load batch and course options');
+      setShowCreateModal(false);
+    } finally {
+      setLoadingCreateOptions(false);
+    }
+  };
+
+  const filteredBatches = useMemo(() => {
+    if (!createOptions?.groups) return [];
+    const q = batchSearch.trim().toLowerCase();
+    if (!q) return createOptions.groups;
+    return createOptions.groups.filter((g) => {
+      const hay = [
+        g.name,
+        g.batchLabel,
+        String(g.batchYear),
+        g.department?.name,
+        g.department?.code,
+        g.pathway?.name,
+        g.pathway?.code,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [createOptions, batchSearch]);
+
+  const toggleCreateGroup = (groupId: string) => {
+    setCreateGroupIds((prev) =>
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
+  };
+
+  const handleCreateCourseChange = (courseId: string) => {
+    setCreateCourseId(courseId);
+    if (courseId === '__new__') return;
+    const course = createOptions?.courses.find((c) => c.id === courseId);
+    if (course) {
+      setCreateCourseCode(course.code);
+      setCreateCourseName(course.name);
+    }
+  };
+
+  const handleCreateCourseCodeChange = (value: string) => {
+    setCreateCourseCode(value.toUpperCase());
+    const matched = createOptions?.courses.find(
+      (c) => c.code.toUpperCase() === value.trim().toUpperCase(),
+    );
+    setCreateCourseId(matched?.id ?? '__new__');
+  };
+
+  const handleCreateHallChange = (value: string) => {
+    setCreateHallName(value);
+    const hall = createOptions?.halls.find(
+      (h) => h.name.toLowerCase() === value.trim().toLowerCase(),
+    );
+    if (hall?.doorPassword) {
+      setCreateDoorPassword(hall.doorPassword);
+    }
+  };
+
+  const handleCreateLecture = async () => {
+    if (createGroupIds.length === 0) {
+      showToast('error', 'Select at least one batch');
+      return;
+    }
+    if (!createHallName.trim()) {
+      showToast('error', 'Place (hall) is required');
+      return;
+    }
+    if (!createCourseCode.trim()) {
+      showToast('error', 'Course code is required');
+      return;
+    }
+
+    setSavingCreate(true);
+    try {
+      await api.post('/lecturers/me/timetable', {
+        dayOfWeek: createDay,
+        startTime: createStart,
+        endTime: createEnd,
+        courseId: createCourseId && createCourseId !== '__new__' ? createCourseId : undefined,
+        courseCode: createCourseCode.trim(),
+        courseName: createCourseName.trim() || undefined,
+        hallName: createHallName.trim(),
+        hallDoorPassword: createDoorPassword.trim() || null,
+        groupIds: createGroupIds,
+        notes: createNotes.trim() || null,
+      });
+      showToast('success', 'Lecture created. Students in selected batches will see it on their timetable.');
+      setShowCreateModal(false);
+      window.dispatchEvent(new Event('timetable-updated'));
+      await fetchAll(true);
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      showToast('error', ax.response?.data?.message || 'Failed to create lecture');
+    } finally {
+      setSavingCreate(false);
+    }
   };
 
   const handleSaveSlot = async () => {
@@ -415,9 +502,6 @@ export default function LecturerMySchedule() {
         dayOfWeek: editDay,
         startTime: editStart,
         endTime: editEnd,
-        year: editYear,
-        month: editMonth,
-        week: editWeek,
         courseName: editCourseName.trim(),
         hallName: editHallName.trim(),
         hallDoorPassword: editDoorPassword.trim() || null,
@@ -493,32 +577,30 @@ export default function LecturerMySchedule() {
         <div>
           <h1 className="flex items-center gap-2">
             <Calendar size={24} />
-            My weekly schedule
+            My teaching schedule
           </h1>
           <p className="tt-subtitle">
             Teaching slots from the admin timetable (matched by your code: <strong>{codeLabel}</strong>)
-            · {mergedTimeBlocks} teaching time{mergedTimeBlocks !== 1 ? 's' : ''} ({filteredFlat.length}{' '}
-            class{filteredFlat.length !== 1 ? 'es' : ''} merged by schedule)
+            · {mergedTimeBlocks} teaching time{mergedTimeBlocks !== 1 ? 's' : ''} ({flat.length}{' '}
+            class{flat.length !== 1 ? 'es' : ''} merged by schedule)
           </p>
           <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-            Pathways taught together at the same time appear in one box. Click edit on a lecture to
-            change day, time, place, or notes — students see updates on their timetable.
+            Pathways taught together at the same time appear in one box. Use the <strong>Edit</strong>{' '}
+            button on a lecture to change day, time, place, or notes — students see updates on their
+            timetable. You can also add lectures manually for your batches.
           </p>
         </div>
         <div className="tt-actions">
-          {periods.length > 1 && (
-            <select
-              className="border border-slate-300 rounded px-2 py-1 text-sm"
-              value={selectedPeriodKey ?? ''}
-              onChange={(e) => setSelectedPeriodKey(e.target.value)}
-            >
-              {periods.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          )}
+          <button
+            type="button"
+            className="btn btn-primary btn-sm flex items-center gap-1.5"
+            onClick={openCreateModal}
+          >
+            <Plus size={16} /> Add lecture
+          </button>
+          <span className="tt-last-updated text-sm text-slate-600 whitespace-nowrap">
+            Last updated: <strong>{formatLastUpdated(lastUpdated)}</strong>
+          </span>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -535,9 +617,12 @@ export default function LecturerMySchedule() {
         <div className="tt-empty">
           <h3>No teaching slots found</h3>
           <p>
-            Ask admin to import the faculty timetable. Your lectures are matched using the two-letter
-            code in the sheet (e.g. <strong>SP</strong> for Shaji Piraba). Your profile code is{' '}
-            <strong>{codeLabel}</strong>.
+            Ask admin to import the faculty timetable, or{' '}
+            <button type="button" className="text-[var(--color-primary)] underline font-medium" onClick={openCreateModal}>
+              create a lecture manually
+            </button>{' '}
+            for your batches. Your lectures are matched using the two-letter code in the sheet (e.g.{' '}
+            <strong>SP</strong> for Shaji Piraba). Your profile code is <strong>{codeLabel}</strong>.
           </p>
         </div>
       ) : (
@@ -546,11 +631,11 @@ export default function LecturerMySchedule() {
             <div className="tt-grid-scroll">
               <div
                 className="tt-grid"
-                style={{ gridTemplateColumns: `80px repeat(${DAYS.length}, minmax(160px, 1fr))` }}
+                style={{ gridTemplateColumns: `72px repeat(${DAYS.length}, minmax(0, 1fr))` }}
               >
                 <div
                   className="tt-time-col"
-                  style={{ minHeight: maxDayBodyHeight + LECTURER_HOUR_HEIGHT_PX }}
+                  style={{ minHeight: gridBodyHeight + LECTURER_HOUR_HEIGHT_PX }}
                 >
                   <div className="tt-corner" />
                   {timeSlots.map((t) => (
@@ -561,74 +646,118 @@ export default function LecturerMySchedule() {
                 </div>
 
                 {DAYS.map((day) => {
-                  const slots = filteredWeekly[day] || [];
+                  const slots = scheduleByDay[day] || [];
                   return (
                     <div key={day} className="tt-day-col">
                       <div className="tt-day-header">{DAY_LABELS[day]}</div>
                       <div
                         className="tt-day-body"
                         style={{
-                          height: maxDayBodyHeight,
+                          height: gridBodyHeight,
                           minHeight: 'var(--tt-body-height)',
                         }}
                       >
-                        {layoutMergedBlocks(slots, gridEndHour).map(({ block, top, height, minHeightPx }) => {
+                        {layoutMergedBlocks(slots).map(({ block, topPx, heightPx }) => {
                           const primaryColor = getCourseColor(
                             block.sessions[0].course.id,
                             colorMap.current,
                           );
+                          const isCompact = heightPx < 90;
+                          const cardTitle = block.sessions
+                            .map((s) => formatCourseLabel(s.course.code, s.course.name))
+                            .join(' · ');
                           return (
                             <div
                               key={block.key}
-                              className="tt-slot-group tt-slot-group-merged"
+                              className={`tt-slot-group tt-slot-group-merged tt-lecture-card-wrap${isCompact ? ' tt-lecture-card-wrap-compact' : ''}`}
                               style={{
-                                top: `${top}%`,
-                                height: `max(${height}%, ${minHeightPx}px)`,
+                                top: `${topPx}px`,
+                                height: `${heightPx}px`,
                               }}
+                              title={cardTitle}
                             >
                               <div
-                                className="tt-slot tt-slot-merged"
+                                className="tt-slot tt-slot-merged tt-lecture-card"
                                 style={{
                                   backgroundColor: `${primaryColor}20`,
                                   borderLeft: `3px solid ${primaryColor}`,
                                 }}
                               >
-                                <span className="tt-slot-time tt-merged-time">
-                                  {formatTime(block.startTime)} – {formatTime(block.endTime)}
-                                </span>
-                                {block.sessions.map((session) => {
-                                  const color = getCourseColor(session.course.id, colorMap.current);
-                                  const classNames = session.slots.map((s) => s.group.name).join(', ');
-                                  return (
-                                    <div key={session.key} className="tt-merged-session">
-                                      <div className="tt-merged-session-head">
-                                        <span className="tt-slot-code" style={{ color }}>
-                                          {formatCourseLabel(session.course.code, session.course.name)}
-                                        </span>
-                                        <button
-                                          type="button"
-                                          className="tt-merged-edit-btn"
-                                          title="Edit this lecture"
-                                          onClick={() => openEditModal(session.slots[0])}
-                                        >
-                                          <Pencil size={11} />
-                                        </button>
+                                <div className="tt-lecture-card-top">
+                                  <div className="tt-lecture-time-block">
+                                    {!isCompact && (
+                                      <Clock size={14} className="tt-lecture-time-icon" aria-hidden />
+                                    )}
+                                    <div className="tt-lecture-time-texts">
+                                      <div className="tt-lecture-time-main">
+                                        {formatTimeRange(block.startTime, block.endTime)}
                                       </div>
-                                      <span className="tt-slot-meta">
-                                        {session.hall.name}
-                                        {session.hall.building ? ` · ${session.hall.building}` : ''}
-                                      </span>
-                                      {session.hall.doorPassword && (
-                                        <span className="tt-slot-door">
-                                          Door: {session.hall.doorPassword}
-                                        </span>
+                                      {!isCompact && (
+                                        <div className="tt-lecture-time-sub">
+                                          {formatTimeRange24(block.startTime, block.endTime)}
+                                        </div>
                                       )}
-                                      <span className="tt-merged-classes">
-                                        <strong>Classes:</strong> {classNames}
-                                      </span>
                                     </div>
-                                  );
-                                })}
+                                  </div>
+                                  {block.sessions.length === 1 && (
+                                    <button
+                                      type="button"
+                                      className={`tt-lecture-edit-btn${isCompact ? ' tt-lecture-edit-btn-compact' : ''}`}
+                                      title="Edit this lecture"
+                                      onClick={() => openEditModal(block.sessions[0].slots[0])}
+                                    >
+                                      <Pencil size={isCompact ? 12 : 14} />
+                                      {!isCompact && <span>Edit</span>}
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="tt-lecture-card-scroll">
+                                  {block.sessions.map((session) => {
+                                    const color = getCourseColor(session.course.id, colorMap.current);
+                                    const classNames = session.slots.map((s) => s.group.name).join(', ');
+                                    return (
+                                      <div key={session.key} className="tt-lecture-card-body">
+                                        <div className="tt-lecture-row">
+                                          <span className="tt-lecture-label">Course</span>
+                                          <span className="tt-lecture-value tt-lecture-course" style={{ color }}>
+                                            {formatCourseLabel(session.course.code, session.course.name)}
+                                          </span>
+                                        </div>
+                                        <div className="tt-lecture-row">
+                                          <span className="tt-lecture-label">Place</span>
+                                          <span className="tt-lecture-value">
+                                            {session.hall.name}
+                                            {session.hall.building ? ` · ${session.hall.building}` : ''}
+                                          </span>
+                                        </div>
+                                        {session.hall.doorPassword && (
+                                          <div className="tt-lecture-row">
+                                            <span className="tt-lecture-label">Door</span>
+                                            <span className="tt-lecture-value font-mono">
+                                              {session.hall.doorPassword}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="tt-lecture-row">
+                                          <span className="tt-lecture-label">Classes</span>
+                                          <span className="tt-lecture-value">{classNames}</span>
+                                        </div>
+                                        {block.sessions.length > 1 && (
+                                          <button
+                                            type="button"
+                                            className="tt-lecture-edit-btn tt-lecture-edit-btn-inline"
+                                            title="Edit this lecture"
+                                            onClick={() => openEditModal(session.slots[0])}
+                                          >
+                                            <Pencil size={12} />
+                                            {!isCompact && <span>Edit</span>}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
                           );
@@ -644,7 +773,7 @@ export default function LecturerMySchedule() {
           <div className="tt-legend-wrapper">
             <div className="tt-legend">
               {Array.from(colorMap.current.entries()).map(([courseId, color]) => {
-                const course = filteredFlat.find((s) => s.course.id === courseId)?.course;
+                const course = flat.find((s) => s.course.id === courseId)?.course;
                 if (!course) return null;
                 return (
                   <div key={courseId} className="tt-legend-item">
@@ -775,6 +904,221 @@ export default function LecturerMySchedule() {
         </form>
       </section>
 
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => !savingCreate && setShowCreateModal(false)}>
+          <div className="modal tt-detail-modal tt-edit-modal tt-create-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create lecture for batches</h3>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => !savingCreate && setShowCreateModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body space-y-4">
+              {loadingCreateOptions ? (
+                <div className="py-8 text-center text-slate-500">
+                  <div className="spinner mx-auto mb-2" />
+                  Loading batches and courses...
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-600">
+                    Select batches, then type lecture details below. Scroll this popup to see all
+                    fields. A timetable entry is created for each selected batch at the same day and
+                    time.
+                  </p>
+
+                  <div className="lecturer-batch-picker">
+                    <div className="lecturer-batch-picker-head">
+                      <label className="block text-sm font-medium text-slate-700">
+                        Batches ({createGroupIds.length} selected)
+                      </label>
+                      <input
+                        type="search"
+                        className="lecturer-batch-search"
+                        placeholder="Search batch, pathway, department..."
+                        value={batchSearch}
+                        onChange={(e) => setBatchSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="lecturer-batch-scroll" role="listbox" aria-multiselectable>
+                      {filteredBatches.length === 0 ? (
+                        <p className="text-sm text-slate-500 p-3 text-center">No batches match your search.</p>
+                      ) : (
+                        filteredBatches.map((g) => {
+                          const checked = createGroupIds.includes(g.id);
+                          const batchLabel = g.batchLabel ?? `Y${g.batchYear}`;
+                          return (
+                            <label
+                              key={g.id}
+                              className={`lecturer-batch-row${checked ? ' lecturer-batch-row-selected' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleCreateGroup(g.id)}
+                              />
+                              <span className="lecturer-batch-row-main">
+                                <span className="lecturer-batch-name">{g.name}</span>
+                                <span className="lecturer-batch-meta">
+                                  {batchLabel}
+                                  {g.pathway ? ` · ${g.pathway.code || g.pathway.name}` : ''}
+                                  {g.department ? ` · ${g.department.code}` : ''}
+                                  {g.memberCount > 0 ? ` · ${g.memberCount} students` : ''}
+                                </span>
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <label className="block text-sm">
+                    <span className="text-slate-600">Quick pick course (optional)</span>
+                    <select
+                      className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                      value={createCourseId || '__new__'}
+                      onChange={(e) => handleCreateCourseChange(e.target.value)}
+                    >
+                      <option value="__new__">Type course details manually</option>
+                      {createOptions?.courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {formatCourseLabel(c.code, c.name)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block text-sm">
+                      <span className="text-slate-600">Course code</span>
+                      <input
+                        type="text"
+                        className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5 font-mono uppercase"
+                        value={createCourseCode}
+                        onChange={(e) => handleCreateCourseCodeChange(e.target.value)}
+                        placeholder="ETEC22033"
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-slate-600">Lecture name</span>
+                      <input
+                        type="text"
+                        className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                        value={createCourseName}
+                        onChange={(e) => setCreateCourseName(e.target.value)}
+                        placeholder="e.g. ETEC 22033 T"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block text-sm">
+                    <span className="text-slate-600">Place (hall / room)</span>
+                    <input
+                      type="text"
+                      list="lecturer-hall-options"
+                      className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                      value={createHallName}
+                      onChange={(e) => handleCreateHallChange(e.target.value)}
+                      placeholder="Type hall name manually, e.g. AB-LCH-03-2"
+                    />
+                    <datalist id="lecturer-hall-options">
+                      {createOptions?.halls.map((h) => (
+                        <option key={h.id} value={h.name}>
+                          {h.building ? `${h.name} · ${h.building}` : h.name}
+                        </option>
+                      ))}
+                    </datalist>
+                    <span className="text-xs text-slate-500 mt-1 block">
+                      Pick from suggestions or type a new room name.
+                    </span>
+                  </label>
+
+                  <label className="block text-sm">
+                    <span className="text-slate-600">Door password</span>
+                    <input
+                      type="text"
+                      className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5 font-mono"
+                      value={createDoorPassword}
+                      onChange={(e) => setCreateDoorPassword(e.target.value)}
+                      placeholder="Room access code for students"
+                    />
+                  </label>
+
+                  <label className="block text-sm">
+                    <span className="text-slate-600">Day</span>
+                    <select
+                      className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                      value={createDay}
+                      onChange={(e) => setCreateDay(e.target.value as DayOfWeek)}
+                    >
+                      {WEEKDAY_OPTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {WEEKDAY_FULL[d]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block text-sm">
+                      <span className="text-slate-600">Start time</span>
+                      <input
+                        type="time"
+                        className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                        value={createStart}
+                        onChange={(e) => setCreateStart(e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-slate-600">End time</span>
+                      <input
+                        type="time"
+                        className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                        value={createEnd}
+                        onChange={(e) => setCreateEnd(e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block text-sm">
+                    <span className="text-slate-600">Additional notes</span>
+                    <textarea
+                      className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5 min-h-[72px]"
+                      value={createNotes}
+                      onChange={(e) => setCreateNotes(e.target.value)}
+                      placeholder="Optional notes for students"
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+            <div className="modal-footer flex gap-2 justify-end p-4 border-t">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={savingCreate}
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={savingCreate || loadingCreateOptions}
+                onClick={handleCreateLecture}
+              >
+                {savingCreate ? 'Creating...' : 'Create lecture'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedSlot && (
         <div className="modal-overlay" onClick={() => setSelectedSlot(null)}>
           <div className="modal tt-detail-modal tt-edit-modal" onClick={(e) => e.stopPropagation()}>
@@ -864,45 +1208,6 @@ export default function LecturerMySchedule() {
                     className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
                     value={editEnd}
                     onChange={(e) => setEditEnd(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <label className="block text-sm">
-                  <span className="text-slate-600">Year</span>
-                  <input
-                    type="number"
-                    min={2020}
-                    max={2035}
-                    className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
-                    value={editYear}
-                    onChange={(e) => setEditYear(Number(e.target.value))}
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-slate-600">Month</span>
-                  <select
-                    className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
-                    value={editMonth}
-                    onChange={(e) => setEditMonth(Number(e.target.value))}
-                  >
-                    {MONTH_NAMES.map((name, i) => (
-                      <option key={name} value={i + 1}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-sm">
-                  <span className="text-slate-600">Week</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={53}
-                    className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
-                    value={editWeek}
-                    onChange={(e) => setEditWeek(Number(e.target.value))}
                   />
                 </label>
               </div>

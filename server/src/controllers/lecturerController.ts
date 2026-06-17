@@ -14,7 +14,11 @@ import {
   replaceLecturerSchedule,
   type ScheduleSlotInput,
 } from '../services/lecturerScheduleService';
-import { updateLecturerMasterSlot } from '../services/lecturerTimetableService';
+import {
+  updateLecturerMasterSlot,
+  getLecturerTimetableCreateOptions,
+  createLecturerTimetableEntries,
+} from '../services/lecturerTimetableService';
 import prisma from '../config/database';
 
 export async function listLecturers(req: Request, res: Response, next: NextFunction) {
@@ -108,6 +112,80 @@ export async function putMySchedule(req: Request, res: Response, next: NextFunct
     }
     const saved = await replaceLecturerSchedule(lecturerId, slots);
     res.json({ success: true, data: saved });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMyTimetableCreateOptions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lecturerId = req.user!.userId;
+    const options = await getLecturerTimetableCreateOptions(lecturerId);
+    res.json({ success: true, data: options });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createMyTimetableEntries(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lecturerId = req.user!.userId;
+    const {
+      dayOfWeek,
+      startTime,
+      endTime,
+      year,
+      month,
+      week,
+      semester,
+      courseCode,
+      courseName,
+      courseId,
+      hallName,
+      hallDoorPassword,
+      groupIds,
+      notes,
+    } = req.body as {
+      dayOfWeek: string;
+      startTime: string;
+      endTime: string;
+      year?: number;
+      month?: number;
+      week?: number;
+      semester?: number;
+      courseCode?: string;
+      courseName?: string;
+      courseId?: string;
+      hallName: string;
+      hallDoorPassword?: string | null;
+      groupIds: string[];
+      notes?: string | null;
+    };
+
+    if (!dayOfWeek || !startTime || !endTime || !hallName?.trim()) {
+      throw new AppError('dayOfWeek, startTime, endTime, and hallName are required', 400);
+    }
+    if (!courseId && !courseCode?.trim()) {
+      throw new AppError('Provide courseId or courseCode', 400);
+    }
+
+    const created = await createLecturerTimetableEntries(lecturerId, {
+      dayOfWeek: dayOfWeek as never,
+      startTime,
+      endTime,
+      year,
+      month,
+      week,
+      semester,
+      courseCode: courseCode ?? '',
+      courseName,
+      courseId,
+      hallName,
+      hallDoorPassword,
+      groupIds: groupIds ?? [],
+      notes,
+    });
+    res.status(201).json({ success: true, data: created });
   } catch (err) {
     next(err);
   }

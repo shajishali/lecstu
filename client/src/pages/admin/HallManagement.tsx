@@ -149,40 +149,98 @@ export default function HallManagement() {
 
       <DataTable columns={columns} data={halls} pageSize={15} searchPlaceholder="Search halls..." emptyMessage="No halls found" />
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editHall ? 'Edit Hall' : 'Create Hall'} width="500px">
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editHall ? 'Edit Hall' : 'Create Hall'} width="560px">
         <form onSubmit={handleSave} className="entity-form">
           <div className="form-row-2">
-            <label>Hall Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
-            <label>Building<input value={form.building} onChange={(e) => setForm({ ...form, building: e.target.value })} required /></label>
+            <label>
+              Hall Name
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </label>
+            <label>
+              Building
+              <input value={form.building} onChange={(e) => setForm({ ...form, building: e.target.value })} required />
+            </label>
           </div>
           <div className="form-row-2">
-            <label>Floor<input type="number" value={form.floor} onChange={(e) => setForm({ ...form, floor: parseInt(e.target.value) })} min={-2} max={20} /></label>
-            <label>Capacity<input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) })} min={1} required /></label>
+            <label>
+              Floor
+              <input
+                type="number"
+                value={form.floor}
+                onChange={(e) => setForm({ ...form, floor: parseInt(e.target.value, 10) || 0 })}
+                min={-2}
+                max={20}
+              />
+            </label>
+            <label>
+              Capacity
+              <input
+                type="number"
+                value={form.capacity}
+                onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value, 10) || 1 })}
+                min={1}
+                required
+              />
+            </label>
           </div>
-          <label>
-            Door password
+
+          <div className="entity-form-field">
+            <label htmlFor="hall-door-password">Door password</label>
             <input
+              id="hall-door-password"
+              type="text"
+              className="font-mono"
               value={form.doorPassword}
               onChange={(e) => setForm({ ...form, doorPassword: e.target.value })}
-              placeholder="Room access code for students & lecturers"
+              placeholder="e.g. 1234"
+              autoComplete="off"
             />
-          </label>
-          <label>
-            Equipment
+            <p className="entity-form-hint">Room access code shown to students and lecturers on the timetable.</p>
+          </div>
+
+          <div className="entity-form-field">
+            <label htmlFor="hall-equipment">Equipment</label>
             <div className="equip-input-row">
-              <input value={equipInput} onChange={(e) => setEquipInput(e.target.value)} placeholder="e.g. Projector" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addEquipment(); } }} />
-              <button type="button" className="btn-secondary" onClick={addEquipment}>Add</button>
+              <input
+                id="hall-equipment"
+                value={equipInput}
+                onChange={(e) => setEquipInput(e.target.value)}
+                placeholder="e.g. Projector"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addEquipment();
+                  }
+                }}
+              />
+              <button type="button" className="btn-secondary" onClick={addEquipment}>
+                Add
+              </button>
             </div>
             {form.equipment.length > 0 && (
-              <div className="equip-tags" style={{ marginTop: '0.4rem' }}>
+              <div className="equip-tags">
                 {form.equipment.map((eq) => (
-                  <span key={eq} className="equip-tag removable" onClick={() => removeEquipment(eq)}>{eq} <X size={12} /></span>
+                  <button
+                    key={eq}
+                    type="button"
+                    className="equip-tag removable"
+                    onClick={() => removeEquipment(eq)}
+                    title={`Remove ${eq}`}
+                  >
+                    <span>{eq}</span>
+                    <X size={14} aria-hidden />
+                  </button>
                 ))}
               </div>
             )}
-          </label>
+          </div>
+
           <label className="checkbox-label">
-            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+            />
             Active
           </label>
           <div className="tt-form-actions">
