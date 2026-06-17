@@ -20,6 +20,7 @@
     "db:reset-lecturer-passwords": "tsx scripts/reset-lecturer-passwords.ts",
     "db:seed-faculty-buildings": "tsx scripts/seed-faculty-buildings.ts",
     "db:seed-phase-11-demo": "tsx scripts/seed-phase-11-demo.ts",
+    "check:phase-11-9": "tsx scripts/check-phase-11-9.ts",
     "db:import-floorplans": "tsx scripts/import-floorplans-from-folder.ts",
     "db:scrape-fct-lecturers": "tsx scripts/scrape-fct-lecturers.ts",
     "db:seed-et-y1": "tsx scripts/seed-et-y1-timetable.ts",

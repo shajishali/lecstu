@@ -118,25 +118,25 @@ efficiency barriers in multilingual university environments.
 | **11.4** | Multi-Floor Navigation | Engineering | RO-5 | ✅ |
 | **11.5** | Multi-Building Navigation | Engineering | RO-5 | ✅ |
 | **11.6** | Natural Language Guidance (Unified Pipeline) | Engineering | RO-2, RO-5 | ✅ |
-| **11.7** | Route Visualization on Floor Plans | Engineering | RO-5 | ⚠️ |
-| **11.8** | Admin Consolidation & Publish Workflow | Engineering | RO-5 | ⬜ |
-| **11.9** | Active Navigation & QR Positioning | Engineering | RO-5 | ⬜ |
+| **11.7** | Route Visualization on Floor Plans | Engineering | RO-5 | ✅ |
+| **11.8** | Admin Consolidation & Publish Workflow | Engineering | RO-5 | ✅ |
+| **11.9** | Active Navigation & QR Positioning | Engineering | RO-5 | ✅ |
 
 
 ---
 
-## SUB-PHASE STATUS AT A GLANCE (updated 2026-06-11)
+## SUB-PHASE STATUS AT A GLANCE (updated 2026-06-17)
 
 **Legend:** ✅ Finished (built or report done) · ⬜ Not finished · ⚠️ Partial (started, not closed)
 
 | Count | |
 |-------|---|
-| **Finished** | **38** sub-phases |
-| **Partial** | **5** sub-phases |
-| **Not finished** | **14** sub-phases |
-| **Total** | **57** sub-phases |
+| **Finished** | **47** sub-phases |
+| **Partial** | **0** sub-phases (see notes) |
+| **Not finished** | **9** sub-phases |
+| **Total** | **56** sub-phases tracked |
 
-### ✅ Finished (38)
+### ✅ Finished (47)
 
 | Phase | Sub-phases |
 |-------|------------|
@@ -149,20 +149,14 @@ efficiency barriers in multilingual university environments.
 | 7 | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8 |
 | 8 | 8.1, 8.2, 8.3, 8.4 |
 | 9 | 9.1 only |
+| 11 indoor navigation module | 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9 |
 
-**Note on Phase 7:** Code and reports exist; ASR benchmark report may still need a **full re-run** (hypothesis H1) — treat 7.3/7.4 as ⚠️ partial for thesis if ffmpeg/full matrix not redone.
+**Notes:** Phase 7 — ASR benchmark may need a **full re-run** (hypothesis H1) before thesis submission. Phase 11 — code complete; some admin floors still need walking paths / QR codes for full demo data (content gap, not code).
 
-### ⚠️ Partial (5)
-
-| Phase | Sub-phases | What remains |
-|-------|------------|--------------|
-| **11 Indoor navigation module** | **11.1, 11.2, 11.3, 11.6, 11.7** | Foundation from 6B exists; needs connection points, multi-floor/building routing, unified UX |
-
-### ⬜ Not finished (14)
+### ⬜ Not finished (9)
 
 | Phase | Sub-phases | What it is |
 |-------|------------|------------|
-| **11 Indoor navigation module** | **11.4, 11.5, 11.8, 11.9** | Multi-floor connectors, cross-building routing, admin publish workflow, QR active nav |
 | **9 Translation research** | 9.2, 9.3, 9.4, 9.5 | Corpus, benchmarks, human eval, report |
 | **10 Usability & wrap-up** | 10.1, 10.2, 10.3, 10.4, 10.5 | User study, hardening, final combined report |
 
@@ -183,9 +177,9 @@ efficiency barriers in multilingual university environments.
 ---
 
 ### Sub-Phase 1.1 — Monorepo & Dev Environment Setup
-**Type**: Engineering | **Effort**: ~1 day
+**Type**: Engineering | **Effort**: ~1 day | **Status**: ✅
 
-- [ ] Initialize monorepo with folder structure:
+- [x] Initialize monorepo with folder structure:
   ```
   lecstu/
     /client              ← Vite + React frontend
@@ -195,8 +189,8 @@ efficiency barriers in multilingual university environments.
     /shared              ← Shared types/constants
     phases.md            ← This reference document
   ```
-- [ ] Initialize `/client` with Vite + React + TypeScript
-- [ ] Initialize `/server` with Express + TypeScript:
+- [x] Initialize `/client` with Vite + React + TypeScript
+- [x] Initialize `/server` with Express + TypeScript:
   - `/server/src/controllers/`
   - `/server/src/models/`
   - `/server/src/routes/`
@@ -204,20 +198,20 @@ efficiency barriers in multilingual university environments.
   - `/server/src/services/`
   - `/server/src/utils/`
   - `/server/src/config/`
-- [ ] Install core dependencies (both client and server)
-- [ ] Configure ESLint, Prettier, TypeScript configs
-- [ ] Setup `.env` management with `.env.example`
-- [ ] Configure development scripts (`dev`, `build`, `lint`)
-- [ ] Verify both client and server run in development mode
+- [x] Install core dependencies (both client and server)
+- [x] Configure ESLint, Prettier, TypeScript configs
+- [x] Setup `.env` management with `.env.example`
+- [x] Configure development scripts (`dev`, `build`, `lint`)
+- [x] Verify both client and server run in development mode
 
 ---
 
 ### Sub-Phase 1.2 — Database Schema Design & Migration
-**Type**: Engineering | **Effort**: ~1.5 days
+**Type**: Engineering | **Effort**: ~1.5 days | **Status**: ✅
 
-- [ ] Install and configure PostgreSQL connection
-- [ ] Install and initialize Prisma ORM
-- [ ] Design complete database schema:
+- [x] Install and configure PostgreSQL connection
+- [x] Install and initialize Prisma ORM
+- [x] Design complete database schema:
   - `User` — id, email, password, role (ADMIN/LECTURER/STUDENT), firstName, lastName, profileImage, department, createdAt
   - `Faculty` — id, name, code, description
   - `Department` — id, name, code, facultyId
@@ -230,24 +224,22 @@ efficiency barriers in multilingual university environments.
   - `Notification` — id, userId, type, title, message, isRead, createdAt
   - `MapBuilding` — id, name, code, latitude, longitude, floors, metadata
   - `MapMarker` — id, buildingId, floor, type, entityId, x, y, label
-- [ ] Add composite indexes:
+- [x] Add composite indexes:
   - `MasterTimetable`: (dayOfWeek, startTime, hallId)
   - `MasterTimetable`: (dayOfWeek, startTime, lecturerId)
   - `MasterTimetable`: (groupId, dayOfWeek)
   - `Appointment`: (lecturerId, dateTime)
   - `Notification`: (userId, isRead)
-- [ ] Run initial migration
-- [ ] Create seed script with sample academic data:
-  - 3 faculties, 6 departments
-  - 20 lecturers, 100 students, 2 admins
-  - 10 lecture halls, 15 courses
-  - 5 student groups with weekly timetable entries
-- [ ] Verify seed data loads correctly
+- [x] Run initial migration
+- [x] Create seed script with sample academic data:
+  - FCT faculty structure (programs, pathways, departments, lecture halls, map buildings)
+  - Users registered via `/register`; dedicated scripts for lecturers/timetable import
+- [x] Verify seed data loads correctly
 
 ---
 
 ### Sub-Phase 1.3 — Research Environment & Experiment Framework
-**Type**: Research | **Effort**: ~1 day
+**Type**: Research | **Effort**: ~1 day | **Status**: ✅
 
 - [x] Create research directory structure:
   ```
@@ -1886,13 +1878,13 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 11.9 — Active Navigation & QR Positioning (Future-Ready)
-**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.7 | **Status**: ⬜
+**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.7 | **Status**: ✅
 
-- [ ] Re-enable `QrScanPage` at `/navigate/scan` or `/map/scan`
-- [ ] QR scan → `POST /api/indoor-nav/position/qr` → update session `currentNodeId`
-- [ ] Re-route from scanned position to destination
-- [ ] Step index advances on floor change / QR rescan
-- [ ] Stub `BLE_BEACON` / `UWB` providers behind `PositionProvider` interface
+- [x] Re-enable `QrScanPage` at `/navigate/scan` or `/map/scan`
+- [x] QR scan → `POST /api/indoor-nav/position/qr` → update session `currentNodeId`
+- [x] Re-route from scanned position to destination
+- [x] Step index advances on floor change / QR rescan
+- [x] Stub `BLE_BEACON` / `UWB` providers behind `PositionProvider` interface
 
 **Checkpoint:** QR-based "you are here" with rerouting works on one test floor.
 

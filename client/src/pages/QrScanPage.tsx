@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Camera, MapPin, QrCode } from 'lucide-react';
 import { postQrPosition } from '@services/indoorNavApi';
 import { showApiErrorToast } from '@services/api';
@@ -7,6 +7,7 @@ import { showToast } from '@components/Toast';
 
 export default function QrScanPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [manualCode, setManualCode] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -14,22 +15,34 @@ export default function QrScanPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const returnTo = searchParams.get('returnTo') || '/navigate';
+  const buildingId = searchParams.get('buildingId') || '';
+
+  const backUrl =
+    returnTo +
+    (returnTo.includes('?') ? '&' : '?') +
+    `scanned=1${buildingId ? `&buildingId=${buildingId}` : ''}`;
+
   const submitCode = useCallback(
     async (code: string) => {
       const trimmed = code.trim();
       if (!trimmed) return;
       setLoading(true);
       try {
-        const result = await postQrPosition(trimmed);
+        const result = await postQrPosition(trimmed, { reroute: true });
         showToast('success', result.message);
-        navigate(`/map?buildingId=${result.session.buildingId}`);
+        const bid = result.session.buildingId || buildingId;
+        const qs = new URLSearchParams({ scanned: '1' });
+        if (bid) qs.set('buildingId', bid);
+        const base = returnTo.split('?')[0];
+        navigate(`${base}?${qs.toString()}`, { replace: true });
       } catch (err) {
         showApiErrorToast(err, 'QR scan failed');
       } finally {
         setLoading(false);
       }
     },
-    [navigate]
+    [navigate, returnTo, buildingId]
   );
 
   const stopCamera = useCallback(() => {
@@ -54,7 +67,11 @@ export default function QrScanPage() {
       setScanning(true);
 
       if ('BarcodeDetector' in window) {
-        const detector = new (window as unknown as { BarcodeDetector: new (o: { formats: string[] }) => { detect: (s: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector({
+        const detector = new (window as unknown as {
+          BarcodeDetector: new (o: { formats: string[] }) => {
+            detect: (s: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
+          };
+        }).BarcodeDetector({
           formats: ['qr_code'],
         });
         intervalRef.current = setInterval(async () => {
@@ -79,8 +96,11 @@ export default function QrScanPage() {
 
   return (
     <div className="mx-auto max-w-lg p-4">
-      <Link to="/map" className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline">
-        <ArrowLeft size={16} /> Back to Campus Map
+      <Link
+        to={returnTo}
+        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--color-primary)] hover:underline"
+      >
+        <ArrowLeft size={16} /> Back to directions
       </Link>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -88,7 +108,9 @@ export default function QrScanPage() {
           <QrCode size={22} className="text-[var(--color-primary)]" />
           <div>
             <h1 className="text-lg font-semibold text-slate-800">Scan location QR</h1>
-            <p className="text-sm text-slate-500">Update your position for accurate indoor directions</p>
+            <p className="text-sm text-slate-500">
+              Update your position — your route will recalculate from here
+            </p>
           </div>
         </div>
 

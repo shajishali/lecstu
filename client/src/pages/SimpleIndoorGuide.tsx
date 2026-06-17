@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Navigation, Search } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Navigation, QrCode, Search } from 'lucide-react';
 import api, { showApiErrorToast } from '@services/api';
 import IndoorRouteMapView from '@components/IndoorRouteMapView';
 import { useActiveStepScroll } from '@hooks/useActiveStepScroll';
 import { firstStepIndexForFloor } from '@utils/routeStepProgress';
 import {
+  getActiveNavigationSession,
   getBuildingsWithGuides,
   getGuidePlaces,
   getTodayIndoorRoutes,
+  patchSessionStep,
   postIndoorRoute,
   type IndoorRouteResult,
   type TodayRoutesResult,
@@ -109,10 +111,13 @@ export default function SimpleIndoorGuide() {
   const [viewFloor, setViewFloor] = useState(0);
   const [viewBuildingId, setViewBuildingId] = useState('');
   const [todayRoutes, setTodayRoutes] = useState<TodayRoutesResult | null>(null);
+  const [navSessionId, setNavSessionId] = useState<string | null>(null);
+  const [positionLabel, setPositionLabel] = useState<string | null>(null);
 
   const { listRef, activeRef } = useActiveStepScroll(stepIndex);
   const resultRef = useRef<HTMLDivElement>(null);
   const autoRouteDone = useRef(false);
+  const prevStepFloorRef = useRef<number | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -211,6 +216,75 @@ export default function SimpleIndoorGuide() {
       typeof s === 'string' ? { instruction: s, floor: 0 } : s
     );
   }, [route]);
+
+  const setStepWithSession = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      setStepIndex((prev) => {
+        const value = typeof next === 'function' ? next(prev) : next;
+        if (navSessionId) {
+          void patchSessionStep(navSessionId, value).catch(() => {});
+        }
+        return value;
+      });
+    },
+    [navSessionId]
+  );
+
+  useEffect(() => {
+    if (isTodayMode || searchParams.get('scanned') === '1') return;
+    void (async () => {
+      if (!toBuildingId) return;
+      try {
+        const session = await getActiveNavigationSession(toBuildingId);
+        if (session?.positionSource === 'QR_CODE' && session.currentNodeId) {
+          setNavSessionId(session.id);
+          const payload = session.routePayload as IndoorRouteResult | undefined;
+          if (payload?.startLabel) setPositionLabel(payload.startLabel);
+        }
+      } catch {
+        /* no active session */
+      }
+    })();
+  }, [toBuildingId, isTodayMode, searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('scanned') !== '1') return;
+    void (async () => {
+      const bid = searchParams.get('buildingId') || toBuildingId;
+      if (!bid) return;
+      try {
+        const session = await getActiveNavigationSession(bid);
+        if (!session) return;
+        setNavSessionId(session.id);
+        setFromBuildingId(session.buildingId);
+        if (session.currentFloor != null) setFromFloor(session.currentFloor);
+        const payload = session.routePayload as IndoorRouteResult | null;
+        if (payload?.found) {
+          setRoute(payload);
+          setStepIndex(session.stepIndex ?? 0);
+          setViewBuildingId(session.buildingId);
+          setViewFloor(session.currentFloor ?? payload.startFloor ?? 0);
+          if (payload.startLabel) setPositionLabel(payload.startLabel);
+          showToast('success', `Position updated — continuing to ${payload.destinationLabel}`);
+        }
+      } catch (err) {
+        showApiErrorToast(err, 'Could not restore navigation session');
+      }
+    })();
+  }, [searchParams, toBuildingId]);
+
+  useEffect(() => {
+    const floor = stepList[stepIndex]?.floor;
+    if (floor == null) return;
+    if (
+      prevStepFloorRef.current != null &&
+      floor !== prevStepFloorRef.current &&
+      navSessionId
+    ) {
+      void patchSessionStep(navSessionId, stepIndex).catch(() => {});
+    }
+    prevStepFloorRef.current = floor;
+  }, [stepIndex, stepList, navSessionId]);
 
   const routeStartFloor = route?.startFloor ?? fromFloor;
   const routeDestFloor = route?.marker?.floor ?? toFloor;
@@ -362,18 +436,24 @@ export default function SimpleIndoorGuide() {
       setStepIndex(0);
       setViewFloor(fromFloor);
       setViewBuildingId(fromBuildingId);
+      const useQrStart = Boolean(navSessionId || positionLabel);
       try {
         const data = await postIndoorRoute({
           fromBuildingId,
           toBuildingId,
           fromFloor,
           floor: toFloor,
-          fromMarkerId: fromPlace?.markerId,
+          fromMarkerId: useQrStart ? undefined : fromPlace?.markerId,
           toMarkerId: markerId,
           toHallId: hallId,
           q: !hallId && !markerId ? destName : undefined,
+          saveSession: true,
+          useActivePosition: useQrStart,
+          sessionId: navSessionId || undefined,
         });
         setRoute(data);
+        if (data.sessionId) setNavSessionId(data.sessionId);
+        if (data.startLabel && useQrStart) setPositionLabel(data.startLabel);
         if (!opts?.silent) {
           if (data.found) {
             const via =
@@ -399,6 +479,8 @@ export default function SimpleIndoorGuide() {
       toFloor,
       toPlace,
       toQuery,
+      navSessionId,
+      positionLabel,
     ]
   );
 
@@ -455,7 +537,7 @@ export default function SimpleIndoorGuide() {
               key={i}
               ref={i === stepIndex ? activeRef : undefined}
               className={i === stepIndex ? 'active' : ''}
-              onClick={() => setStepIndex(i)}
+              onClick={() => setStepWithSession(i)}
             >
               <span className="guided-step-num">{i + 1}</span>
               {step.instruction}
@@ -466,14 +548,14 @@ export default function SimpleIndoorGuide() {
           <button
             type="button"
             disabled={stepIndex <= 0}
-            onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+            onClick={() => setStepWithSession((i) => Math.max(0, i - 1))}
           >
             <ChevronLeft size={18} /> Previous
           </button>
           <button
             type="button"
             disabled={stepIndex >= stepList.length - 1}
-            onClick={() => setStepIndex((i) => Math.min(stepList.length - 1, i + 1))}
+            onClick={() => setStepWithSession((i) => Math.min(stepList.length - 1, i + 1))}
           >
             Next <ChevronRight size={18} />
           </button>
@@ -530,7 +612,9 @@ export default function SimpleIndoorGuide() {
       {showingDirections && (
         <div className="find-my-way-route-summary mb-4">
           <p className="text-sm text-slate-700">
-            <span className="font-medium">{fromPlace?.name || 'Building entrance'}</span>
+            <span className="font-medium">
+              {positionLabel || fromPlace?.name || 'Building entrance'}
+            </span>
             <span className="mx-2 text-slate-400" aria-hidden>
               →
             </span>
@@ -538,19 +622,39 @@ export default function SimpleIndoorGuide() {
               {route?.destinationLabel || destinationLabel || '…'}
             </span>
           </p>
-          {!loading && (
-          <button
-            type="button"
-            className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-            onClick={() => {
-              setRoute(null);
-              setStepIndex(0);
-            }}
-          >
-            Change route
-          </button>
-          )}
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {route?.found && !isTodayMode && (
+              <Link
+                to={`/navigate/scan?buildingId=${toBuildingId}&returnTo=${encodeURIComponent('/navigate')}`}
+                className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+              >
+                <QrCode size={14} />
+                Scan QR
+              </Link>
+            )}
+            {!loading && (
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => {
+                  setRoute(null);
+                  setStepIndex(0);
+                  setNavSessionId(null);
+                  setPositionLabel(null);
+                }}
+              >
+                Change route
+              </button>
+            )}
+          </div>
         </div>
+      )}
+
+      {positionLabel && route?.found && (
+        <p className="find-my-way-position-banner mb-4" role="status">
+          You are here: <strong>{positionLabel}</strong>
+          <span className="text-slate-500"> — scan again anytime to recalculate your route</span>
+        </p>
       )}
 
       {!showingDirections && !isTodayMode && (
@@ -776,7 +880,7 @@ export default function SimpleIndoorGuide() {
                             v.buildingId,
                             route.polyline
                           );
-                          if (idx >= 0) setStepIndex(idx);
+                          if (idx >= 0) setStepWithSession(idx);
                         }}
                       >
                         {v.label}

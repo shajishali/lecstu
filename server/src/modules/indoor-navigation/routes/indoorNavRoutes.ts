@@ -18,6 +18,7 @@ import {
   postQrCode,
   postQrPosition,
   postRoute,
+  patchSessionStep,
 } from '../controllers/indoorNavController';
 
 const router = Router();
@@ -35,6 +36,7 @@ router.get('/session/active', getActiveNavigationSession);
 router.post('/route', postRoute);
 router.post('/navigation', postNavigation);
 router.post('/position/qr', postQrPosition);
+router.patch('/session/:id/step', patchSessionStep);
 router.post('/session/:id/complete', postCompleteSession);
 
 router.post('/floorplans', authorize('ADMIN'), postFloorplanAlias);

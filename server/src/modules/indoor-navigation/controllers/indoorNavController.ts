@@ -12,9 +12,11 @@ import {
   createOrUpdateSession,
   getActiveSession,
   getSessionById,
+  updateSessionStepIndex,
 } from '../services/navigation-session.service';
 import { executeUnifiedNavigationQuery } from '../../../services/unifiedNavigationQueryService';
 import { computeRouteRequest } from '../services/route.service';
+import { resolveStepIndexForPathNode } from '../utils/activeNavigation';
 
 /** GET /indoor-nav/buildings-with-guides — buildings that have a built navigation guide */
 export async function getBuildingsWithGuides(_req: Request, res: Response, next: NextFunction) {
@@ -121,6 +123,7 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
       fromFloor,
       sessionId,
       saveSession,
+      useActivePosition,
     } = req.body ?? {};
 
     if (!toHallId && !toMarkerId && !toOfficeId && !q?.trim()) {
@@ -133,6 +136,15 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
     if (sessionId && req.user?.userId) {
       const session = await getSessionById(sessionId, req.user.userId);
       if (session?.currentNodeId) effectiveFromNodeId = session.currentNodeId;
+    } else if (
+      useActivePosition &&
+      req.user?.userId &&
+      destBuildingId &&
+      !fromMarkerId &&
+      !effectiveFromNodeId
+    ) {
+      const active = await getActiveSession(req.user.userId, destBuildingId);
+      if (active?.currentNodeId) effectiveFromNodeId = active.currentNodeId;
     } else if (req.user?.userId && destBuildingId && !fromMarkerId && !fromBuildingId) {
       const active = await getActiveSession(req.user.userId, destBuildingId);
       if (active?.currentNodeId) effectiveFromNodeId = active.currentNodeId;
@@ -214,7 +226,7 @@ export async function postNavigation(req: Request, res: Response, next: NextFunc
   }
 }
 
-/** POST /indoor-nav/position/qr — update position from QR scan */
+/** POST /indoor-nav/position/qr — update position from QR scan; optional reroute */
 export async function postQrPosition(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
@@ -222,6 +234,7 @@ export async function postQrPosition(req: Request, res: Response, next: NextFunc
 
     const code = (req.body?.code as string)?.trim();
     if (!code) throw new AppError('code is required', 400);
+    const reroute = req.body?.reroute !== false;
 
     const position = await resolvePosition('QR_CODE', code);
     if (!position) throw new AppError('Unknown or inactive QR code', 404);
@@ -233,12 +246,59 @@ export async function postQrPosition(req: Request, res: Response, next: NextFunc
     });
     if (!node) throw new AppError('Navigation node not found', 404);
 
+    const prior = await getActiveSession(userId, node.buildingId);
+    const priorPayload = prior?.routePayload as Record<string, unknown> | null;
+    const destinationNodeId = prior?.destinationNodeId ?? null;
+
+    let reroutedRoute: Awaited<ReturnType<typeof computeRouteRequest>>['formatted'] | null = null;
+    let stepIndex = prior?.stepIndex ?? 0;
+
+    const hasDestination =
+      destinationNodeId ||
+      priorPayload?.destinationLabel ||
+      (priorPayload?.marker as { id?: string } | undefined)?.id;
+
+    if (reroute && hasDestination) {
+      const marker = priorPayload?.marker as { id?: string; floor?: number } | undefined;
+      const { formatted } = await computeRouteRequest({
+        buildingId: node.buildingId,
+        fromNodeId: position.nodeId,
+        toMarkerId: marker?.id,
+        q: (priorPayload?.destinationLabel as string) || undefined,
+        floor: marker?.floor,
+        forAdmin: req.user?.role === 'ADMIN',
+      });
+      if (formatted.found) {
+        reroutedRoute = formatted;
+        const steps = (formatted.steps || []).map((s) =>
+          typeof s === 'string' ? { instruction: s, floor: 0 } : s
+        );
+        stepIndex = resolveStepIndexForPathNode(
+          steps,
+          formatted.pathNodeIds || [],
+          position.nodeId,
+          position.floor
+        );
+      }
+    } else if (priorPayload?.steps) {
+      const steps = (priorPayload.steps as Array<{ instruction: string; floor: number }>) || [];
+      stepIndex = resolveStepIndexForPathNode(
+        steps,
+        (priorPayload.pathNodeIds as string[]) || [],
+        position.nodeId,
+        position.floor
+      );
+    }
+
     const session = await createOrUpdateSession({
       userId,
       buildingId: node.buildingId,
       currentNodeId: position.nodeId,
       currentFloor: position.floor,
+      destinationNodeId: destinationNodeId || reroutedRoute?.goalNodeId || undefined,
       positionSource: 'QR_CODE',
+      routePayload: reroutedRoute ?? priorPayload ?? undefined,
+      stepIndex,
     });
 
     res.json({
@@ -246,9 +306,33 @@ export async function postQrPosition(req: Request, res: Response, next: NextFunc
       data: {
         position,
         session,
-        message: `You are at ${position.label}`,
+        route: reroutedRoute,
+        stepIndex,
+        message: reroutedRoute
+          ? `You are at ${position.label} — route updated from here`
+          : `You are at ${position.label}`,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /indoor-nav/session/:id/step — sync step index during active navigation */
+export async function patchSessionStep(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new AppError('Authentication required', 401);
+
+    const stepIndex = parseInt(String(req.body?.stepIndex ?? ''), 10);
+    if (Number.isNaN(stepIndex) || stepIndex < 0) {
+      throw new AppError('stepIndex must be a non-negative integer', 400);
+    }
+
+    const session = await updateSessionStepIndex(String(req.params.id), userId, stepIndex);
+    if (!session) throw new AppError('Navigation session not found', 404);
+
+    res.json({ success: true, data: session });
   } catch (err) {
     next(err);
   }

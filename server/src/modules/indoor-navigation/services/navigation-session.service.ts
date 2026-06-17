@@ -77,6 +77,18 @@ export async function getSessionById(sessionId: string, userId: string) {
   });
 }
 
+export async function updateSessionStepIndex(sessionId: string, userId: string, stepIndex: number) {
+  const session = await prisma.navigationSession.findFirst({
+    where: { id: sessionId, userId, status: 'ACTIVE' },
+  });
+  if (!session) return null;
+
+  return prisma.navigationSession.update({
+    where: { id: sessionId },
+    data: { stepIndex: Math.max(0, stepIndex) },
+  });
+}
+
 export async function completeSession(sessionId: string, userId: string) {
   return prisma.navigationSession.updateMany({
     where: { id: sessionId, userId, status: 'ACTIVE' },

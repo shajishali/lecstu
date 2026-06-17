@@ -28,6 +28,7 @@ import Appointments from '@pages/Appointments';
 import BookAppointment from '@pages/BookAppointment';
 import Notifications from '@pages/Notifications';
 import VoiceAssistant from '@pages/VoiceAssistant';
+import QrScanPage from '@pages/QrScanPage';
 import Settings from '@pages/admin/Settings';
 
 const NAVIGATE_QUERY_KEYS = [
@@ -213,8 +214,9 @@ function AppRoutes() {
         <Route path="/appointments/book/:lecturerId" element={<BookAppointment />} />
         <Route path="/assistant" element={<VoiceAssistant />} />
         <Route path="/navigate" element={<SimpleIndoorGuide />} />
+        <Route path="/navigate/scan" element={<QrScanPage />} />
         <Route path="/map" element={<MapLegacyRedirect />} />
-        <Route path="/map/scan" element={<Navigate to="/navigate" replace />} />
+        <Route path="/map/scan" element={<Navigate to="/navigate/scan" replace />} />
         <Route path="/map/guide" element={<MapGuideEntry />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route

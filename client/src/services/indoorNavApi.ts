@@ -26,6 +26,8 @@ export type IndoorRouteResult = {
   marker?: { id: string; label: string; floor: number } | null;
   segments?: Array<{ buildingId: string; floor: number; polyline: [number, number][] }>;
   pathNodeIds?: string[];
+  startNodeId?: string;
+  goalNodeId?: string;
   sessionId?: string;
   deepLink?: string | null;
   message?: string;
@@ -44,17 +46,43 @@ export async function postIndoorRoute(body: {
   floor?: number;
   fromFloor?: number;
   saveSession?: boolean;
+  useActivePosition?: boolean;
+  sessionId?: string;
 }): Promise<IndoorRouteResult> {
   const res = await api.post('/indoor-nav/route', body);
   return res.data.data;
 }
 
-export async function postQrPosition(code: string): Promise<{
+export type NavigationSession = {
+  id: string;
+  buildingId: string;
+  currentNodeId?: string | null;
+  currentFloor?: number | null;
+  stepIndex?: number;
+  positionSource?: string;
+  destinationNodeId?: string | null;
+  routePayload?: IndoorRouteResult | null;
+};
+
+export async function postQrPosition(
+  code: string,
+  options?: { reroute?: boolean }
+): Promise<{
   position: { nodeId: string; floor: number; label: string };
-  session: { id: string; buildingId: string };
+  session: NavigationSession;
+  route?: IndoorRouteResult | null;
+  stepIndex?: number;
   message: string;
 }> {
-  const res = await api.post('/indoor-nav/position/qr', { code });
+  const res = await api.post('/indoor-nav/position/qr', {
+    code,
+    reroute: options?.reroute !== false,
+  });
+  return res.data.data;
+}
+
+export async function patchSessionStep(sessionId: string, stepIndex: number) {
+  const res = await api.patch(`/indoor-nav/session/${sessionId}/step`, { stepIndex });
   return res.data.data;
 }
 
