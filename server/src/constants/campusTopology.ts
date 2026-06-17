@@ -1,11 +1,11 @@
 import type { FacultyBuildingCode } from './facultyBuildings';
 import { getNeighborBuildingCodes } from './buildingConnections';
 
-/** Buildings that may connect when at least one same-floor link exists. */
+/** Buildings that may connect when at least one same-floor link exists. ACAD is the hub. */
 export const FACULTY_BUILDING_ADJACENCY: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
-  ADMIN: ['ACAD', 'LAB'],
-  ACAD: ['ADMIN'],
-  LAB: ['ADMIN'],
+  ADMIN: ['ACAD'],
+  ACAD: ['ADMIN', 'LAB'],
+  LAB: ['ACAD'],
 };
 
 export const FACULTY_BUILDING_CODES: FacultyBuildingCode[] = ['ADMIN', 'ACAD', 'LAB'];

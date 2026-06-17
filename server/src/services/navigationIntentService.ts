@@ -2,7 +2,7 @@
  * Navigation Intent Detector — routes chat messages to the Floor Navigation AI Engine.
  * Mirrors Python engine patterns for offline fallback.
  */
-import { parseNavigationQuery } from './mapSearchService';
+import { parseNavigationQuery, parseSourceDestinationQuery } from './mapSearchService';
 
 export type NavigationIntentResult = {
   isNavigation: boolean;
@@ -60,6 +60,18 @@ export function detectNavigationIntentLocal(message: string): NavigationIntentRe
     };
   }
 
+  const fromTo = parseSourceDestinationQuery(text);
+  if (fromTo.sourceQuery && fromTo.destinationQuery) {
+    return {
+      isNavigation: true,
+      confidence: 0.9,
+      intent: 'guide_to_room',
+      destinationQuery: fromTo.destinationQuery,
+      buildingHint: fromTo.buildingHint,
+      source: 'local',
+    };
+  }
+
   if (OFFICE.test(text)) {
     const parsed = parseNavigationQuery(text);
     return {
@@ -96,6 +108,11 @@ export function detectNavigationIntentLocal(message: string): NavigationIntentRe
 
 export async function detectNavigationIntent(message: string): Promise<NavigationIntentResult> {
   const local = detectNavigationIntentLocal(message);
+
+  // Next-class intent is deterministic — do not let the remote engine override it.
+  if (local.intent === 'guide_to_next_class' && local.isNavigation) {
+    return local;
+  }
 
   try {
     const { callNavigationEngine } = await import('./floorNavigationEngineService');

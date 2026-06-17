@@ -1,5 +1,5 @@
 /**
- * Phase 11.5 — multi-building routing (same-floor links + shortest campus path).
+ * Phase 11.5 — multi-building routing (ACAD hub topology + legs).
  * Run: npx tsx scripts/check-phase-11-5.ts
  */
 import prisma from '../src/config/database';
@@ -38,6 +38,7 @@ async function findLabMarker(buildingId: string) {
       OR: [
         { type: 'LAB' },
         { label: { contains: 'laboratory', mode: 'insensitive' } },
+        { label: { contains: 'workshop', mode: 'insensitive' } },
         { label: { contains: ' lab', mode: 'insensitive' } },
       ],
     },
@@ -51,29 +52,36 @@ async function main() {
 
   let failed = 0;
 
-  if (isDirectBuildingLinkAllowed('ADMIN', 'LAB')) {
-    console.log('OK | direct ADMIN↔LAB allowed (same-floor model)');
+  if (!isDirectBuildingLinkAllowed('ADMIN', 'LAB')) {
+    console.log('OK | direct ADMIN↔LAB blocked (ACAD hub)');
   } else {
     failed++;
-    console.log('FAIL | ADMIN↔LAB should be allowed on linked floors');
+    console.log('FAIL | direct ADMIN↔LAB should be blocked');
   }
 
-  if (!isSameFloorLinkAllowed('ADMIN', 'LAB', 10)) {
-    console.log('OK | ADMIN↔LAB blocked on LAB floor 10');
+  if (!isSameFloorLinkAllowed('ADMIN', 'LAB', 0)) {
+    console.log('OK | same-floor ADMIN↔LAB blocked');
   } else {
     failed++;
-    console.log('FAIL | ADMIN↔LAB should not link on floor 10');
+    console.log('FAIL | same-floor ADMIN↔LAB should be blocked');
   }
 
-  if (isSameFloorLinkAllowed('ACAD', 'LAB', 10)) {
-    console.log('OK | ACAD↔LAB allowed on LAB floor 10');
+  if (isSameFloorLinkAllowed('ACAD', 'LAB', 5)) {
+    console.log('OK | ACAD↔LAB allowed on shared floor');
   } else {
     failed++;
-    console.log('FAIL | ACAD↔LAB should link on floor 10');
+    console.log('FAIL | ACAD↔LAB should link on shared floors');
   }
 
   const adminToLabPath = findBuildingPath('ADMIN', 'LAB');
-  console.log(`INFO | building hint path ADMIN→LAB: ${adminToLabPath?.join('→') ?? 'none'}`);
+  if (adminToLabPath?.join('→') === 'ADMIN→ACAD→LAB') {
+    console.log(`OK | building path ADMIN→LAB: ${adminToLabPath.join('→')}`);
+  } else {
+    failed++;
+    console.log(
+      `FAIL | expected ADMIN→ACAD→LAB, got ${adminToLabPath?.join('→') ?? 'none'}`
+    );
+  }
 
   const buildings = await prisma.mapBuilding.findMany({
     where: { code: { in: ['ADMIN', 'ACAD', 'LAB'] } },
@@ -122,16 +130,17 @@ async function main() {
     });
     const route = formatIndoorRouteResponse(raw);
 
-    const hasCrossStep = route.steps.some((s) =>
-      /cross into/i.test(typeof s === 'string' ? s : s.instruction)
-    );
+    const path = route.buildingPath?.join('→') ?? '';
+    const viaAcad = path.includes('ACAD') && path !== 'ADMIN→LAB';
+    const hasBuildingSteps = route.steps.some((s) => {
+      const t = typeof s === 'string' ? s : s.instruction;
+      return /^(Exit|Enter)\s+/i.test(t);
+    });
+    const hasLegs = (route.legs?.length ?? 0) >= 2;
 
-    if (route.found && route.crossBuilding && hasCrossStep) {
-      const path = route.buildingPath?.join('→') ?? '?';
-      const directAdminLab =
-        path === 'ADMIN→LAB' ? ' (direct same-floor shortcut)' : '';
+    if (route.found && route.crossBuilding && viaAcad && hasBuildingSteps && hasLegs) {
       console.log(
-        `OK | ${route.steps.length} steps | path ${path}${directAdminLab} | ${Math.round(route.distanceMeters ?? 0)} m | ${route.pathfindingAlgorithm}`
+        `OK | ${route.steps.length} steps | path ${path} | ${route.legs!.length} legs | ${Math.round(route.distanceMeters ?? 0)} m`
       );
     } else if (!route.found) {
       failed++;
@@ -139,7 +148,7 @@ async function main() {
     } else {
       failed++;
       console.log(
-        `FAIL | route incomplete (crossBuilding=${route.crossBuilding}, path=${route.buildingPath?.join('→')})`
+        `FAIL | crossBuilding=${route.crossBuilding} path=${path} legs=${route.legs?.length ?? 0} buildingSteps=${hasBuildingSteps}`
       );
     }
   } catch (err) {

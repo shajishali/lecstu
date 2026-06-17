@@ -197,7 +197,7 @@ export default function IndoorRouteMapView({
     routePathPoints.length > 1 ? (
       <p className="guided-path-legend mt-2">
         <span>
-          <span className="guided-legend-start" aria-hidden /> Blue A = start
+          <span className="guided-legend-start" aria-hidden /> Green A = start
         </span>
         <span>
           <span className="guided-legend-end" aria-hidden /> Red B = destination

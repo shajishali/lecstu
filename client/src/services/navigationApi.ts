@@ -14,6 +14,7 @@ export type NavigationRoute = {
   found?: boolean;
   message?: string;
   destinationLabel?: string;
+  roomLabel?: string;
   building?: { id: string; name: string; code: string };
   steps: Array<{ instruction: string; floor: number }>;
   segments: Array<{ buildingId: string; floor: number; polyline: [number, number][] }>;
@@ -21,6 +22,15 @@ export type NavigationRoute = {
   deepLink?: string | null;
   confidence?: number;
   directionEngine?: string;
+  storySupplement?: string[];
+  intent?: NavigationIntent;
+  classContext?: {
+    courseName: string;
+    lecturerName: string;
+    hallName: string;
+    when: string;
+    isCurrent: boolean;
+  };
 };
 
 export async function detectNavigationIntent(message: string): Promise<NavigationIntent> {

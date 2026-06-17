@@ -1168,7 +1168,7 @@ class ActionGuideToRoom(Action):
 
 
 class ActionGuideToNextClass(Action):
-    """Route to current or next class today."""
+    """Route to current or next class today via unified navigation API."""
 
     def name(self) -> Text:
         return "action_guide_to_next_class"
@@ -1186,57 +1186,41 @@ class ActionGuideToNextClass(Action):
 
         headers = _api_headers(user_id)
         try:
-            r = requests.get(
-                f"{PLATFORM_API_URL}/timetable/my/today/next",
+            nr = requests.post(
+                f"{PLATFORM_API_URL}/navigation/query",
+                json={"message": "guide me to my next class"},
                 headers=headers,
-                timeout=10,
+                timeout=15,
             )
-            r.raise_for_status()
-            data = r.json().get("data", {})
-            target = data.get("current") or data.get("next")
+            nr.raise_for_status()
+            payload = nr.json().get("data", {})
 
-            if not target:
-                slots = data.get("slots") or []
-                if not slots:
-                    dispatcher.utter_message(text="You have **no classes left today**.")
-                else:
-                    dispatcher.utter_message(
-                        text="No class in progress right now. Check **Today on campus** on your dashboard for the full list."
-                    )
-                return []
-
-            label = target["hall"]["name"]
-            when = "now" if data.get("current") else f"at {_format_ampm(target['startTime'])}"
-            intro = (
-                f"Your {'current' if data.get('current') else 'next'} class {when} is "
-                f"**{target['course']['name']}** with {target.get('lecturerName', 'TBD')} "
-                f"in **{label}**.\n\n"
-            )
-
-            if not target.get("mapBuildingId"):
+            if not payload.get("routed"):
                 dispatcher.utter_message(
-                    text=intro + "This room isn't on the indoor map yet. Check **Campus Map** for the building location."
+                    text=payload.get("message") or "That doesn't look like a navigation request."
                 )
                 return []
 
-            route_params: Dict[str, Any] = {
-                "buildingId": target["mapBuildingId"],
-                "toHallId": target["hall"]["id"],
-            }
-            if target.get("markerId"):
-                route_params["toMarkerId"] = target["markerId"]
-            if target.get("floor") is not None:
-                route_params["floor"] = target["floor"]
+            ctx = payload.get("classContext") or {}
+            if ctx:
+                when = ctx.get("when", "")
+                intro = (
+                    f"Your {'current' if ctx.get('isCurrent') else 'next'} class {when} is "
+                    f"**{ctx.get('courseName', 'Class')}** with {ctx.get('lecturerName', 'TBD')} "
+                    f"in **{ctx.get('hallName', 'the room')}**.\n\n"
+                )
+            else:
+                intro = ""
 
-            rr = requests.get(
-                f"{PLATFORM_API_URL}/map/indoor-route",
-                params=route_params,
-                headers=headers,
-                timeout=12,
-            )
-            rr.raise_for_status()
-            route = rr.json().get("data", {})
-            dispatcher.utter_message(text=intro + _format_indoor_route_message(route, label))
+            if payload.get("found"):
+                label = payload.get("destinationLabel") or ctx.get("hallName") or "your class"
+                dispatcher.utter_message(
+                    text=intro + _format_indoor_route_message(payload, label)
+                )
+            else:
+                dispatcher.utter_message(
+                    text=intro + (payload.get("message") or "Could not build a route to your next class.")
+                )
         except requests.RequestException:
             logger.exception("Guide to next class API error")
             dispatcher.utter_message(

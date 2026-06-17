@@ -13,10 +13,8 @@ import {
   getActiveSession,
   getSessionById,
 } from '../services/navigation-session.service';
+import { executeUnifiedNavigationQuery } from '../../../services/unifiedNavigationQueryService';
 import { computeRouteRequest } from '../services/route.service';
-import { parseSourceDestinationQuery } from '../../../services/mapSearchService';
-import { detectNavigationIntent } from '../../../services/navigationIntentService';
-import { searchMapEntities, pickBestMapSearchResult } from '../../../services/mapSearchService';
 
 /** GET /indoor-nav/buildings-with-guides — buildings that have a built navigation guide */
 export async function getBuildingsWithGuides(_req: Request, res: Response, next: NextFunction) {
@@ -194,71 +192,22 @@ export async function getRouteBySession(req: Request, res: Response, next: NextF
   }
 }
 
-/** POST /indoor-nav/navigation — NL query with source/destination support */
+/** POST /indoor-nav/navigation — NL query (shared pipeline with /navigation/query) */
 export async function postNavigation(req: Request, res: Response, next: NextFunction) {
   try {
     const message = (req.body?.message as string)?.trim();
     const buildingId = req.body?.buildingId as string | undefined;
     if (!message) throw new AppError('message is required', 400);
 
-    const intent = await detectNavigationIntent(message);
-    if (!intent.isNavigation) {
-      res.json({
-        success: true,
-        data: { routed: false, intent, message: 'Not a navigation query.' },
-      });
-      return;
-    }
-
-    const parsed = parseSourceDestinationQuery(message);
-    const destQuery = parsed.destinationQuery || intent.destinationQuery || message;
-    const sourceQ = parsed.sourceQuery;
-
-    const searchResults = await searchMapEntities(destQuery);
-    const room = pickBestMapSearchResult(destQuery, searchResults);
-
-    if (!room?.buildingId) {
-      res.json({
-        success: true,
-        data: {
-          routed: true,
-          intent,
-          found: false,
-          message: `Could not find "${destQuery}" on the indoor map.`,
-          steps: [],
-          segments: [],
-          deepLink: null,
-        },
-      });
-      return;
-    }
-
-    if (buildingId && room.buildingId !== buildingId) {
-      throw new AppError('Room not found in the specified building', 404);
-    }
-
-    const { formatted } = await computeRouteRequest({
-      buildingId: room.buildingId,
-      toMarkerId: room.markerId,
-      toHallId: room.hallId,
-      toOfficeId: room.kind === 'office' ? room.id : undefined,
-      q: destQuery,
-      sourceQ: sourceQ ?? undefined,
-      floor: room.floor,
+    const data = await executeUnifiedNavigationQuery({
+      message,
+      buildingId,
       fromNodeId: req.body?.fromNodeId,
+      userId: req.user?.userId,
+      userRole: req.user?.role,
     });
 
-    res.json({
-      success: true,
-      data: {
-        routed: true,
-        intent,
-        sourceQuery: sourceQ,
-        destinationQuery: destQuery,
-        ...formatted,
-        roomLabel: room.label,
-      },
-    });
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }

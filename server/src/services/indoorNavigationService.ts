@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 import { findShortestPath, estimateRouteMetrics } from '../modules/indoor-navigation/pathfinding';
-import { buildTurnByTurnSteps } from './turnByTurnSteps';
+import { buildTurnByTurnSteps, type PathNodeLite, type TurnStep } from './turnByTurnSteps';
 
 export { buildTurnByTurnSteps } from './turnByTurnSteps';
 import { getFloorScale } from '../modules/indoor-navigation/repositories/nav-graph.repository';
@@ -879,6 +879,59 @@ async function ensureCampusConnectors(_fromBuildingId: string, _toBuildingId: st
   /* no-op */
 }
 
+function buildCampusRouteLegs(
+  pathNodeLite: PathNodeLite[],
+  pathNodeIds: string[],
+  stepRows: TurnStep[],
+  polyline: RoutePolylinePoint[],
+  buildingById: Map<string, { id: string; name: string; code: string }>
+): CampusRouteLeg[] {
+  if (pathNodeLite.length === 0) return [];
+
+  const legs: CampusRouteLeg[] = [];
+  let legStart = 0;
+
+  const pushLeg = (endExclusive: number) => {
+    if (endExclusive <= legStart) return;
+    const nodes = pathNodeLite.slice(legStart, endExclusive);
+    const ids = pathNodeIds.slice(legStart, endExclusive);
+    const buildingId = nodes[0].buildingId!;
+    const building = buildingById.get(buildingId);
+    const legPoly = polyline.slice(legStart, Math.min(endExclusive, polyline.length));
+    const legSteps: RouteStep[] = stepRows.filter(
+      (s) => s.polylineIndex >= legStart && s.polylineIndex < endExclusive
+    );
+    legs.push({
+      buildingId,
+      buildingCode: building?.code ?? nodes[0].buildingCode ?? '',
+      buildingName: building?.name ?? nodes[0].buildingName ?? '',
+      pathNodeIds: ids,
+      polyline: legPoly,
+      segments: polylineToSegments(buildingId, legPoly),
+      steps: legSteps,
+    });
+    legStart = endExclusive;
+  };
+
+  for (let i = 1; i < pathNodeLite.length; i++) {
+    const prev = pathNodeLite[i - 1];
+    const cur = pathNodeLite[i];
+    if (prev.buildingCode && cur.buildingCode && prev.buildingCode !== cur.buildingCode) {
+      pushLeg(i);
+    }
+  }
+  pushLeg(pathNodeLite.length);
+
+  if (polyline.length > pathNodeLite.length && legs.length > 0) {
+    const tail = polyline.slice(pathNodeLite.length);
+    const last = legs[legs.length - 1];
+    last.polyline = [...last.polyline, ...tail];
+    last.segments = polylineToSegments(last.buildingId, last.polyline);
+  }
+
+  return legs;
+}
+
 async function computeCampusIndoorRoute(options: {
   fromBuildingId: string;
   toBuildingId: string;
@@ -923,7 +976,7 @@ async function computeCampusIndoorRoute(options: {
       building: { id: toBuilding.id, name: toBuilding.name, code: toBuilding.code },
       fromBuilding: { id: fromBuilding.id, name: fromBuilding.name, code: fromBuilding.code },
       message:
-        'No cross-building path found. Academic ↔ Laboratory routes go through Administration — pair ACAD↔ADMIN and ADMIN↔LAB horizontal links on the same floor, plus stairs/lift where floors differ.',
+        'No cross-building path found. Pair ACAD↔ADMIN and ACAD↔LAB doorway links on the same floor in Admin → Building links, and connect stairs/lift between floors where needed.',
     };
   }
 
@@ -991,11 +1044,22 @@ async function computeCampusIndoorRoute(options: {
 
   const buildingPath = [...new Set(pathNodeLite.map((n) => n.buildingCode).filter(Boolean))] as string[];
   const crossBuilding = buildingPath.length > 1;
+  const legs =
+    crossBuilding
+      ? buildCampusRouteLegs(
+          pathNodeLite,
+          pathResult.pathNodeIds,
+          stepRows,
+          polyline,
+          buildingById
+        )
+      : [];
 
   return {
     found: true as const,
     crossBuilding,
     buildingPath,
+    legs,
     building: { id: toBuilding.id, name: toBuilding.name, code: toBuilding.code },
     fromBuilding: { id: fromBuilding.id, name: fromBuilding.name, code: fromBuilding.code },
     destinationLabel: destLabel,
@@ -1141,6 +1205,16 @@ export type RouteSegment = {
 
 export type RouteStep = { instruction: string; floor: number; polylineIndex?: number };
 
+export type CampusRouteLeg = {
+  buildingId: string;
+  buildingCode: string;
+  buildingName: string;
+  pathNodeIds: string[];
+  polyline: RoutePolylinePoint[];
+  segments: RouteSegment[];
+  steps: RouteStep[];
+};
+
 export const INDOOR_ROUTE_ADMIN_FIX = {
   roomMarkers: '/admin/indoor-markers',
   walkingPaths: '/admin/indoor-nav',
@@ -1166,9 +1240,12 @@ export function buildGuideDeepLink(params: {
   if (params.today) q.set('today', '1');
   if (params.leg !== undefined) q.set('leg', String(params.leg));
   if (params.today) {
-    return `/map/guide?${q.toString()}`;
+    return `/navigate?${q.toString()}`;
   }
   const nav = new URLSearchParams({ buildingId: params.buildingId });
+  if (params.floor !== undefined) nav.set('floor', String(params.floor));
+  if (params.hallId) nav.set('hallId', params.hallId);
+  if (params.markerId) nav.set('markerId', params.markerId);
   const label = params.destination;
   if (label) nav.set('q', label);
   return `/navigate?${nav.toString()}`;
@@ -1278,6 +1355,7 @@ export function formatIndoorRouteResponse(raw: RawRouteResult) {
     pathNodeIds: raw.pathNodeIds,
     crossBuilding: 'crossBuilding' in raw ? (raw as { crossBuilding?: boolean }).crossBuilding : false,
     buildingPath: 'buildingPath' in raw ? (raw as { buildingPath?: string[] }).buildingPath : [raw.building.code],
+    legs: 'legs' in raw ? (raw as { legs?: CampusRouteLeg[] }).legs : undefined,
     fromBuilding: 'fromBuilding' in raw ? (raw as { fromBuilding?: { id: string; name: string; code: string } }).fromBuilding : undefined,
     adminFix: null,
   };
@@ -1288,6 +1366,7 @@ export async function computeTodayIndoorRoutes(studentId: string) {
 
   let lastBuildingId: string | null = null;
   let lastGoalNodeId: string | null = null;
+  let lastMarkerId: string | null = null;
 
   const legs: {
     slotId: string;
@@ -1333,20 +1412,26 @@ export async function computeTodayIndoorRoutes(studentId: string) {
     }
 
     try {
-      const fromNodeId =
-        lastBuildingId === slot.mapBuildingId && lastGoalNodeId ? lastGoalNodeId : undefined;
+      const crossBuildingLeg =
+        lastBuildingId != null && lastBuildingId !== slot.mapBuildingId;
 
       const raw = await computeIndoorRouteFlexible({
         buildingId: slot.mapBuildingId,
+        fromBuildingId: crossBuildingLeg ? lastBuildingId! : undefined,
         toHallId: slot.hall.id,
         toMarkerId: slot.markerId || undefined,
-        fromNodeId,
+        fromNodeId:
+          !crossBuildingLeg && lastBuildingId === slot.mapBuildingId && lastGoalNodeId
+            ? lastGoalNodeId
+            : undefined,
+        fromMarkerId: crossBuildingLeg && lastMarkerId ? lastMarkerId : undefined,
       });
 
       const route = formatIndoorRouteResponse(raw);
       if (raw.found) {
         lastBuildingId = slot.mapBuildingId;
         lastGoalNodeId = raw.goalNodeId;
+        lastMarkerId = raw.marker?.id ?? slot.markerId ?? null;
       }
       legs.push({ ...base, route });
     } catch (err) {
@@ -1377,6 +1462,6 @@ export async function computeTodayIndoorRoutes(studentId: string) {
     hasCrossBuilding: buildingIds.size >= 2,
     hasMultipleLocations: today.hasMultipleLocations,
     legs,
-    deepLinkAll: '/map/guide?today=1',
+    deepLinkAll: '/navigate?today=1',
   };
 }

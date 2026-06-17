@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ArrowRight, Navigation, Search } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ChevronLeft, ChevronRight, Navigation, Search } from 'lucide-react';
 import api, { showApiErrorToast } from '@services/api';
 import IndoorRouteMapView from '@components/IndoorRouteMapView';
+import { useActiveStepScroll } from '@hooks/useActiveStepScroll';
 import { firstStepIndexForFloor } from '@utils/routeStepProgress';
 import {
   getBuildingsWithGuides,
   getGuidePlaces,
+  getTodayIndoorRoutes,
   postIndoorRoute,
   type IndoorRouteResult,
+  type TodayRoutesResult,
 } from '@services/indoorNavApi';
 import { showToast } from '@components/Toast';
 
@@ -36,6 +39,14 @@ function floorLabel(f: number) {
 
 function floorOptions(count: number) {
   return Array.from({ length: Math.max(1, count) }, (_, i) => i);
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':');
+  const hr = parseInt(h, 10);
+  const suffix = hr >= 12 ? 'PM' : 'AM';
+  const display = hr > 12 ? hr - 12 : hr === 0 ? 12 : hr;
+  return `${display}:${m} ${suffix}`;
 }
 
 async function loadBuildingPlaces(buildingId: string): Promise<SelectablePlace[]> {
@@ -74,6 +85,9 @@ async function loadBuildingPlaces(buildingId: string): Promise<SelectablePlace[]
 
 export default function SimpleIndoorGuide() {
   const [searchParams] = useSearchParams();
+  const isTodayMode = searchParams.get('today') === '1';
+  const legIndex = parseInt(searchParams.get('leg') || '0', 10);
+
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [guidedBuildingIds, setGuidedBuildingIds] = useState<Set<string>>(new Set());
 
@@ -94,8 +108,11 @@ export default function SimpleIndoorGuide() {
   const [stepIndex, setStepIndex] = useState(0);
   const [viewFloor, setViewFloor] = useState(0);
   const [viewBuildingId, setViewBuildingId] = useState('');
+  const [todayRoutes, setTodayRoutes] = useState<TodayRoutesResult | null>(null);
 
+  const { listRef, activeRef } = useActiveStepScroll(stepIndex);
   const resultRef = useRef<HTMLDivElement>(null);
+  const autoRouteDone = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -109,7 +126,11 @@ export default function SimpleIndoorGuide() {
         setGuidedBuildingIds(new Set(guides.map((g) => g.buildingId)));
 
         const urlBid = searchParams.get('buildingId');
-        const urlQ = searchParams.get('q');
+        const urlQ =
+          searchParams.get('q') ||
+          searchParams.get('destination') ||
+          searchParams.get('guide');
+        const urlFloor = searchParams.get('floor');
         const defaultId =
           urlBid && list.some((b: Building) => b.id === urlBid)
             ? urlBid
@@ -118,6 +139,10 @@ export default function SimpleIndoorGuide() {
         setFromBuildingId(defaultId);
         setToBuildingId(defaultId);
         if (urlQ) setToQuery(urlQ);
+        if (urlFloor) {
+          const f = parseInt(urlFloor, 10);
+          if (!Number.isNaN(f)) setToFloor(f);
+        }
       } catch (err) {
         showApiErrorToast(err, 'Failed to load buildings');
       }
@@ -235,6 +260,18 @@ export default function SimpleIndoorGuide() {
 
   const polylineForView = useMemo(() => route?.polyline ?? [], [route]);
 
+  const buildingBanner = useMemo(() => {
+    const step = stepList[stepIndex];
+    if (!step) return null;
+    const enter = step.instruction.match(/^Enter (.+)$/);
+    if (enter) return { kind: 'enter' as const, label: enter[1] };
+    const exit = step.instruction.match(/^Exit (.+)$/);
+    if (exit) return { kind: 'exit' as const, label: exit[1] };
+    return null;
+  }, [stepList, stepIndex]);
+
+  const activeTodayLeg = isTodayMode ? todayRoutes?.legs[legIndex] ?? todayRoutes?.legs[0] : null;
+
   useEffect(() => {
     if (!route?.found) return;
     const step = stepList[stepIndex];
@@ -258,7 +295,36 @@ export default function SimpleIndoorGuide() {
 
   const destinationLabel = toPlace?.name || toQuery.trim();
   const canGuide = Boolean(toBuildingId && destinationLabel);
-  const showingDirections = Boolean(route?.found || loading);
+  const showingDirections = Boolean(isTodayMode || route?.found || loading);
+
+  useEffect(() => {
+    if (!isTodayMode) return;
+    void (async () => {
+      setLoading(true);
+      setRoute(null);
+      setStepIndex(0);
+      try {
+        const data = await getTodayIndoorRoutes();
+        setTodayRoutes(data);
+        const leg = data.legs[legIndex] ?? data.legs[0];
+        if (!leg) return;
+        setRoute(leg.route);
+        if (leg.mapBuildingId) {
+          setToBuildingId(leg.mapBuildingId);
+          setFromBuildingId(leg.mapBuildingId);
+          setToFloor(leg.hall.floor ?? 0);
+          const seg = leg.route.segments?.[0];
+          const floor = seg?.floor ?? leg.hall.floor ?? 0;
+          setViewFloor(floor);
+          setViewBuildingId(leg.mapBuildingId);
+        }
+      } catch (err) {
+        showApiErrorToast(err, "Failed to load today's routes");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isTodayMode, legIndex]);
 
   useEffect(() => {
     if (!route?.found) return;
@@ -268,21 +334,28 @@ export default function SimpleIndoorGuide() {
     return () => window.clearTimeout(t);
   }, [route?.found]);
 
-  const handleGuide = useCallback(
-    async (placeOverride?: SelectablePlace) => {
-      const dest = placeOverride || toPlace;
+  const fetchRoute = useCallback(
+    async (opts?: {
+      placeOverride?: SelectablePlace;
+      toHallId?: string;
+      toMarkerId?: string;
+      silent?: boolean;
+    }) => {
+      const dest = opts?.placeOverride || toPlace;
       const destName = dest?.name || toQuery.trim();
+      const hallId = opts?.toHallId;
+      const markerId = opts?.toMarkerId || dest?.markerId;
       if (!toBuildingId) {
-        showToast('info', 'Please choose a building');
+        if (!opts?.silent) showToast('info', 'Please choose a building');
         return;
       }
-      if (!destName) {
-        showToast('info', 'Select a destination below or type a room name');
+      if (!hallId && !markerId && !destName) {
+        if (!opts?.silent) showToast('info', 'Select a destination below or type a room name');
         return;
       }
-      if (placeOverride) {
-        setToPlaceId(placeOverride.id);
-        setToQuery(placeOverride.name);
+      if (opts?.placeOverride) {
+        setToPlaceId(opts.placeOverride.id);
+        setToQuery(opts.placeOverride.name);
       }
       setLoading(true);
       setRoute(null);
@@ -296,18 +369,21 @@ export default function SimpleIndoorGuide() {
           fromFloor,
           floor: toFloor,
           fromMarkerId: fromPlace?.markerId,
-          toMarkerId: dest?.markerId,
-          q: dest?.markerId ? undefined : destName,
+          toMarkerId: markerId,
+          toHallId: hallId,
+          q: !hallId && !markerId ? destName : undefined,
         });
         setRoute(data);
-        if (data.found) {
-          const via =
-            data.crossBuilding && data.buildingPath?.length
-              ? ` via ${data.buildingPath.join(' → ')}`
-              : '';
-          showToast('success', `Route to ${data.destinationLabel}${via}`);
-        } else {
-          showToast('info', data.message || 'No route found');
+        if (!opts?.silent) {
+          if (data.found) {
+            const via =
+              data.crossBuilding && data.buildingPath?.length
+                ? ` via ${data.buildingPath.join(' → ')}`
+                : '';
+            showToast('success', `Route to ${data.destinationLabel}${via}`);
+          } else {
+            showToast('info', data.message || 'No route found');
+          }
         }
       } catch (err) {
         showApiErrorToast(err, 'Could not get directions');
@@ -326,6 +402,29 @@ export default function SimpleIndoorGuide() {
     ]
   );
 
+  useEffect(() => {
+    if (autoRouteDone.current || isTodayMode || !buildings.length || !toBuildingId) return;
+    const hallId = searchParams.get('hallId') || searchParams.get('toHallId') || '';
+    const markerId = searchParams.get('markerId') || searchParams.get('toMarkerId') || '';
+    const q =
+      searchParams.get('q') ||
+      searchParams.get('destination') ||
+      searchParams.get('guide') ||
+      '';
+    if (!hallId && !markerId && !q) return;
+    autoRouteDone.current = true;
+    void fetchRoute({
+      toHallId: hallId || undefined,
+      toMarkerId: markerId || undefined,
+      silent: true,
+    });
+  }, [buildings.length, toBuildingId, isTodayMode, searchParams, fetchRoute]);
+
+  const handleGuide = useCallback(
+    async (placeOverride?: SelectablePlace) => fetchRoute({ placeOverride }),
+    [fetchRoute]
+  );
+
   const pickToPlace = (p: SelectablePlace) => {
     setToPlaceId(p.id);
     setToQuery(p.name);
@@ -339,15 +438,94 @@ export default function SimpleIndoorGuide() {
   const selectClass = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm';
   const activeViewKey = `${viewBuildingId}-${viewFloor}`;
 
+  const stepsPanel =
+    stepList.length > 0 ? (
+      <>
+        <p className="guided-step-counter">
+          Step {stepIndex + 1} of {stepList.length}
+          <span className="find-my-way-step-floor">
+            {' '}
+            · {floorLabel(stepList[stepIndex]?.floor ?? viewFloor)}
+          </span>
+        </p>
+        <p className="guided-current-step">{stepList[stepIndex]?.instruction}</p>
+        <ol ref={listRef} className="guided-step-list">
+          {stepList.map((step, i) => (
+            <li
+              key={i}
+              ref={i === stepIndex ? activeRef : undefined}
+              className={i === stepIndex ? 'active' : ''}
+              onClick={() => setStepIndex(i)}
+            >
+              <span className="guided-step-num">{i + 1}</span>
+              {step.instruction}
+            </li>
+          ))}
+        </ol>
+        <div className="guided-step-nav">
+          <button
+            type="button"
+            disabled={stepIndex <= 0}
+            onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+          >
+            <ChevronLeft size={18} /> Previous
+          </button>
+          <button
+            type="button"
+            disabled={stepIndex >= stepList.length - 1}
+            onClick={() => setStepIndex((i) => Math.min(stepList.length - 1, i + 1))}
+          >
+            Next <ChevronRight size={18} />
+          </button>
+        </div>
+      </>
+    ) : null;
+
   return (
-    <div className="find-my-way-page">
+    <div
+      className={`find-my-way-page${route?.found && stepList.length > 0 ? ' has-mobile-sheet' : ''}`}
+    >
       <h1 className="mb-1 flex items-center gap-2 text-xl font-bold text-slate-900">
         <Navigation className="text-[var(--color-primary)]" size={22} />
-        Find My Way
+        {isTodayMode ? "Today's routes" : 'Find My Way'}
       </h1>
       <p className="mb-4 text-sm text-slate-600">
-        Pick your start and destination — the floor plan appears when you get directions.
+        {isTodayMode
+          ? 'Step through each class — floor plans and walking directions update as you go.'
+          : 'Pick your start and destination — the floor plan appears when you get directions.'}
       </p>
+
+      {isTodayMode && todayRoutes && todayRoutes.legs.length > 1 && (
+        <div className="find-my-way-today-tabs" role="tablist">
+          {todayRoutes.legs.map((leg, i) => (
+            <Link
+              key={leg.slotId}
+              to={`/navigate?today=1&leg=${i}`}
+              role="tab"
+              aria-selected={i === legIndex}
+              className={i === legIndex ? 'active' : ''}
+            >
+              {formatTime(leg.startTime)} · {leg.courseName}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {isTodayMode && activeTodayLeg && (
+        <div className="find-my-way-route-summary mb-4">
+          <p className="text-sm text-slate-700">
+            <span className="font-medium">{formatTime(activeTodayLeg.startTime)}</span>
+            <span className="mx-2 text-slate-400" aria-hidden>
+              ·
+            </span>
+            <span className="font-medium">{activeTodayLeg.courseName}</span>
+            <span className="mx-2 text-slate-400" aria-hidden>
+              →
+            </span>
+            <span className="font-medium">{activeTodayLeg.hall.name}</span>
+          </p>
+        </div>
+      )}
 
       {showingDirections && (
         <div className="find-my-way-route-summary mb-4">
@@ -375,7 +553,7 @@ export default function SimpleIndoorGuide() {
         </div>
       )}
 
-      {!showingDirections && (
+      {!showingDirections && !isTodayMode && (
       <div className="find-my-way-form">
         <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">From</p>
@@ -570,6 +748,14 @@ export default function SimpleIndoorGuide() {
         <div ref={resultRef} className="find-my-way-result">
           <div className="find-my-way-body">
             <div className="find-my-way-map">
+              {buildingBanner && (
+                <div className="find-my-way-building-banner" role="status">
+                  {buildingBanner.kind === 'enter'
+                    ? `Now entering ${buildingBanner.label}`
+                    : `Leaving ${buildingBanner.label}`}
+                </div>
+              )}
+
               {routeViews.length > 1 && (
                 <div className="find-my-way-floor-tabs" role="tablist">
                   {routeViews.map((v) => {
@@ -600,48 +786,6 @@ export default function SimpleIndoorGuide() {
                 </div>
               )}
 
-              {stepList.length > 0 && (
-                <div className="find-my-way-step-inline" aria-live="polite">
-                  <div className="find-my-way-step-inline-head">
-                    <p className="find-my-way-step-meta">
-                      Step {stepIndex + 1} of {stepList.length}
-                      <span className="find-my-way-step-floor">
-                        · {floorLabel(stepList[stepIndex]?.floor ?? viewFloor)}
-                      </span>
-                    </p>
-                    {stepList.length > 1 && (
-                      <div className="find-my-way-step-nav">
-                        <button
-                          type="button"
-                          disabled={stepIndex <= 0}
-                          className="rounded-lg border px-3 py-1.5 text-xs disabled:opacity-40"
-                          onClick={() => setStepIndex((i) => i - 1)}
-                        >
-                          Previous
-                        </button>
-                        <button
-                          type="button"
-                          disabled={stepIndex >= stepList.length - 1}
-                          className="rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs text-white disabled:opacity-40"
-                          onClick={() => setStepIndex((i) => i + 1)}
-                        >
-                          Next step
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <p key={stepIndex} className="find-my-way-step-instruction">
-                    {stepList[stepIndex]?.instruction}
-                  </p>
-                  {route.crossBuilding && route.buildingPath && route.buildingPath.length > 1 && (
-                    <p className="find-my-way-step-route-meta">
-                      {route.buildingPath.join(' → ')}
-                      {route.distanceMeters != null && ` · ~${Math.round(route.distanceMeters)} m`}
-                    </p>
-                  )}
-                </div>
-              )}
-
               <IndoorRouteMapView
                 buildingId={viewBuildingId || toBuildingId}
                 floor={viewFloor}
@@ -649,13 +793,19 @@ export default function SimpleIndoorGuide() {
                 startLabel={fromPlace?.name || route.startLabel}
                 destinationLabel={route.destinationLabel}
                 startMarkerId={fromPlace?.markerId}
-                destinationMarkerId={toPlace?.markerId}
+                destinationMarkerId={toPlace?.markerId || route.marker?.id}
                 startFloor={routeStartFloor}
                 destFloor={routeDestFloor}
                 stepIndex={stepIndex}
                 stepDetails={stepList}
               />
             </div>
+
+            {stepsPanel && (
+              <aside className="find-my-way-steps-panel" aria-label="Turn-by-turn directions">
+                {stepsPanel}
+              </aside>
+            )}
           </div>
         </div>
       )}

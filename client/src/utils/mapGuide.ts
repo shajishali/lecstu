@@ -9,14 +9,17 @@ export function buildCampusMapUrl(params: {
   q?: string;
 }): string {
   const search = new URLSearchParams({ buildingId: params.buildingId });
+  if (params.floor !== undefined) search.set('floor', String(params.floor));
+  if (params.hallId) search.set('hallId', params.hallId);
+  if (params.markerId) search.set('markerId', params.markerId);
   const label = params.q || params.destination || params.guide;
   if (label) search.set('q', label);
   return `/navigate?${search.toString()}`;
 }
 
-/** Multi-leg “guide all today” still uses the step-by-step guided map page. */
+/** Multi-leg “guide all today” on the unified navigate page. */
 export function buildGuideAllTodayUrl(): string {
-  return '/map/guide?today=1';
+  return '/navigate?today=1';
 }
 
 /** @deprecated Use buildCampusMapUrl — kept for imports that pass `today` / `leg`. */
@@ -32,7 +35,7 @@ export function buildGuideUrl(params: {
   if (params.today) {
     const q = new URLSearchParams({ today: '1' });
     if (params.leg !== undefined) q.set('leg', String(params.leg));
-    return `/map/guide?${q.toString()}`;
+    return `/navigate?${q.toString()}`;
   }
   return buildCampusMapUrl({
     buildingId: params.buildingId,
@@ -50,9 +53,7 @@ export function normalizeMapLink(path: string): string {
 
   if (path.startsWith('/map/guide?')) {
     const qs = path.slice('/map/guide?'.length);
-    const params = new URLSearchParams(qs);
-    if (params.get('today') === '1') return path;
-    return normalizeMapLink(`/map?${qs}`);
+    return qs ? `/navigate?${qs}` : '/navigate';
   }
 
   if (path.startsWith('/map?')) {
@@ -62,6 +63,11 @@ export function normalizeMapLink(path: string): string {
     const label =
       params.get('q') || params.get('destination') || params.get('guide') || params.get('markerId');
     if (buildingId) next.set('buildingId', buildingId);
+    if (params.get('hallId')) next.set('hallId', params.get('hallId')!);
+    if (params.get('toHallId')) next.set('toHallId', params.get('toHallId')!);
+    if (params.get('markerId')) next.set('markerId', params.get('markerId')!);
+    if (params.get('toMarkerId')) next.set('toMarkerId', params.get('toMarkerId')!);
+    if (params.get('floor')) next.set('floor', params.get('floor')!);
     if (label && !label.match(/^[0-9a-f-]{36}$/i)) next.set('q', label);
     else if (params.get('destination')) next.set('q', params.get('destination')!);
     const qs = next.toString();

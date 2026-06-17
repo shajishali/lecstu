@@ -12,6 +12,15 @@ export type IndoorRouteResult = {
   pathfindingAlgorithm?: string;
   crossBuilding?: boolean;
   buildingPath?: string[];
+  legs?: Array<{
+    buildingId: string;
+    buildingCode: string;
+    buildingName: string;
+    pathNodeIds: string[];
+    polyline: Array<{ x: number; y: number; floor: number; buildingId?: string; label?: string }>;
+    segments: Array<{ buildingId: string; floor: number; polyline: [number, number][] }>;
+    steps: Array<{ instruction: string; floor: number; polylineIndex?: number }>;
+  }>;
   fromBuilding?: { id: string; name: string; code: string };
   building?: { id: string; name: string; code: string };
   marker?: { id: string; label: string; floor: number } | null;
@@ -103,4 +112,28 @@ export async function getBuildingsWithGuides(): Promise<
 > {
   const res = await api.get('/indoor-nav/buildings-with-guides');
   return res.data.data || [];
+}
+
+export type TodayRouteLeg = {
+  slotId: string;
+  startTime: string;
+  endTime: string;
+  courseName: string;
+  lecturerName: string;
+  hall: { id: string; name: string; building: string; floor: number };
+  mapBuildingId: string | null;
+  route: IndoorRouteResult;
+};
+
+export type TodayRoutesResult = {
+  legs: TodayRouteLeg[];
+  deepLinkAll: string;
+  hasCrossBuilding: boolean;
+  date?: string;
+  dayOfWeek?: string;
+};
+
+export async function getTodayIndoorRoutes(): Promise<TodayRoutesResult> {
+  const res = await api.get('/map/indoor-route/today');
+  return res.data.data;
 }

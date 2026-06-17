@@ -3,6 +3,7 @@ import {
   isVerticalConnectorType,
   verticalConnectorKey,
 } from '../utils/verticalConnectorLabels';
+import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 
 export type PathNodeLite = {
   label: string;
@@ -109,6 +110,12 @@ function floorLabelShort(floor: number): string {
   return floor === 0 ? 'Ground floor' : `Floor ${floor}`;
 }
 
+function buildingShortLabel(code?: string, name?: string): string {
+  const def = code ? getFacultyBuildingByCode(code) : undefined;
+  const full = (name || def?.name || code || 'building').trim();
+  return full.replace(/\s+Building$/i, '').trim();
+}
+
 export function buildTurnByTurnSteps(
   pathNodes: PathNodeLite[],
   destinationLabel: string,
@@ -133,8 +140,15 @@ export function buildTurnByTurnSteps(
     const cur = pathNodes[i];
 
     if (prev.buildingId && cur.buildingId && prev.buildingId !== cur.buildingId) {
+      const exitLabel = buildingShortLabel(prev.buildingCode, prev.buildingName);
+      const enterLabel = buildingShortLabel(cur.buildingCode, cur.buildingName);
       steps.push({
-        instruction: `Use ${prev.label} to enter ${cur.buildingName || 'the next building'}`,
+        instruction: `Exit ${exitLabel}`,
+        floor: prev.floor,
+        polylineIndex: Math.max(0, i - 1),
+      });
+      steps.push({
+        instruction: `Enter ${enterLabel}`,
         floor: cur.floor,
         polylineIndex: i,
       });

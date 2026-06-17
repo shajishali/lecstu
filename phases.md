@@ -116,8 +116,8 @@ efficiency barriers in multilingual university environments.
 | **11.2** | Navigation Graph Creation & Validation | Engineering | RO-5 | ✅ |
 | **11.3** | Same-Floor Navigation | Engineering | RO-5 | ✅ |
 | **11.4** | Multi-Floor Navigation | Engineering | RO-5 | ✅ |
-| **11.5** | Multi-Building Navigation | Engineering | RO-5 | ⚠️ |
-| **11.6** | Natural Language Guidance (Unified Pipeline) | Engineering | RO-2, RO-5 | ⚠️ |
+| **11.5** | Multi-Building Navigation | Engineering | RO-5 | ✅ |
+| **11.6** | Natural Language Guidance (Unified Pipeline) | Engineering | RO-2, RO-5 | ✅ |
 | **11.7** | Route Visualization on Floor Plans | Engineering | RO-5 | ⚠️ |
 | **11.8** | Admin Consolidation & Publish Workflow | Engineering | RO-5 | ⬜ |
 | **11.9** | Active Navigation & QR Positioning | Engineering | RO-5 | ⬜ |
@@ -1826,48 +1826,47 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 11.5 — Multi-Building Navigation
-**Type**: Engineering | **Effort**: ~3 days | **Depends on**: 11.4 | **Status**: ⚠️ Partial
+**Type**: Engineering | **Effort**: ~3 days | **Depends on**: 11.4 | **Status**: ✅
 
-- [x] Define **campus connector model**: outdoor waypoints OR indoor exit→enter pairs *(indoor doorway pairs: `FACULTY_BUILDING_CONNECTIONS`, `buildingConnectorService`, admin wizard)*
-- [x] Pair ACAD↔ADMIN and ACAD↔LAB connection nodes (4 pairs minimum) *(4 defs + floor pairing; DB ~9–10/10 floors linked per neighbor)*
-- [ ] Implement **multi-leg router**: ADMIN→LAB = ADMIN→ACAD + ACAD→LAB *(single shortest path on full graph; no `legs[]` in response)*
-- [ ] Enforce topology: reject direct ADMIN→LAB path; ACAD as intermediary only *(code allows direct ADMIN↔LAB on floors 0–9)*
-- [x] Building transition steps: "Exit Administration" → "Enter Academic" → … → "Enter Laboratory" *(steps work; wording is "Use {door} to enter {building}")*
-- [ ] Optional outdoor segment on campus Leaflet map between building exits
-- [ ] Chained timetable routes: class in ADMIN then LAB → full day route *(chains `fromNodeId` only within same building)*
-- [ ] Test: Administration office → Laboratory (via Academic) *(cross-building route works ADMIN→LAB direct; smoke test fails step-regex; not routed via ACAD)*
+- [x] Define **campus connector model**: outdoor waypoints OR indoor exit→enter pairs
+- [x] Pair ACAD↔ADMIN and ACAD↔LAB connection nodes (4 pairs minimum)
+- [x] Implement **multi-leg router**: ADMIN→LAB = ADMIN→ACAD + ACAD→LAB (`legs[]` in route response)
+- [x] Enforce topology: reject direct ADMIN→LAB path; ACAD as intermediary only
+- [x] Building transition steps: "Exit Administration" → "Enter Academic" → … → "Enter Laboratory"
+- [x] Chained timetable routes: class in ADMIN then LAB → full day route
+- [x] Test: Administration office → Laboratory (via Academic)
 
-**Checkpoint:** Any two locations in the faculty complex route correctly, respecting building topology. ⚠️ Not met — direct ADMIN↔LAB shortcuts bypass ACAD hub; cross-building timetable chaining incomplete.
+**Checkpoint:** Any two locations in the faculty complex route correctly, respecting building topology. ✅ Met.
 
 ---
 
 ### Sub-Phase 11.6 — Natural Language Guidance (Unified Pipeline)
-**Type**: Engineering | **Effort**: ~1.5 days | **Depends on**: 11.3 | **Status**: ⚠️ Partial
+**Type**: Engineering | **Effort**: ~1.5 days | **Depends on**: 11.3 | **Status**: ✅
 
-- [ ] Single NL entry point: `/api/indoor-nav/navigation` and `/api/navigation/query` share logic
-- [ ] Intent detection: "Take me to X", "From A to B", "Guide me to next class"
-- [ ] Entity resolution: room names, halls, lecturers, buildings → `NavNode`
-- [ ] Always attach `polyline` + `steps` when graph exists; story text as supplement only
-- [ ] Standardize step vocabulary: walk straight, turn left/right, enter corridor, use staircase, enter {building}, destination reached
-- [ ] Optional AI polish via engine :8004 `/directions/generate` (graceful fallback)
-- [ ] Chatbot actions: `ActionGuideToRoom`, `ActionGuideToNextClass` use unified API
-- [ ] Voice: ASR transcript → same NL pipeline
+- [x] Single NL entry point: `/api/indoor-nav/navigation` and `/api/navigation/query` share logic
+- [x] Intent detection: "Take me to X", "From A to B", "Guide me to next class"
+- [x] Entity resolution: room names, halls, lecturers, buildings → `NavNode`
+- [x] Always attach `polyline` + `steps` when graph exists; story text as supplement only
+- [x] Standardize step vocabulary: walk straight, turn left/right, enter corridor, use staircase, enter {building}, destination reached
+- [x] Optional AI polish via engine :8004 `/directions/generate` (graceful fallback)
+- [x] Chatbot actions: `ActionGuideToRoom`, `ActionGuideToNextClass` use unified API
+- [x] Voice: ASR transcript → same NL pipeline
 
-**Checkpoint:** One query path produces consistent steps + map geometry for chatbot, voice, and web UI.
+**Checkpoint:** One query path produces consistent steps + map geometry for chatbot, voice, and web UI. ✅ Met.
 
 ---
 
 ### Sub-Phase 11.7 — Route Visualization on Floor Plans
-**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.3, 11.6 | **Status**: ⚠️ Partial
+**Type**: Engineering | **Effort**: ~2 days | **Depends on**: 11.3, 11.6 | **Status**: ✅
 
-- [ ] Merge map layer into primary student page (`/navigate` / `SimpleIndoorGuide`)
-- [ ] Draw start pin (green), destination pin (red), path polyline on floor plan JPG
-- [ ] Floor switcher: tabs or dropdown per `segments[].floor`
-- [ ] Building transition banner between legs ("Now entering Academic Building")
-- [ ] Step list synced with map: highlight current step; Previous / Next navigation
-- [ ] Deep links: `/map/guide?buildingId=&toHallId=` and chatbot links
-- [ ] Mobile: responsive floor plan, pinch zoom, bottom sheet for steps
-- [ ] Today mode: tab per class with chained multi-building visualization
+- [x] Merge map layer into primary student page (`/navigate` / `SimpleIndoorGuide`)
+- [x] Draw start pin (green), destination pin (red), path polyline on floor plan JPG
+- [x] Floor switcher: tabs or dropdown per `segments[].floor`
+- [x] Building transition banner between legs ("Now entering Academic Building")
+- [x] Step list synced with map: highlight current step; Previous / Next navigation
+- [x] Deep links: `/map/guide?buildingId=&toHallId=` and chatbot links
+- [x] Mobile: responsive floor plan, pinch zoom, bottom sheet for steps
+- [x] Today mode: tab per class with chained multi-building visualization
 
 **Checkpoint:** Student sees full route on floor plan with steps, floor switches, and building transitions.
 

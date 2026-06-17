@@ -3,9 +3,9 @@ import type { FacultyBuildingCode } from './facultyBuildings';
 export const CROSS_BUILDING_EDGE_LABEL = 'cross-building';
 
 const FACULTY_ADJACENCY: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
-  ADMIN: ['ACAD', 'LAB'],
-  ACAD: ['ADMIN'],
-  LAB: ['ADMIN'],
+  ADMIN: ['ACAD'],
+  ACAD: ['ADMIN', 'LAB'],
+  LAB: ['ACAD'],
 };
 
 function isFacultyCode(code: string): code is FacultyBuildingCode {
@@ -63,21 +63,13 @@ export function isDirectBuildingLinkAllowed(fromCode: string, toCode: string): b
 }
 
 /** Which neighbor buildings may have a doorway on this floor number. */
-export function getNeighborBuildingCodes(code: string, floor: number): FacultyBuildingCode[] {
+export function getNeighborBuildingCodes(code: string, _floor: number): FacultyBuildingCode[] {
   const c = code.toUpperCase();
   if (!isFacultyCode(c)) return [];
 
-  if (c === 'ADMIN') {
-    const neighbors: FacultyBuildingCode[] = ['ACAD'];
-    if (floor < 10) neighbors.push('LAB');
-    return neighbors;
-  }
-  if (c === 'ACAD') {
-    return ['ADMIN'];
-  }
-  if (c === 'LAB') {
-    return ['ADMIN'];
-  }
+  if (c === 'ADMIN') return ['ACAD'];
+  if (c === 'ACAD') return ['ADMIN', 'LAB'];
+  if (c === 'LAB') return ['ACAD'];
   return [];
 }
 
@@ -112,12 +104,12 @@ export function isSameFloorLinkAllowed(
   if (!isFacultyCode(from) || !isFacultyCode(to)) return false;
   if (!isDirectBuildingLinkAllowed(from, to)) return false;
 
-  // ADMIN ↔ LAB only on floors both buildings share (0–9).
+  // No direct ADMIN ↔ LAB — cross-building routes use Academic as hub.
   if (
     (from === 'ADMIN' && to === 'LAB') ||
     (from === 'LAB' && to === 'ADMIN')
   ) {
-    return floor < 10;
+    return false;
   }
 
   return true;

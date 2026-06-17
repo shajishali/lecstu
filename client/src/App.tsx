@@ -25,30 +25,45 @@ import LecturerProfile from '@pages/LecturerProfile';
 import Appointments from '@pages/Appointments';
 import BookAppointment from '@pages/BookAppointment';
 import Notifications from '@pages/Notifications';
-import GuidedMap from '@pages/GuidedMap';
 import VoiceAssistant from '@pages/VoiceAssistant';
 import Settings from '@pages/admin/Settings';
+
+const NAVIGATE_QUERY_KEYS = [
+  'buildingId',
+  'q',
+  'destination',
+  'guide',
+  'hallId',
+  'toHallId',
+  'markerId',
+  'toMarkerId',
+  'floor',
+  'today',
+  'leg',
+] as const;
 
 /** Preserve query params when redirecting legacy /map links to /navigate. */
 function MapLegacyRedirect() {
   const [searchParams] = useSearchParams();
-  const buildingId = searchParams.get('buildingId');
-  const label =
-    searchParams.get('q') ||
-    searchParams.get('destination') ||
-    searchParams.get('guide');
   const next = new URLSearchParams();
-  if (buildingId) next.set('buildingId', buildingId);
-  if (label) next.set('q', label);
+  for (const key of NAVIGATE_QUERY_KEYS) {
+    const value = searchParams.get(key);
+    if (value) next.set(key, value);
+  }
   const qs = next.toString();
   return <Navigate to={qs ? `/navigate?${qs}` : '/navigate'} replace />;
 }
 
-/** Multi-leg “today” keeps Guided Map; other /map/guide links go to /navigate. */
+/** Legacy /map/guide deep links → unified /navigate (today mode included). */
 function MapGuideEntry() {
   const [searchParams] = useSearchParams();
-  if (searchParams.get('today') === '1') return <GuidedMap />;
-  return <MapLegacyRedirect />;
+  const next = new URLSearchParams();
+  for (const key of NAVIGATE_QUERY_KEYS) {
+    const value = searchParams.get(key);
+    if (value) next.set(key, value);
+  }
+  const qs = next.toString();
+  return <Navigate to={qs ? `/navigate?${qs}` : '/navigate'} replace />;
 }
 
 function AppRoutes() {

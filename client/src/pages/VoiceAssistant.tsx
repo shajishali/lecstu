@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import VoiceInput, { type TranscriptionResult, type VoiceLanguage } from '@components/VoiceInput';
+import { detectNavigationIntent, queryNavigation } from '@services/navigationApi';
 
 export default function VoiceAssistant() {
   const [transcription, setTranscription] = useState<string>('');
@@ -7,13 +8,36 @@ export default function VoiceAssistant() {
   const [language, setLanguage] = useState<VoiceLanguage>('en');
   const [engine, setEngine] = useState<'whisper' | 'whisper-finetuned' | 'google' | 'azure'>('whisper');
   const [model, setModel] = useState<'tiny' | 'base' | 'small' | 'medium'>('base');
+  const [navigationResult, setNavigationResult] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
 
-  const handleTranscription = (result: TranscriptionResult) => {
+  const handleTranscription = useCallback(async (result: TranscriptionResult) => {
     setTranscription(result.text);
     setLastResult(result);
     setError('');
-  };
+    setNavigationResult(null);
+
+    try {
+      const intent = await detectNavigationIntent(result.text);
+      if (!intent.isNavigation) return;
+
+      const route = await queryNavigation(result.text);
+      if (!route.routed) return;
+
+      if (route.found && route.steps?.length) {
+        const lines = route.steps.slice(0, 8).map((s, i) => {
+          const t = typeof s === 'string' ? s : s.instruction;
+          return `${i + 1}. ${t}`;
+        });
+        const dest = route.destinationLabel || route.roomLabel || 'destination';
+        setNavigationResult(`Navigation to ${dest}:\n${lines.join('\n')}`);
+      } else if (route.message) {
+        setNavigationResult(route.message);
+      }
+    } catch {
+      /* navigation is optional on voice demo page */
+    }
+  }, []);
 
   const handleError = (msg: string) => {
     setError(msg);
@@ -101,6 +125,15 @@ export default function VoiceAssistant() {
               {lastResult.latency_ms.toFixed(0)} ms · Engine: {lastResult.engine}
             </p>
           )}
+        </div>
+      )}
+
+      {navigationResult && (
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-emerald-700">
+            Indoor navigation (unified pipeline)
+          </h3>
+          <pre className="whitespace-pre-wrap text-sm text-emerald-900">{navigationResult}</pre>
         </div>
       )}
     </div>
