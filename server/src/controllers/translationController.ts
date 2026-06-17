@@ -57,10 +57,10 @@ export async function translate(req: Request, res: Response, next: NextFunction)
 }
 
 const ENGINE_TIMEOUT_MS: Record<string, number> = {
-  mbart: 120000,  // mBART loads ~2.4GB model; first run can take 60–90s
-  google: 90000,
-  marian: 60000,
-  azure: 60000,
+  google: 10000,
+  marian: 15000,
+  azure: 15000,
+  mbart: 15000,
 };
 
 async function translateViaSubprocess(

@@ -70,21 +70,6 @@ function userMatchesSearch(u: LecturerUserRow, searchQ: string): boolean {
   return false;
 }
 
-async function schedulePlacesForLecturer(lecturerId: string): Promise<DirectoryTeachingHall[]> {
-  const slots = await prisma.lecturerScheduleSlot.findMany({
-    where: { lecturerId, location: { not: null } },
-    select: { location: true },
-    distinct: ['location'],
-  });
-  const halls: DirectoryTeachingHall[] = [];
-  for (const s of slots) {
-    const loc = s.location?.trim();
-    if (!loc) continue;
-    halls.push({ name: loc, building: loc });
-  }
-  return halls;
-}
-
 export async function listDirectoryLecturers(filters?: {
   search?: string;
   departmentId?: string;
@@ -119,6 +104,30 @@ export async function listDirectoryLecturers(filters?: {
     ? users.filter((u) => userMatchesSearch(u, searchQ))
     : users;
 
+  const lecturerIds = filteredUsers.map((u) => u.id);
+  const scheduleSlots =
+    lecturerIds.length > 0
+      ? await prisma.lecturerScheduleSlot.findMany({
+          where: {
+            lecturerId: { in: lecturerIds },
+            location: { not: null },
+          },
+          select: { lecturerId: true, location: true },
+          distinct: ['lecturerId', 'location'],
+        })
+      : [];
+
+  const placesByLecturer = new Map<string, DirectoryTeachingHall[]>();
+  for (const slot of scheduleSlots) {
+    const loc = slot.location?.trim();
+    if (!loc) continue;
+    const halls = placesByLecturer.get(slot.lecturerId) ?? [];
+    if (!halls.some((h) => h.name === loc)) {
+      halls.push({ name: loc, building: loc });
+      placesByLecturer.set(slot.lecturerId, halls);
+    }
+  }
+
   const items: LecturerDirectoryItem[] = [];
 
   for (const u of filteredUsers) {
@@ -134,7 +143,7 @@ export async function listDirectoryLecturers(filters?: {
         building: u.lecturerOffice.building,
       });
     }
-    const schedulePlaces = await schedulePlacesForLecturer(u.id);
+    const schedulePlaces = placesByLecturer.get(u.id) ?? [];
     for (const p of schedulePlaces) {
       if (!teachingHalls.some((h) => h.name === p.name)) teachingHalls.push(p);
     }

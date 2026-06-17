@@ -17,6 +17,7 @@
     "db:repair-timetable-details": "tsx scripts/repair-grid-snapshots.ts",
     "db:sync-lecturer-codes": "tsx scripts/sync-lecturer-codes-from-names.ts",
     "db:seed-lecturers": "tsx scripts/seed-faculty-lecturers.ts",
+    "db:reset-lecturer-passwords": "tsx scripts/reset-lecturer-passwords.ts",
     "db:seed-faculty-buildings": "tsx scripts/seed-faculty-buildings.ts",
     "db:import-floorplans": "tsx scripts/import-floorplans-from-folder.ts",
     "db:scrape-fct-lecturers": "tsx scripts/scrape-fct-lecturers.ts",

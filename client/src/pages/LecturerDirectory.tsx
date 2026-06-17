@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@store/authStore';
 import { showToast } from '@components/Toast';
@@ -34,39 +34,76 @@ interface Department {
   code: string;
 }
 
+const CACHE_TTL_MS = 60_000;
+let cachedLecturers: { key: string; data: LecturerItem[]; at: number } | null = null;
+
+function cacheKey(search: string, deptFilter: string) {
+  return `${search}::${deptFilter}`;
+}
+
 export default function LecturerDirectory() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [lecturers, setLecturers] = useState<LecturerItem[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
+  const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
   const fetchDepartments = useCallback(async () => {
     try {
       const res = await api.get('/lecturers/departments');
       setDepartments(res.data.data || []);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  const fetchLecturers = useCallback(async () => {
-    setLoading(true);
+  const fetchLecturers = useCallback(async (opts?: { background?: boolean }) => {
+    const key = cacheKey(search, deptFilter);
+    const cached = cachedLecturers;
+    if (cached && cached.key === key && Date.now() - cached.at < CACHE_TTL_MS) {
+      setLecturers(cached.data);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    if (opts?.background) setRefreshing(true);
+    else setLoading(true);
+
     try {
       const params: Record<string, string> = {};
       if (search) params.search = search;
       if (deptFilter) params.departmentId = deptFilter;
       const res = await api.get('/lecturers', { params });
-      setLecturers(res.data.data || []);
+      const data = res.data.data || [];
+      cachedLecturers = { key, data, at: Date.now() };
+      setLecturers(data);
     } catch {
       showToast('error', 'Failed to load lecturers');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [search, deptFilter]);
 
-  useEffect(() => { fetchDepartments(); }, [fetchDepartments]);
-  useEffect(() => { fetchLecturers(); }, [fetchLecturers]);
+  useEffect(() => {
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      void Promise.all([fetchDepartments(), fetchLecturers()]);
+      return;
+    }
+    void fetchLecturers({ background: true });
+  }, [fetchDepartments, fetchLecturers]);
 
   const openProfile = (lec: LecturerItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -97,8 +134,8 @@ export default function LecturerDirectory() {
           <input
             type="text"
             placeholder="Search by name, email, or timetable code..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
         <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
@@ -107,6 +144,9 @@ export default function LecturerDirectory() {
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>
+        {refreshing && (
+          <span className="text-sm text-slate-500">Updating...</span>
+        )}
       </div>
 
       {loading ? (

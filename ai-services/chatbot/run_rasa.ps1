@@ -96,6 +96,13 @@ Write-Host "Starting Rasa server (port 5005) and action server (port 5055)..." -
 Write-Host "Press Ctrl+C to stop both." -ForegroundColor Gray
 Write-Host ""
 
+# Custom actions call the platform API (lecturers, availability). Defaults (10s) cause rest.message.received.timeout.
+$env:RASA_REST_WEBHOOK_TIMEOUT = "90"
+$env:ACTION_ENDPOINT_TIMEOUT = "60"
+$env:ACTION_SERVER_REQUEST_TIMEOUT = "60"
+$env:LECSTU_API_URL = if ($env:LECSTU_API_URL) { $env:LECSTU_API_URL } else { "http://localhost:5000/api" }
+$env:CHATBOT_API_KEY = if ($env:CHATBOT_API_KEY) { $env:CHATBOT_API_KEY } else { "lecstu-chatbot-dev-key" }
+
 # Start-Job is unreliable on Windows (venv path / no listener on 5055). Use a real process.
 $rasaExe = Join-Path $chatbotDir ".venv\Scripts\rasa.exe"
 if (-not (Test-Path $rasaExe)) {

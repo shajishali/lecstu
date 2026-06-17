@@ -7,6 +7,7 @@ import {
   getDepartments,
   getMySchedule,
   putMySchedule,
+  patchMyTimetableSlot,
 } from '../controllers/lecturerController';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.use(authenticate);
 router.get('/departments', getDepartments);
 router.get('/me/schedule', authorize('LECTURER'), getMySchedule);
 router.put('/me/schedule', authorize('LECTURER'), putMySchedule);
+router.patch('/me/timetable/:slotId', authorize('LECTURER'), patchMyTimetableSlot);
 router.get('/', listLecturers);
 router.get('/:id', getLecturerProfile);
 router.get('/:id/availability', getLecturerAvailability);

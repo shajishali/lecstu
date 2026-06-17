@@ -3,3 +3,5 @@
 
 action_endpoint:
   url: "http://localhost:5055/webhook"
+  # Allow custom actions (lecturer lookup + availability) to finish without Rasa aborting early
+  request_timeout: 60

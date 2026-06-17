@@ -311,6 +311,7 @@ model LectureHall {
   floor     Int      @default(0)
   capacity  Int
   equipment String[] @default([])
+  doorPassword String? // Default door access code for this room
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,6 +379,7 @@ model MasterTimetable {
   semester  Int       @default(1)
   isActive  Boolean   @default(true)
   lecturerInitials String? // FET sheet code (ND, MB, VL_HS) — shown as-is; not course P/T suffix
+  notes            String? // Optional lecturer notes shown to students
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 

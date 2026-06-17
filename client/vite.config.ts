@@ -43,6 +43,7 @@ export default defineConfig({
       '/rasa': {
         target: 'http://localhost:5005',
         changeOrigin: true,
+        timeout: 120000,
         rewrite: (path) => path.replace(/^\/rasa/, ''),
       },
     },

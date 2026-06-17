@@ -14,7 +14,7 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const DEFAULT_PASSWORD = 'lecstu123';
+const DEFAULT_PASSWORD = 'lecturer123';
 
 async function main() {
   const password = await bcrypt.hash(DEFAULT_PASSWORD, 12);

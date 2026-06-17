@@ -44,9 +44,16 @@ export async function getHall(req: Request, res: Response, next: NextFunction) {
 
 export async function createHall(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, building, floor, capacity, equipment } = req.body;
+    const { name, building, floor, capacity, equipment, doorPassword } = req.body;
     const hall = await prisma.lectureHall.create({
-      data: { name, building, floor: floor || 0, capacity, equipment: equipment || [] },
+      data: {
+        name,
+        building,
+        floor: floor || 0,
+        capacity,
+        equipment: equipment || [],
+        doorPassword: typeof doorPassword === 'string' ? doorPassword.trim() || null : null,
+      },
       include: INCLUDE,
     });
     await logActionForRequest(req, 'CREATE', 'LectureHall', hall.id, { name, building, capacity });

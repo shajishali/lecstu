@@ -120,6 +120,7 @@ export default function ChatWidget() {
           message: messageToSend,
           metadata: user ? { user_id: user.id } : {},
         }),
+        signal: AbortSignal.timeout(90000),
       });
 
       const isProxyOrServerError = res.status >= 500 && res.status < 600;

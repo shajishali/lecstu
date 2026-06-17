@@ -14,10 +14,11 @@ interface Hall {
   capacity: number;
   equipment: string[];
   isActive: boolean;
+  doorPassword?: string | null;
   _count: { timetableEntries: number };
 }
 
-const EMPTY_FORM = { name: '', building: '', floor: 0, capacity: 50, equipment: [] as string[], isActive: true };
+const EMPTY_FORM = { name: '', building: '', floor: 0, capacity: 50, equipment: [] as string[], doorPassword: '', isActive: true };
 
 export default function HallManagement() {
   const [halls, setHalls] = useState<Hall[]>([]);
@@ -51,7 +52,7 @@ export default function HallManagement() {
 
   const openEdit = (h: Hall) => {
     setEditHall(h);
-    setForm({ name: h.name, building: h.building, floor: h.floor, capacity: h.capacity, equipment: [...h.equipment], isActive: h.isActive });
+    setForm({ name: h.name, building: h.building, floor: h.floor, capacity: h.capacity, equipment: [...h.equipment], doorPassword: h.doorPassword || '', isActive: h.isActive });
     setEquipInput('');
     setFormOpen(true);
   };
@@ -73,10 +74,16 @@ export default function HallManagement() {
     setSaving(true);
     try {
       if (editHall) {
-        await api.patch(`/admin/halls/${editHall.id}`, form);
+        await api.patch(`/admin/halls/${editHall.id}`, {
+          ...form,
+          doorPassword: form.doorPassword.trim() || null,
+        });
         showToast('success', 'Hall updated');
       } else {
-        await api.post('/admin/halls', form);
+        await api.post('/admin/halls', {
+          ...form,
+          doorPassword: form.doorPassword.trim() || null,
+        });
         showToast('success', 'Hall created');
       }
       setFormOpen(false);
@@ -104,6 +111,11 @@ export default function HallManagement() {
     { key: 'building', label: 'Building', sortable: true },
     { key: 'floor', label: 'Floor', sortable: true },
     { key: 'capacity', label: 'Capacity', sortable: true },
+    {
+      key: 'doorPassword',
+      label: 'Door code',
+      render: (r: Hall) => r.doorPassword ? <code>{r.doorPassword}</code> : '—',
+    },
     {
       key: 'equipment', label: 'Equipment',
       render: (r: Hall) => r.equipment.length > 0
@@ -147,6 +159,14 @@ export default function HallManagement() {
             <label>Floor<input type="number" value={form.floor} onChange={(e) => setForm({ ...form, floor: parseInt(e.target.value) })} min={-2} max={20} /></label>
             <label>Capacity<input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) })} min={1} required /></label>
           </div>
+          <label>
+            Door password
+            <input
+              value={form.doorPassword}
+              onChange={(e) => setForm({ ...form, doorPassword: e.target.value })}
+              placeholder="Room access code for students & lecturers"
+            />
+          </label>
           <label>
             Equipment
             <div className="equip-input-row">

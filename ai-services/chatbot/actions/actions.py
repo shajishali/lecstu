@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 PLATFORM_API_URL = os.environ.get("LECSTU_API_URL", "http://localhost:5000/api")
 CHATBOT_API_KEY = os.environ.get("CHATBOT_API_KEY", "lecstu-chatbot-dev-key")
+API_TIMEOUT_SEC = 8
+
+_LECTURER_LOOKUP_CACHE: Dict[str, Dict[str, Any]] = {}
 
 DAY_ALIASES = {
     "today": None,  # resolved at runtime
@@ -189,6 +192,68 @@ def _find_lecturer_by_name(lecturers: List[Dict], name: str) -> Optional[Dict]:
     return None
 
 
+def _resolve_day_from_tracker(tracker: Tracker, day_slot: Optional[str]) -> Optional[str]:
+    if day_slot:
+        return day_slot
+    text = ((tracker.latest_message or {}).get("text") or "").lower()
+    if "today" in text:
+        return "today"
+    if "tomorrow" in text:
+        return "tomorrow"
+    return None
+
+
+def _lookup_lecturer(user_id: str, name: str) -> Optional[Dict]:
+    """Find lecturer via search API (faster than loading the full directory)."""
+    if not name:
+        return None
+    cache_key = f"{user_id}:{name.strip().lower()}"
+    if cache_key in _LECTURER_LOOKUP_CACHE:
+        return _LECTURER_LOOKUP_CACHE[cache_key]
+
+    cleaned = (
+        name.lower()
+        .replace("dr.", "")
+        .replace("dr", "")
+        .replace("prof.", "")
+        .replace("prof", "")
+        .replace("madam", "")
+        .replace("sir", "")
+        .strip()
+    )
+    search_terms = [name.strip()]
+    if cleaned and cleaned not in {t.lower() for t in search_terms}:
+        search_terms.append(cleaned)
+    tokens = [t for t in cleaned.split() if len(t) > 2]
+    if tokens:
+        search_terms.append(tokens[0])
+
+    seen_queries: set[str] = set()
+    for query in search_terms:
+        key = query.lower()
+        if not key or key in seen_queries:
+            continue
+        seen_queries.add(key)
+        try:
+            r = requests.get(
+                f"{PLATFORM_API_URL}/lecturers",
+                params={"search": query},
+                headers=_api_headers(user_id),
+                timeout=API_TIMEOUT_SEC,
+            )
+            r.raise_for_status()
+            data = r.json()
+            lecturers = data.get("data", []) if data.get("success") else []
+            lec = _find_lecturer_by_name(lecturers, name)
+            if lec:
+                _LECTURER_LOOKUP_CACHE[cache_key] = lec
+                return lec
+        except requests.RequestException:
+            logger.exception("Lecturer lookup failed for %s", query)
+
+    return None
+
+
 def _get_lecturer_name_from_tracker(tracker: Tracker) -> Optional[str]:
     """Prefer lecturer_name from the CURRENT user message to avoid stale slot from previous turn."""
     latest = tracker.latest_message or {}
@@ -209,6 +274,7 @@ def _get_lecturer_name_from_tracker(tracker: Tracker) -> Optional[str]:
     _name = r"([A-Za-z\u0B80-\u0BFF\u0D80-\u0DFF][A-Za-z\s\.\-\u0B80-\u0BFF\u0D80-\u0DFF]*?)\s+(?:sir|madam)"
     if text:
         for pattern in [
+            r"(?:today|tomorrow)\s+(?:dr\.?|prof\.?)\s+([A-Za-z][A-Za-z\s\.\-]+?)\s+(?:is\s+)?(?:available|free|\?|or)",
             r"(?:today|tomorrow)\s+(?:is\s+)?" + _name + r"\s+(?:is\s+)?(?:available|free|or)",
             _name + r"\s+(?:is\s+)?(?:available|free|or)",
             _name + r"\s+(?:is\s+)?(?:available|free)",
@@ -425,7 +491,7 @@ class ActionCheckLecturerAvailability(Action):
             return []
 
         lecturer_name = _get_lecturer_name_from_tracker(tracker)
-        day_slot = tracker.get_slot("day")
+        day_slot = _resolve_day_from_tracker(tracker, tracker.get_slot("day"))
 
         if not lecturer_name:
             dispatcher.utter_message(
@@ -438,15 +504,7 @@ class ActionCheckLecturerAvailability(Action):
             lecturer_name = _translate_to_english(lecturer_name, user_id)
 
         try:
-            r = requests.get(
-                f"{PLATFORM_API_URL}/lecturers",
-                headers=_api_headers(user_id),
-                timeout=10,
-            )
-            r.raise_for_status()
-            data = r.json()
-            lecturers = data.get("data", []) if data.get("success") else []
-            lec = _find_lecturer_by_name(lecturers, lecturer_name)
+            lec = _lookup_lecturer(user_id, lecturer_name)
             if not lec:
                 dispatcher.utter_message(
                     text=f"I couldn't find a lecturer named '{lecturer_name}'. Check the Lecturers page for the correct name."
@@ -477,13 +535,13 @@ class ActionCheckLecturerAvailability(Action):
                     f"{PLATFORM_API_URL}/lecturers/{lec_id}/availability",
                     params={"date": date_str},
                     headers=_api_headers(user_id),
-                    timeout=10,
+                    timeout=API_TIMEOUT_SEC,
                 )
             else:
                 r2 = requests.get(
                     f"{PLATFORM_API_URL}/lecturers/{lec_id}/availability",
                     headers=_api_headers(user_id),
-                    timeout=10,
+                    timeout=API_TIMEOUT_SEC,
                 )
 
             r2.raise_for_status()
@@ -569,15 +627,7 @@ class ActionBookAppointment(Action):
             lecturer_name = _translate_to_english(lecturer_name, user_id)
 
         try:
-            r = requests.get(
-                f"{PLATFORM_API_URL}/lecturers",
-                headers=_api_headers(user_id),
-                timeout=10,
-            )
-            r.raise_for_status()
-            data = r.json()
-            lecturers = data.get("data", []) if data.get("success") else []
-            lec = _find_lecturer_by_name(lecturers, lecturer_name)
+            lec = _lookup_lecturer(user_id, lecturer_name)
             if not lec:
                 dispatcher.utter_message(
                     text=f"I couldn't find lecturer '{lecturer_name}'. Go to Book Appointment to select from the list."
@@ -677,15 +727,7 @@ class ActionCancelAppointment(Action):
             appointments = data.get("data", []) if data.get("success") else []
 
             if lecturer_name:
-                lecturers_r = requests.get(
-                    f"{PLATFORM_API_URL}/lecturers",
-                    headers=_api_headers(user_id),
-                    timeout=10,
-                )
-                lecturers_r.raise_for_status()
-                lec_data = lecturers_r.json()
-                lecturers = lec_data.get("data", []) if lec_data.get("success") else []
-                lec = _find_lecturer_by_name(lecturers, lecturer_name)
+                lec = _lookup_lecturer(user_id, lecturer_name)
                 if lec:
                     lec_id = lec.get("id")
                     appointments = [a for a in appointments if a.get("lecturer", {}).get("id") == lec_id]
@@ -1269,15 +1311,7 @@ class ActionGetOfficeLocation(Action):
             lecturer_name = _translate_to_english(lecturer_name, user_id)
 
         try:
-            r = requests.get(
-                f"{PLATFORM_API_URL}/lecturers",
-                headers=_api_headers(user_id),
-                timeout=10,
-            )
-            r.raise_for_status()
-            data = r.json()
-            lecturers = data.get("data", []) if data.get("success") else []
-            lec = _find_lecturer_by_name(lecturers, lecturer_name)
+            lec = _lookup_lecturer(user_id, lecturer_name)
             if not lec:
                 dispatcher.utter_message(
                     text=f"I couldn't find lecturer '{lecturer_name}'. Check the Lecturers page."

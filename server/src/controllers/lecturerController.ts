@@ -14,6 +14,7 @@ import {
   replaceLecturerSchedule,
   type ScheduleSlotInput,
 } from '../services/lecturerScheduleService';
+import { updateLecturerMasterSlot } from '../services/lecturerTimetableService';
 import prisma from '../config/database';
 
 export async function listLecturers(req: Request, res: Response, next: NextFunction) {
@@ -107,6 +108,67 @@ export async function putMySchedule(req: Request, res: Response, next: NextFunct
     }
     const saved = await replaceLecturerSchedule(lecturerId, slots);
     res.json({ success: true, data: saved });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function patchMyTimetableSlot(req: Request, res: Response, next: NextFunction) {
+  try {
+    const lecturerId = req.user!.userId;
+    const slotId = req.params.slotId as string;
+    const {
+      dayOfWeek,
+      startTime,
+      endTime,
+      year,
+      month,
+      week,
+      courseName,
+      hallName,
+      hallDoorPassword,
+      notes,
+    } = req.body as {
+      dayOfWeek?: string;
+      startTime?: string;
+      endTime?: string;
+      year?: number;
+      month?: number;
+      week?: number;
+      courseName?: string;
+      hallName?: string;
+      hallDoorPassword?: string | null;
+      notes?: string | null;
+    };
+
+    const hasPatch =
+      dayOfWeek ||
+      startTime ||
+      endTime ||
+      year != null ||
+      month != null ||
+      week != null ||
+      courseName?.trim() ||
+      hallName?.trim() ||
+      hallDoorPassword !== undefined ||
+      notes !== undefined;
+    if (!hasPatch) {
+      throw new AppError('Provide at least one field to update', 400);
+    }
+
+    const updated = await updateLecturerMasterSlot(lecturerId, slotId, {
+      dayOfWeek: dayOfWeek as never,
+      startTime,
+      endTime,
+      year,
+      month,
+      week,
+      courseName,
+      hallName,
+      hallDoorPassword,
+      notes,
+    });
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }

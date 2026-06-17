@@ -20,10 +20,11 @@ interface SlotData {
   year: number;
   month?: number;
   week?: number;
+  notes?: string | null;
   course: { id: string; name: string; code: string };
   lecturerInitials?: string | null;
   lecturer: { id: string; firstName: string; lastName: string; email: string };
-  hall: { id: string; name: string; building: string; capacity: number };
+  hall: { id: string; name: string; building: string; capacity: number; doorPassword?: string | null };
   group: { id: string; name: string; batchYear: number; batchLabel?: string | null };
 }
 
@@ -412,7 +413,7 @@ export default function MyTimetable() {
                 'You are not assigned to a student group yet. Set your program, study year, and pathway in My Profile → Academic year enrollment.'
               )
             ) : (
-              'No lectures assigned to you this semester.'
+              'No lectures assigned yet. Ask admin to import the faculty timetable — your slots are matched using the two-letter code in the sheet (e.g. SP for Shaji Piraba). Open My Schedule to view and edit your teaching grid.'
             )}
           </p>
         </div>
@@ -455,7 +456,12 @@ export default function MyTimetable() {
                         <span className="tt-mobile-slot-course" style={{ color }}>
                           {formatCourseLabel(slot.course.code, slot.course.name)}
                         </span>
-                        <span className="tt-mobile-slot-hall">{slot.hall.name} · {formatTimetableLecturer(slot)}</span>
+                        <span className="tt-mobile-slot-hall">
+                          {slot.hall.name}
+                          {slot.hall.building ? ` · ${slot.hall.building}` : ''}
+                          {slot.hall.doorPassword ? ` · Door: ${slot.hall.doorPassword}` : ''}
+                          {formatTimetableLecturer(slot) !== '—' && ` · ${formatTimetableLecturer(slot)}`}
+                        </span>
                       </button>
                     );
                   })
@@ -522,6 +528,8 @@ export default function MyTimetable() {
                                     <span className="tt-slot-time">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
                                     <span className="tt-slot-meta">
                                       {slot.hall.name}
+                                      {slot.hall.building ? ` · ${slot.hall.building}` : ''}
+                                      {slot.hall.doorPassword ? ` · Door: ${slot.hall.doorPassword}` : ''}
                                       {formatTimetableLecturer(slot) !== '—' && ` · ${formatTimetableLecturer(slot)}`}
                                     </span>
                                   </>
@@ -600,6 +608,16 @@ export default function MyTimetable() {
                   <label>Hall</label>
                   <span>{selectedSlot.hall.name} ({selectedSlot.hall.building})</span>
                 </div>
+                {selectedSlot.hall.doorPassword && (
+                  <div className="tt-detail-row">
+                    <label>Door password</label>
+                    <span>
+                      <code className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-sm text-emerald-800">
+                        {selectedSlot.hall.doorPassword}
+                      </code>
+                    </span>
+                  </div>
+                )}
                 <div className="tt-detail-row">
                   <label>Capacity</label>
                   <span>{selectedSlot.hall.capacity} seats</span>
@@ -612,6 +630,12 @@ export default function MyTimetable() {
                   <label>Semester / Year</label>
                   <span>Semester {selectedSlot.semester}, {selectedSlot.year}</span>
                 </div>
+                {selectedSlot.notes?.trim() && (
+                  <div className="tt-detail-row">
+                    <label>Notes</label>
+                    <span>{selectedSlot.notes}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

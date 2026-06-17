@@ -1,12 +1,19 @@
 /**
  * Translation hook
  * Translates text via /api/ai/translation/translate when target language is not English.
+ * Fails fast so slow/unavailable translation never blocks other API calls.
  */
 import { useState, useCallback } from 'react';
 import api from '@services/api';
 import type { UiLanguage } from '@store/languageStore';
 
 const cache = new Map<string, string>();
+const failedKeys = new Set<string>();
+const inflight = new Map<string, Promise<string>>();
+
+/** Lightweight engines only — mBART is too slow/heavy for routine UI translation. */
+const ENGINES: Array<'google' | 'marian'> = ['google', 'marian'];
+const ENGINE_TIMEOUT_MS = 8000;
 
 export function useTranslation() {
   const [isTranslating, setIsTranslating] = useState(false);
@@ -14,35 +21,48 @@ export function useTranslation() {
   const translate = useCallback(
     async (text: string, targetLang: UiLanguage, sourceLang: UiLanguage = 'en'): Promise<string> => {
       if (!text?.trim() || targetLang === sourceLang) return text;
+
       const key = `${sourceLang}:${targetLang}:${text}`;
       if (cache.has(key)) return cache.get(key)!;
-      setIsTranslating(true);
-      try {
-        const engines: Array<'mbart' | 'google' | 'marian'> = ['mbart', 'google', 'marian'];
-        const timeouts: Record<string, number> = { mbart: 125000, google: 95000, marian: 65000 };
-        for (const engine of engines) {
-          try {
-            const { data } = await api.post<{ success: boolean; data?: { translated_text?: string }; message?: string }>(
-              '/ai/translation/translate',
-              { text, src: sourceLang, tgt: targetLang, engine },
-              { timeout: timeouts[engine] }
-            );
-            const translated = data.data?.translated_text ?? text;
-            cache.set(key, translated);
-            return translated;
-          } catch (err: unknown) {
-            const axiosErr = err as { response?: { data?: { data?: { error?: string } } } };
-            const msg = axiosErr?.response?.data?.data?.error || (err instanceof Error ? err.message : 'Unknown');
-            const next = engines[engines.indexOf(engine) + 1];
-            console.warn(`[Translation] ${engine} failed:`, msg, next ? `- trying ${next}...` : '');
+      if (failedKeys.has(key)) return text;
+      if (inflight.has(key)) return inflight.get(key)!;
+
+      const request = (async () => {
+        setIsTranslating(true);
+        try {
+          for (const engine of ENGINES) {
+            try {
+              const { data } = await api.post<{
+                success: boolean;
+                data?: { translated_text?: string };
+              }>(
+                '/ai/translation/translate',
+                { text, src: sourceLang, tgt: targetLang, engine },
+                { timeout: ENGINE_TIMEOUT_MS },
+              );
+
+              const translated = data.data?.translated_text?.trim();
+              if (data.success && translated) {
+                cache.set(key, translated);
+                return translated;
+              }
+            } catch {
+              /* try next engine */
+            }
           }
+
+          failedKeys.add(key);
+          return text;
+        } finally {
+          setIsTranslating(false);
+          inflight.delete(key);
         }
-        return text;
-      } finally {
-        setIsTranslating(false);
-      }
+      })();
+
+      inflight.set(key, request);
+      return request;
     },
-    []
+    [],
   );
 
   return { translate, isTranslating };

@@ -68,6 +68,12 @@ export async function replaceLecturerSchedule(
 ): Promise<ScheduleSlotDto[]> {
   for (let i = 0; i < slots.length; i++) {
     validateSlotInput(slots[i], i);
+    if (slots[i].slotType === 'TEACHING') {
+      throw new AppError(
+        'Teaching times are synced from the admin timetable. Edit them in your weekly schedule grid.',
+        400,
+      );
+    }
   }
   for (let i = 0; i < slots.length; i++) {
     for (let j = i + 1; j < slots.length; j++) {
@@ -81,7 +87,9 @@ export async function replaceLecturerSchedule(
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.lecturerScheduleSlot.deleteMany({ where: { lecturerId } });
+    await tx.lecturerScheduleSlot.deleteMany({
+      where: { lecturerId, slotType: { in: ['BUSY', 'OFFICE_HOUR'] } },
+    });
     if (slots.length > 0) {
       await tx.lecturerScheduleSlot.createMany({
         data: slots.map((s) => ({
