@@ -103,7 +103,7 @@ efficiency barriers in multilingual university environments.
 | **8.3** | NLP Evaluation (Cross-validation + Confusion Matrix) | Research | RO-2 | ✅ |
 | **8.4** | NLP Error Analysis & Report | Research | RO-2 | ✅ |
 | **9.1** | Translation Service Implementation | Engineering | RO-3 | ✅ |
-| **9.2** | Parallel Corpus Curation | Research | RO-3 | ⬜ |
+| **9.2** | Parallel Corpus Curation | Research | RO-3 | ✅ |
 | **9.3** | Automated Translation Benchmarks (BLEU + Similarity) | Research | RO-3 | ⬜ |
 | **9.4** | Human Evaluation & Inter-rater Analysis | Research | RO-3 | ⬜ |
 | **9.5** | Translation Comparative Report | Research | RO-3 | ⬜ |
@@ -131,12 +131,12 @@ efficiency barriers in multilingual university environments.
 
 | Count | |
 |-------|---|
-| **Finished** | **47** sub-phases |
+| **Finished** | **48** sub-phases |
 | **Partial** | **0** sub-phases (see notes) |
-| **Not finished** | **9** sub-phases |
+| **Not finished** | **8** sub-phases |
 | **Total** | **56** sub-phases tracked |
 
-### ✅ Finished (47)
+### ✅ Finished (48)
 
 | Phase | Sub-phases |
 |-------|------------|
@@ -148,16 +148,16 @@ efficiency barriers in multilingual university environments.
 | 6 outdoor + indoor maps | 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9 |
 | 7 | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8 |
 | 8 | 8.1, 8.2, 8.3, 8.4 |
-| 9 | 9.1 only |
+| 9 | 9.1, 9.2 |
 | 11 indoor navigation module | 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9 |
 
 **Notes:** Phase 7 — ASR benchmark may need a **full re-run** (hypothesis H1) before thesis submission. Phase 11 — code complete; some admin floors still need walking paths / QR codes for full demo data (content gap, not code).
 
-### ⬜ Not finished (9)
+### ⬜ Not finished (8)
 
 | Phase | Sub-phases | What it is |
 |-------|------------|------------|
-| **9 Translation research** | 9.2, 9.3, 9.4, 9.5 | Corpus, benchmarks, human eval, report |
+| **9 Translation research** | 9.3, 9.4, 9.5 | Benchmarks, human eval, report |
 | **10 Usability & wrap-up** | 10.1, 10.2, 10.3, 10.4, 10.5 | User study, hardening, final combined report |
 
 ---
@@ -1402,9 +1402,9 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 9.2 — Parallel Corpus Curation
-**Type**: Research | **Effort**: ~1.5 days
+**Type**: Research | **Effort**: ~1.5 days | **Status**: ✅
 
-- [ ] Build parallel test corpus:
+- [x] Build parallel test corpus:
   - **100 sentence pairs per language pair** (En-Ta, En-Si, Ta-Si) = 300 pairs
   - Academic domain content categories:
     - Timetable queries and responses
@@ -1413,13 +1413,13 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
     - Notification messages
     - General academic phrases
   - Sentence complexity levels: simple, moderate, complex
-- [ ] Obtain human reference translations:
+- [x] Obtain human reference translations:
   - Native speaker translations for each sentence
   - Double-checked by second translator
-- [ ] Document corpus metadata:
+- [x] Document corpus metadata:
   - `corpus_manifest.json`: id, source_text, target_text, language_pair, category, complexity
   - Methodology for corpus creation
-- [ ] Store in `/research/datasets/translation/`
+- [x] Store in `/research/datasets/translation/`
 
 ---
 

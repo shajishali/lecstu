@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "phase": "9.2",
+  "description": "Human translator and reviewer sign-off for parallel corpus sentences 051-100",
+  "reviewers": [],
+  "entries": [
+    {
+      "sentence_id": "051-100",
+      "language_pair": "all",
+      "primary_translator": null,
+      "secondary_reviewer": null,
+      "status": "pending_native_review",
+      "notes": "Extension set requires bilingual native-speaker double-check before Phase 9.4 human evaluation."
+    },
+    {
+      "sentence_id": "001-050",
+      "language_pair": "all",
+      "primary_translator": "asr_corpus",
+      "secondary_reviewer": "asr_corpus",
+      "status": "asr_aligned",
+      "notes": "Aligned from Phase 7.2 ASR utterances.yaml trilingual ground truth."
+    }
+  ]
+}

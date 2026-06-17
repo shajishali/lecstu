@@ -1,0 +1,359 @@
+# Additional 50 trilingual sentences for Phase 9.2 (ids 051–100)
+# Focus: timetable responses, notifications, and platform UI phrases
+# Categories: notification, timetable, appointment, navigation, general (10 each)
+
+sentences:
+  # ── Notifications (051–060) ──
+  - id: "051"
+    category: notification
+    complexity: simple
+    en: "Your appointment with Dr. Perera has been confirmed."
+    ta: "டாக்டர் பெரேராவுடனான உங்கள் சந்திப்பு உறுதிப்படுத்தப்பட்டது."
+    si: "ඩොක්ටර් පෙරේරා සමඟ ඔබේ හමුවීම තහවුරු කර ඇත."
+
+  - id: "052"
+    category: notification
+    complexity: simple
+    en: "Your timetable for this week has been updated."
+    ta: "இந்த வாரத்திற்கான உங்கள் அட்டவணை புதுப்பிக்கப்பட்டது."
+    si: "මෙම සතිය සඳහා ඔබේ වේලාසටිය යාවත්කාලීන කර ඇත."
+
+  - id: "053"
+    category: notification
+    complexity: moderate
+    en: "Reminder: You have a Machine Learning lecture in Hall A at nine am."
+    ta: "நினைவூட்டல்: காலை ஒன்பது மணிக்கு மண்டபம் ஏவில் இயந்திர கற்றல் வகுப்பு உள்ளது."
+    si: "මතක් කිරීම: උදේ නවයට හෝල් ඒ හි යන්ත්‍ර ඉගෙනීම් පන්තියක් තිබේ."
+
+  - id: "054"
+    category: notification
+    complexity: moderate
+    en: "Dr. Chandrasena has rescheduled your appointment to Friday at two pm."
+    ta: "டாக்டர் சந்திரசேனா உங்கள் சந்திப்பை வெள்ளி மதிய இரண்டு மணிக்கு மாற்றியுள்ளார்."
+    si: "ඩොක්ටර් චන්ද්‍රසේන ඔබේ හමුවීම සිකුරාදා පස්වරු දෙකට මාරු කළා."
+
+  - id: "055"
+    category: notification
+    complexity: simple
+    en: "Your hall booking request was approved."
+    ta: "உங்கள் மண்டப முன்பதிவு கோரிக்கை அங்கீகரிக்கப்பட்டது."
+    si: "ඔබේ හෝල් වෙන්කිරීම් ඉල්ලීම අනුමත කර ඇත."
+
+  - id: "056"
+    category: notification
+    complexity: simple
+    en: "Your appointment request is pending approval."
+    ta: "உங்கள் சந்திப்பு கோரிக்கை ஒப்புதலுக்காக நிலுவையில் உள்ளது."
+    si: "ඔබේ හමුවීම් ඉල්ලීම අනුමත කිරීම සඳහා රැඳී සිටී."
+
+  - id: "057"
+    category: notification
+    complexity: moderate
+    en: "The Database Systems class in Hall C has been moved to Hall B."
+    ta: "மண்டபம் சியில் உள்ள தரவுதள அமைப்பு வகுப்பு மண்டபம் பிக்கு மாற்றப்பட்டது."
+    si: "හෝල් සී හි දත්ත සමුදාය පන්තිය හෝල් බී වෙත මාරු කර ඇත."
+
+  - id: "058"
+    category: notification
+    complexity: simple
+    en: "You have a new message from the admin office."
+    ta: "நிர்வாக அலுவலகத்திலிருந்து புதிய செய்தி உள்ளது."
+    si: "පරිපාලන කාර්යාලයෙන් නව පණිවිඩයක් තිබේ."
+
+  - id: "059"
+    category: notification
+    complexity: complex
+    en: "Your group timetable for CS Year Three Artificial Intelligence pathway is now available."
+    ta: "கணினி அறிவியல் மூன்றாம் ஆண்டு செயற்கை நுண்ணறிவு பாதைக்கான உங்கள் குழு அட்டவணை இப்போது கிடைக்கிறது."
+    si: "පරිගණක විද්යා තෙවන වසර කෘතිම බුද්ධි මාර්ගය සඳහා ඔබේ කණ්ඩායම් වේලාසටිය දැන් ලබා ගත හැක."
+
+  - id: "060"
+    category: notification
+    complexity: moderate
+    en: "Your appointment with Dr. Dias was cancelled by the lecturer."
+    ta: "டாக்டர் டயாஸுடனான உங்கள் சந்திப்பு விரிவுரையாளரால் ரத்து செய்யப்பட்டது."
+    si: "ඩොක්ටර් ඩයස් සමඟ ඔබේ හමුවීම දේශකයා විසින් අවලංගු කර ඇත."
+
+  # ── Timetable responses (061–070) ──
+  - id: "061"
+    category: timetable
+    complexity: simple
+    en: "Your next class is Data Structures at ten thirty am."
+    ta: "உங்கள் அடுத்த வகுப்பு காலை பத்து முப்பதுக்கு தரவு கட்டமைப்பு."
+    si: "ඔබේ ඊළඟ පන්තිය උදේ දහය තිස් දත්ත ව්යුහයයි."
+
+  - id: "062"
+    category: timetable
+    complexity: moderate
+    en: "On Monday you have three lectures: Algorithms, Calculus, and Physics."
+    ta: "திங்கள் கிழமை உங்களுக்கு மூன்று வகுப்புகள்: வழிமுறைகள், கால்குலஸ், இயற்பியல்."
+    si: "සඳුදා ඔබට පන්ති තුනක් තිබේ: ඇල්ගොරිතම, ගණිතය, සහ භෞතික විද්යාව."
+
+  - id: "063"
+    category: timetable
+    complexity: simple
+    en: "Group A has no classes on Wednesday afternoon."
+    ta: "புதன் மதியம் குழு ஏக்கு வகுப்புகள் இல்லை."
+    si: "බදාදා දහවල් කණ්ඩායම ඒ සඳහා පන්ති නැත."
+
+  - id: "064"
+    category: timetable
+    complexity: moderate
+    en: "The Software Engineering lecture starts at two pm in Hall B."
+    ta: "மென்பொருள் பொறியியல் வகுப்பு மதிய இரண்டு மணிக்கு மண்டபம் பியில் தொடங்குகிறது."
+    si: "මෘදුකාංග ඉංජිනේරු පන්තිය පස්වරු දෙකට හෝල් බී හි ආරම්භ වේ."
+
+  - id: "065"
+    category: timetable
+    complexity: complex
+    en: "Your weekly timetable shows twelve contact hours across five days this semester."
+    ta: "இந்த செமஸ்டரில் ஐந்து நாட்களில் பன்னிரண்டு தொடர்பு மணிநேரங்களை உங்கள் வாராந்திர அட்டவணை காட்டுகிறது."
+    si: "මෙම සෙමෙස්ටරයේ දින පහක දොළොස් සම්බන්ධතා පැය ඔබේ සතික වේලාසටිය පෙන්වයි."
+
+  - id: "066"
+    category: timetable
+    complexity: simple
+    en: "Today's last lecture ends at four pm."
+    ta: "இன்றைய கடைசி வகுப்பு மாலை நான்கு மணிக்கு முடிகிறது."
+    si: "අද අවසාන පන්තිය සවස හතරට අවසන් වේ."
+
+  - id: "067"
+    category: timetable
+    complexity: moderate
+    en: "Dr. Rajapaksha teaches Operating Systems on Thursday morning."
+    ta: "வியாழன் காலை டாக்டர் ராஜபக்ஷ இயக்க முறைமைகள் கற்பிக்கிறார்."
+    si: "බ්රහස්පතින්දා උදේ ඩොක්ටර් රාජපක්ෂ මෙහෙයුම් පද්ධති ඉගැන්වේ."
+
+  - id: "068"
+    category: timetable
+    complexity: moderate
+    en: "There is a lab session for Computer Networks on Friday at eleven am."
+    ta: "வெள்ளி காலை பதினொன்று மணிக்கு கணினி வலைப்பின்னல்களுக்கு ஆய்வக அமர்வு உள்ளது."
+    si: "සිකුරාදා උදේ එකොළොස්ට පරිගණක ජාල සඳහා පරීක්ෂණාගාර සැසියක් තිබේ."
+
+  - id: "069"
+    category: timetable
+    complexity: simple
+    en: "You are free until two pm today."
+    ta: "இன்று மதிய இரண்டு மணி வரை நீங்கள் சுதந்திரமாக உள்ளீர்கள்."
+    si: "අද පස්වරු දෙක දක්වා ඔබට නිදහස්ය."
+
+  - id: "070"
+    category: timetable
+    complexity: complex
+    en: "The master timetable for Batch Twenty Twenty Four has been published for all departments."
+    ta: "இருபது இருபத்து நான்கு தொகுப்பிற்கான முதன்மை அட்டவணை அனைத்து துறைகளுக்கும் வெளியிடப்பட்டது."
+    si: "විසි හතර බැච් සඳහා ප්රධාන වේලාසටිය සියලු දෙපාර්තමේන්තු සඳහා ප්රකාශයට පත් කර ඇත."
+
+  # ── Appointments (071–080) ──
+  - id: "071"
+    category: appointment
+    complexity: moderate
+    en: "Please select a time slot between nine am and four pm on weekdays."
+    ta: "வார நாட்களில் காலை ஒன்பது முதல் மாலை நான்கு மணி வரை நேர இடைவெளியைத் தேர்ந்தெடுக்கவும்."
+    si: "සතියේ දිනවල උදේ නවය සිට සවස හතර දක්වා කාල ස්ලොට් එකක් තෝරන්න."
+
+  - id: "072"
+    category: appointment
+    complexity: simple
+    en: "The lecturer is not available on public holidays."
+    ta: "பொது விடுமுறை நாட்களில் விரிவுரையாளர் கிடைக்க மாட்டார்."
+    si: "රජයේ නිවාඩු දිනවල දේශකයා ලබා ගත නොහැක."
+
+  - id: "073"
+    category: appointment
+    complexity: moderate
+    en: "Your meeting with Professor Chen is scheduled for ten am on Tuesday."
+    ta: "பேராசிரியர் சென்னுடனான உங்கள் சந்திப்பு செவ்வாய் காலை பத்து மணிக்கு திட்டமிடப்பட்டுள்ளது."
+    si: "ප්රොෆෙසර් චෙන් සමඟ ඔබේ හමුවීම අඟහරුවාදා උදේ දහයට සැලසුම් කර ඇත."
+
+  - id: "074"
+    category: appointment
+    complexity: simple
+    en: "Appointment duration is limited to thirty minutes."
+    ta: "சந்திப்பு காலம் முப்பது நிமிடங்களுக்கு மட்டுப்படுத்தப்பட்டுள்ளது."
+    si: "හමුවීම් කාලය මිනිත්තු තිස් දක්වා සීමා වේ."
+
+  - id: "075"
+    category: appointment
+    complexity: complex
+    en: "You must provide a reason when requesting an appointment with your academic advisor."
+    ta: "உங்கள் கல்வி ஆலோசகருடன் சந்திப்பு கோரும்போது காரணத்தை வழங்க வேண்டும்."
+    si: "ඔබේ අධ්යයන උපදේශක සමඟ හමුවීමක් ඉල්ලන විට හේතුවක් සපයන්න."
+
+  - id: "076"
+    category: appointment
+    complexity: moderate
+    en: "Dr. Tennekoon has two free slots remaining this week."
+    ta: "இந்த வாரம் டாக்டர் டென்னகூனுக்கு இரண்டு காலி இடைவெளிகள் மீதமுள்ளன."
+    si: "මෙම සතියේ ඩොක්ටර් ටෙනෙකූන්ට හිස් ස්ලොට් දෙකක් ඉතිරිව ඇත."
+
+  - id: "077"
+    category: appointment
+    complexity: simple
+    en: "Your cancellation request has been sent to the lecturer."
+    ta: "உங்கள் ரத்து கோரிக்கை விரிவுரையாளருக்கு அனுப்பப்பட்டது."
+    si: "ඔබේ අවලංගු ඉල්ලීම දේශකයා වෙත යවා ඇත."
+
+  - id: "078"
+    category: appointment
+    complexity: moderate
+    en: "Students may book only one appointment per lecturer per week."
+    ta: "மாணவர்கள் ஒரு வாரத்திற்கு ஒரு விரிவுரையாளரிடம் ஒரு சந்திப்பை மட்டுமே பதிவு செய்யலாம்."
+    si: "ශිෂ්යයන්ට සතියකට දේශකයෙකු සඳහා හමුවීමක් එකක් පමණක් වෙන්කර ගත හැක."
+
+  - id: "079"
+    category: appointment
+    complexity: simple
+    en: "The office hour for Dr. Dias is Monday three to five pm."
+    ta: "டாக்டர் டயாஸின் அலுவலக நேரம் திங்கள் மதிய மூன்று முதல் ஐந்து மணி வரை."
+    si: "ඩොක්ටර් ඩයස්ගේ කාර්යාල වේලාව සඳුදා පස්වරු තුන සිට පහ දක්වා."
+
+  - id: "080"
+    category: appointment
+    complexity: complex
+    en: "If the lecturer rejects your request, you will receive a notification with an alternative time."
+    ta: "விரிவுரையாளர் உங்கள் கோரிக்கையை நிராகரித்தால், மாற்று நேரத்துடன் அறிவிப்பைப் பெறுவீர்கள்."
+    si: "දේශකයා ඔබේ ඉල්ලීම ප්රතික්ෂේප කළහොත්, විකල්ප වේලාවක් සමඟ දැනුම්දීමක් ලැබේ."
+
+  # ── Navigation (081–090) ──
+  - id: "081"
+    category: navigation
+    complexity: moderate
+    en: "Walk straight along the corridor and turn left at the staircase."
+    ta: "நடைபாதையில் நேராக நடந்து படிக்கட்டில் இடதுபுறம் திரும்பவும்."
+    si: "විවරයේ කෙළින්ම ඇවිද ගොස් පඩිපෙළෙහි වමට හැරෙන්න."
+
+  - id: "082"
+    category: navigation
+    complexity: simple
+    en: "The Academic Building is on your right."
+    ta: "கல்வி கட்டிடம் உங்கள் வலதுபுறம் உள்ளது."
+    si: "ශාස්ත්‍රීය ගොඩනැගිල්ල ඔබේ දකුණු පැත්තේය."
+
+  - id: "083"
+    category: navigation
+    complexity: moderate
+    en: "Take the lift to the first floor and exit towards Hall A."
+    ta: "முதல் மாடிக்கு லிப்டில் சென்று மண்டபம் ஏ நோக்கி வெளியேறவும்."
+    si: "පළමු මහලට ලිෆ්ට් එකෙන් ගොස් හෝල් ඒ දෙසට පිටවන්න."
+
+  - id: "084"
+    category: navigation
+    complexity: complex
+    en: "To reach the Laboratory Building from Administration, go through the Academic Building."
+    ta: "நிர்வாக கட்டிடத்திலிருந்து ஆய்வக கட்டிடத்தை அடைய, கல்வி கட்டிடம் வழியாக செல்லவும்."
+    si: "පරිපාලනයෙන් පරීක්ෂණාගාර ගොඩනැගිල්ලට යාමට, ශාස්ත්‍රීය ගොඩනැගිල්ල හරහා යන්න."
+
+  - id: "085"
+    category: navigation
+    complexity: simple
+    en: "You have arrived at your destination."
+    ta: "நீங்கள் உங்கள் இலக்கை அடைந்துவிட்டீர்கள்."
+    si: "ඔබ ඔබේ ගමනාන්තයට ළඟා වී ඇත."
+
+  - id: "086"
+    category: navigation
+    complexity: moderate
+    en: "Room three zero one is at the end of the corridor on the left."
+    ta: "அறை மூன்று பூஜ்ஜிய ஒன்று நடைபாதையின் முடிவில் இடதுபுறம் உள்ளது."
+    si: "කාමර තුන බිංදු එක විවරයේ අවසානයේ වම් පැත්තේ ඇත."
+
+  - id: "087"
+    category: navigation
+    complexity: moderate
+    en: "Go up one floor using the staircase near the main entrance."
+    ta: "முதன்மை நுழைவாயிலுக்கு அருகிலுள்ள படிக்கட்டில் ஒரு மாடி மேலே செல்லவும்."
+    si: "ප්රධාන පිවිසුම අසල පඩිපෙළෙන් එක් මහලක් ඉහළට යන්න."
+
+  - id: "088"
+    category: navigation
+    complexity: simple
+    en: "The cafeteria is next to the main library."
+    ta: "கஃபேட்டீரியா முதன்மை நூலகத்திற்கு அடுத்து உள்ளது."
+    si: "කැෆෙටීරියාව ප්රධාන පුස්තකාලයට යාබදව ඇත."
+
+  - id: "089"
+    category: navigation
+    complexity: complex
+    en: "Your next class is in Hall B on the first floor of the Academic Building; estimated walking time is four minutes."
+    ta: "உங்கள் அடுத்த வகுப்பு கல்வி கட்டிடத்தின் முதல் மாடியில் மண்டபம் பியில்; மதிப்பிடப்பட்ட நடை நேரம் நான்கு நிமிடங்கள்."
+    si: "ඔබේ ඊළඟ පන්තිය ශාස්ත්‍රීය ගොඩනැගිල්ලේ පළමු මහලේ හෝල් බී හි; ඇස්තමේන්තු ගමනාගමන වේලාව මිනිත්තු හතරයි."
+
+  - id: "090"
+    category: navigation
+    complexity: moderate
+    en: "Scan the QR code at this location to update your position."
+    ta: "உங்கள் நிலையை புதுப்பிக்க இந்த இடத்தில் க்யூஆர் குறியீட்டை ஸ்கேன் செய்யவும்."
+    si: "ඔබේ ස්ථානය යාවත්කාලීන කිරීමට මෙම ස්ථානයේ QR කේතය ස්කෑන් කරන්න."
+
+  # ── General (091–100) ──
+  - id: "091"
+    category: general
+    complexity: simple
+    en: "Welcome to the LECSTU academic platform."
+    ta: "லெக்ஸ்டு கல்வி தளத்திற்கு வரவேற்கிறோம்."
+    si: "LECSTU අධ්යයන වේදිකාවට සාදරයෙන් පිළිගනිමු."
+
+  - id: "092"
+    category: general
+    complexity: moderate
+    en: "You can switch the interface language to Tamil or Sinhala."
+    ta: "இடைமுக மொழியை தமிழ் அல்லது சிங்களத்திற்கு மாற்றலாம்."
+    si: "අතුරුමුහුණත භාෂාව දෙමළ හෝ සිංහලට මාරු කළ හැක."
+
+  - id: "093"
+    category: general
+    complexity: simple
+    en: "Please log in to view your personal timetable."
+    ta: "உங்கள் தனிப்பட்ட அட்டவணையைப் பார்க்க உள்நுழையவும்."
+    si: "ඔබේ පුද්ගලික වේලාසටිය බැලීමට පිවිසෙන්න."
+
+  - id: "094"
+    category: general
+    complexity: moderate
+    en: "Hall B has a projector, whiteboard, and seating for sixty students."
+    ta: "மண்டபம் பியில் ப்ரொஜெக்டர், வைட்போர்டு மற்றும் அறுபது மாணவர்களுக்கு இருக்கைகள் உள்ளன."
+    si: "හෝල් බී හි ප්රොජෙක්ටරයක්, සුදු පුවරුවක් සහ ශිෂ්යයන් අසූ දෙනකුට ආසන තිබේ."
+
+  - id: "095"
+    category: general
+    complexity: simple
+    en: "The Faculty of Computing and Technology is in Building ACAD."
+    ta: "கணினி மற்றும் தொழில்நுட்ப பீடம் ஏசிஏடி கட்டிடத்தில் உள்ளது."
+    si: "පරිගණක හා තාක්ෂණ පීඨය ඒසීඒඩී ගොඩනැගිල්ලේ ඇත."
+
+  - id: "096"
+    category: general
+    complexity: moderate
+    en: "Contact the admin office if you cannot find your lecture hall."
+    ta: "உங்கள் வெளிப்பாடு அறையைக் கண்டுபிடிக்க முடியவில்லை என்றால் நிர்வாக அலுவலகத்தை தொடர்பு கொள்ளவும்."
+    si: "ඔබේ දේශන ශාලාව සොයා ගත නොහැකි නම් පරිපාලන කාර්යාලය අමතන්න."
+
+  - id: "097"
+    category: general
+    complexity: complex
+    en: "This platform integrates timetable management, appointments, indoor navigation, and multilingual AI assistance."
+    ta: "இந்த தளம் அட்டவணை மேலாண்மை, சந்திப்புகள், உட்புற வழிசெலுத்தல் மற்றும் பன்மொழி செயற்கை நுண்ணறிவு உதவியை ஒருங்கிணைக்கிறது."
+    si: "මෙම වේදිකාව වේලාසටි කළමනාකරණය, හමුවීම්, ගෘහස්ථ සංචාලනය සහ බහුභාෂා කෘතිම බුද්ධි සහාය ඒකාබද්ධ කරයි."
+
+  - id: "098"
+    category: general
+    complexity: simple
+    en: "Your session has expired. Please log in again."
+    ta: "உங்கள் அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்."
+    si: "ඔබේ සැසිය කල් ඉකුත් වී ඇත. නැවත පිවිසෙන්න."
+
+  - id: "099"
+    category: general
+    complexity: moderate
+    en: "Use the chatbot to ask about your schedule or book a hall."
+    ta: "உங்கள் அட்டவணையைக் கேட்க அல்லது மண்டபம் பதிவு செய்ய சாட்பாட் பயன்படுத்தவும்."
+    si: "ඔබේ කාලසටහන ගැන අසන්න හෝ හෝල් එකක් වෙන්කර ගැනීමට chatbot භාවිතා කරන්න."
+
+  - id: "100"
+    category: general
+    complexity: moderate
+    en: "Voice input supports English, Tamil, and Sinhala for hands-free queries."
+    ta: "கைகள் இல்லாத கேள்விகளுக்கு குரல் உள்ளீடு ஆங்கிலம், தமிழ் மற்றும் சிங்களத்தை ஆதரிக்கிறது."
+    si: "අත් නොමැතිව විමසීම් සඳහා හඬ ආදානය ඉංග්රීසි, දෙමළ සහ සිංහල සඳහා සහාය දක්වයි."
