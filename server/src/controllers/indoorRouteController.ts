@@ -41,6 +41,7 @@ export async function getIndoorRoute(req: Request, res: Response, next: NextFunc
       fromNodeId,
       fromMarkerId,
       fromOfficeId,
+      forAdmin: req.user?.role === 'ADMIN',
     });
 
     res.json({ success: true, data: formatted });

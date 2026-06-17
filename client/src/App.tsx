@@ -16,6 +16,8 @@ import GroupManagement from '@pages/admin/GroupManagement';
 import HallManagement from '@pages/admin/HallManagement';
 import OfficeManagement from '@pages/admin/OfficeManagement';
 import IndoorNavigationAdmin from '@pages/admin/IndoorNavigationAdmin';
+import IndoorMarkerEditor from '@pages/admin/IndoorMarkerEditor';
+import IndoorNavGraphEditor from '@pages/admin/IndoorNavGraphEditor';
 import SimpleIndoorGuide from '@pages/SimpleIndoorGuide';
 import TimetableRoute from '@components/TimetableRoute';
 import LecturerMySchedule from '@pages/LecturerMySchedule';
@@ -175,11 +177,25 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/admin/buildings" element={<Navigate to="/admin/navigation" replace />} />
-        <Route path="/admin/markers" element={<Navigate to="/admin/navigation" replace />} />
-        <Route path="/admin/indoor-markers" element={<Navigate to="/admin/navigation" replace />} />
-        <Route path="/admin/indoor-nav" element={<Navigate to="/admin/navigation" replace />} />
-        <Route path="/admin/indoor-nav/graph" element={<Navigate to="/admin/navigation" replace />} />
+        <Route
+          path="/admin/indoor-markers"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <IndoorMarkerEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/indoor-nav/graph"
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <IndoorNavGraphEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/admin/buildings" element={<Navigate to="/admin/navigation?tab=setup" replace />} />
+        <Route path="/admin/markers" element={<Navigate to="/admin/navigation?tab=review" replace />} />
+        <Route path="/admin/indoor-nav" element={<Navigate to="/admin/navigation?tab=graph" replace />} />
 
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route

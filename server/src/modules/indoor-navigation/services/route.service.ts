@@ -22,6 +22,8 @@ export async function computeRouteRequest(options: {
   sourceQ?: string;
   floor?: number;
   fromFloor?: number;
+  /** When true, skip publish-status checks (admin test routes). */
+  forAdmin?: boolean;
 }) {
   let fromNodeId = options.fromNodeId;
   let buildingId = options.toBuildingId || options.buildingId;
@@ -61,6 +63,20 @@ export async function computeRouteRequest(options: {
   });
 
   const formatted = formatIndoorRouteResponse(raw);
+
+  if (!options.forAdmin && formatted.found) {
+    const { assertRoutePublishedForStudents } = await import('../../../utils/floorPlanPublish');
+    const segments =
+      formatted.segments?.length > 0
+        ? formatted.segments
+        : formatted.polyline?.map((p) => ({
+            buildingId: p.buildingId || buildingId || '',
+            floor: p.floor,
+          })).filter((s) => s.buildingId) ?? [];
+    if (segments.length > 0) {
+      await assertRoutePublishedForStudents(segments);
+    }
+  }
 
   if (formatted.found && formatted.polyline?.length) {
     const destFloor =

@@ -1873,13 +1873,13 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 11.8 — Admin Consolidation & Publish Workflow
-**Type**: Engineering | **Effort**: ~1.5 days | **Depends on**: 11.2 (parallel) | **Status**: ⬜
+**Type**: Engineering | **Effort**: ~1.5 days | **Depends on**: 11.2 (parallel) | **Status**: ✅
 
-- [ ] Re-mount admin tools in `/admin/navigation`: Setup | Markers | Walking Paths | Vertical Links
-- [ ] Wire `IndoorMarkerEditor`, `IndoorNavGraphEditor` routes (currently orphaned)
-- [ ] Per-floor **publish status**: draft → reviewed → published (students see published only)
-- [ ] Health dashboard: vision engine 8003, nav engine 8004, graph connectivity
-- [ ] Seed / migration script for 3 buildings × 2 floors demo data
+- [x] Re-mount admin tools in `/admin/navigation`: Setup | Markers | Walking Paths | Vertical Links
+- [x] Wire `IndoorMarkerEditor`, `IndoorNavGraphEditor` routes (currently orphaned)
+- [x] Per-floor **publish status**: draft → reviewed → published (students see published only)
+- [x] Health dashboard: vision engine 8003, nav engine 8004, graph connectivity
+- [x] Seed / migration script for 3 buildings × 2 floors demo data
 
 **Checkpoint:** Admin can set up a new floor end-to-end without touching code.
 

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import api, { showApiErrorToast } from '@services/api';
+import NavigationHealthPanel from '@components/NavigationHealthPanel';
 import { showToast } from '@components/Toast';
 import FloorPlanReviewPanel from '@pages/admin/FloorPlanReviewPanel';
 import FloorNavGraphTab from '@pages/admin/FloorNavGraphTab';
@@ -17,6 +19,12 @@ import {
 } from 'lucide-react';
 
 type AdminTab = 'setup' | 'review' | 'graph' | 'horizontal' | 'vertical';
+
+const VALID_TABS: AdminTab[] = ['setup', 'review', 'graph', 'horizontal', 'vertical'];
+
+function parseTab(value: string | null): AdminTab {
+  return VALID_TABS.includes(value as AdminTab) ? (value as AdminTab) : 'setup';
+}
 
 interface FloorPlan {
   id: string;
@@ -55,7 +63,8 @@ function floorLabel(floor: number): string {
 }
 
 export default function IndoorNavigationAdmin() {
-  const [tab, setTab] = useState<AdminTab>('setup');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState<AdminTab>(() => parseTab(searchParams.get('tab')));
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
   const [buildingId, setBuildingId] = useState('');
@@ -68,26 +77,52 @@ export default function IndoorNavigationAdmin() {
   const [imagePreviewVersion, setImagePreviewVersion] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const goToLocationsAfterAnalyze = () => {
-    setReviewTick((t) => t + 1);
-    setTab('review');
-  };
-
   const selected = buildings.find((b) => b.id === buildingId);
   const floorPlan = selected?.floorPlans.find((fp) => fp.floor === floor);
+
+  const syncUrl = useCallback(
+    (patch: { tab?: AdminTab; buildingId?: string; floor?: number }) => {
+      const next = new URLSearchParams(searchParams);
+      if (patch.tab) next.set('tab', patch.tab);
+      if (patch.buildingId) next.set('buildingId', patch.buildingId);
+      if (patch.floor !== undefined) next.set('floor', String(patch.floor));
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const selectTab = (nextTab: AdminTab) => {
+    setTab(nextTab);
+    syncUrl({ tab: nextTab, buildingId, floor });
+  };
+
+  const goToLocationsAfterAnalyze = () => {
+    setReviewTick((t) => t + 1);
+    selectTab('review');
+  };
 
   const fetchBuildings = useCallback(async () => {
     try {
       const res = await api.get('/admin/buildings');
       const list: Building[] = res.data.data || [];
       setBuildings(list);
-      if (!buildingId && list[0]) setBuildingId(list[0].id);
+      const urlBid = searchParams.get('buildingId');
+      const urlFloor = searchParams.get('floor');
+      const defaultId =
+        urlBid && list.some((b: Building) => b.id === urlBid) ? urlBid : list[0]?.id || '';
+
+      setBuildingId(defaultId);
+      if (urlFloor) {
+        const f = parseInt(urlFloor, 10);
+        if (!Number.isNaN(f)) setFloor(f);
+      }
+      setTab(parseTab(searchParams.get('tab')));
     } catch (err) {
       showApiErrorToast(err, 'Failed to load buildings');
     } finally {
       setLoading(false);
     }
-  }, [buildingId]);
+  }, [searchParams]);
 
   const fetchSetupStatus = useCallback(async () => {
     try {
@@ -207,10 +242,12 @@ export default function IndoorNavigationAdmin() {
         </div>
       )}
 
+      <NavigationHealthPanel />
+
       <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200">
         <button
           type="button"
-          onClick={() => setTab('setup')}
+          onClick={() => selectTab('setup')}
           className={`border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'setup'
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -218,12 +255,12 @@ export default function IndoorNavigationAdmin() {
           }`}
         >
           <span className="inline-flex items-center gap-1">
-            <Upload size={16} /> Floor plan
+            <Upload size={16} /> Setup
           </span>
         </button>
         <button
           type="button"
-          onClick={() => setTab('review')}
+          onClick={() => selectTab('review')}
           className={`border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'review'
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -231,12 +268,12 @@ export default function IndoorNavigationAdmin() {
           }`}
         >
           <span className="inline-flex items-center gap-1">
-            <ClipboardCheck size={16} /> Locations &amp; publish
+            <ClipboardCheck size={16} /> Markers
           </span>
         </button>
         <button
           type="button"
-          onClick={() => setTab('graph')}
+          onClick={() => selectTab('graph')}
           className={`border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'graph'
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -249,7 +286,7 @@ export default function IndoorNavigationAdmin() {
         </button>
         <button
           type="button"
-          onClick={() => setTab('horizontal')}
+          onClick={() => selectTab('horizontal')}
           className={`border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'horizontal'
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -262,7 +299,7 @@ export default function IndoorNavigationAdmin() {
         </button>
         <button
           type="button"
-          onClick={() => setTab('vertical')}
+          onClick={() => selectTab('vertical')}
           className={`border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'vertical'
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -281,7 +318,11 @@ export default function IndoorNavigationAdmin() {
           <select
             className="w-full rounded-lg border border-slate-200 px-3 py-2"
             value={buildingId}
-            onChange={(e) => setBuildingId(e.target.value)}
+            onChange={(e) => {
+              const id = e.target.value;
+              setBuildingId(id);
+              syncUrl({ tab, buildingId: id, floor });
+            }}
           >
             {buildings.map((b) => (
               <option key={b.id} value={b.id}>
@@ -295,7 +336,11 @@ export default function IndoorNavigationAdmin() {
           <select
             className="w-full rounded-lg border border-slate-200 px-3 py-2"
             value={floor}
-            onChange={(e) => setFloor(parseInt(e.target.value, 10))}
+            onChange={(e) => {
+              const f = parseInt(e.target.value, 10);
+              setFloor(f);
+              syncUrl({ tab, buildingId, floor: f });
+            }}
           >
             {Array.from({ length: selected?.floors ?? 1 }, (_, i) => (
               <option key={i} value={i}>
@@ -371,7 +416,17 @@ export default function IndoorNavigationAdmin() {
       )}
 
       {tab === 'review' && selected && (
-        <FloorPlanReviewPanel
+        <>
+          <p className="mb-3 text-xs text-slate-500">
+            Review AI-detected rooms, link halls, and set publish status.{' '}
+            <Link
+              to={`/admin/indoor-markers?buildingId=${selected.id}&floor=${floor}`}
+              className="font-medium text-[var(--color-primary)] hover:underline"
+            >
+              Open full-screen marker editor
+            </Link>
+          </p>
+          <FloorPlanReviewPanel
           key={`${selected.id}-${floor}-${reviewTick}`}
           buildingId={selected.id}
           floor={floor}
@@ -383,10 +438,21 @@ export default function IndoorNavigationAdmin() {
             void fetchSetupStatus();
           }}
         />
+        </>
       )}
 
       {tab === 'graph' && selected && (
-        <FloorNavGraphTab
+        <>
+          <p className="mb-3 text-xs text-slate-500">
+            Draw corridor paths on the locked floor plan.{' '}
+            <Link
+              to={`/admin/indoor-nav/graph?buildingId=${selected.id}&floor=${floor}`}
+              className="font-medium text-[var(--color-primary)] hover:underline"
+            >
+              Open full-screen graph editor
+            </Link>
+          </p>
+          <FloorNavGraphTab
           buildingId={selected.id}
           floor={floor}
           hasFloorPlan={!!floorPlan}
@@ -402,6 +468,7 @@ export default function IndoorNavigationAdmin() {
           }
           locationsLocked={!!floorPlan?.locationsLockedAt}
         />
+        </>
       )}
 
       {tab === 'horizontal' && selected && (

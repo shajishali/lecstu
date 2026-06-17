@@ -152,6 +152,7 @@ export async function postRoute(req: Request, res: Response, next: NextFunction)
       sourceQ: sourceQ?.trim(),
       floor: floor !== undefined ? parseInt(String(floor), 10) : undefined,
       fromFloor: fromFloor !== undefined ? parseInt(String(fromFloor), 10) : undefined,
+      forAdmin: req.user?.role === 'ADMIN',
     });
 
     if (saveSession && req.user?.userId && formatted.found && destBuildingId) {

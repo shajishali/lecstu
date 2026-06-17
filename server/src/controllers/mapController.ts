@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
-import {
-  findAvailableNow,
-  getHallDaySchedule,
-} from '../services/hallAvailabilityService';
+import { publishedFloorPlanFilter } from '../utils/floorPlanPublish';
 import { searchMapEntities } from '../services/mapSearchService';
 
 export interface MapSearchResult {
@@ -186,6 +183,7 @@ export async function getMapLiveStatus(req: Request, res: Response, next: NextFu
 /** List buildings for map (any authenticated user) */
 export async function listMapBuildings(req: Request, res: Response, next: NextFunction) {
   try {
+    const isAdmin = req.user?.role === 'ADMIN';
     const data = await prisma.mapBuilding.findMany({
       select: {
         id: true,
@@ -195,7 +193,18 @@ export async function listMapBuildings(req: Request, res: Response, next: NextFu
         longitude: true,
         floors: true,
         _count: { select: { markers: true, floorPlans: true } },
-        floorPlans: { select: { id: true, floor: true, imagePath: true, bounds: true, drawableRegion: true }, orderBy: { floor: 'asc' as const } },
+        floorPlans: {
+          where: isAdmin ? undefined : publishedFloorPlanFilter(),
+          select: {
+            id: true,
+            floor: true,
+            imagePath: true,
+            bounds: true,
+            drawableRegion: true,
+            ...(isAdmin ? { publishStatus: true } : {}),
+          },
+          orderBy: { floor: 'asc' as const },
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -209,6 +218,7 @@ export async function listMapBuildings(req: Request, res: Response, next: NextFu
 export async function listMapMarkers(req: Request, res: Response, next: NextFunction) {
   try {
     const { buildingId, floor, type } = req.query as Record<string, string>;
+    const isAdmin = req.user?.role === 'ADMIN';
     const where: Record<string, unknown> = {};
     if (buildingId) where.buildingId = buildingId;
     if (floor) where.floor = parseInt(floor, 10);
@@ -216,6 +226,24 @@ export async function listMapMarkers(req: Request, res: Response, next: NextFunc
       const types = type.split(',').map((t) => t.trim()).filter(Boolean);
       if (types.length === 1) where.type = types[0];
       else if (types.length > 1) where.type = { in: types };
+    }
+
+    if (!isAdmin && buildingId) {
+      const published = await prisma.floorPlan.findMany({
+        where: { buildingId, ...publishedFloorPlanFilter() },
+        select: { floor: true },
+      });
+      const floors = published.map((p) => p.floor);
+      if (floor) {
+        const f = parseInt(floor, 10);
+        if (!floors.includes(f)) {
+          return res.json({ success: true, data: [] });
+        }
+      } else if (floors.length > 0) {
+        where.floor = { in: floors };
+      } else {
+        return res.json({ success: true, data: [] });
+      }
     }
 
     const data = await prisma.mapMarker.findMany({

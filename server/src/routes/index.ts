@@ -22,6 +22,7 @@ import chatbotRoutes from './chatbot';
 import translationRoutes from './translation';
 import navigationRoutes from './navigation';
 import indoorNavRoutes from '../modules/indoor-navigation/routes/indoorNavRoutes';
+import navigationAdminRoutes from './navigationAdmin';
 
 const router = Router();
 
@@ -42,6 +43,7 @@ router.use('/admin/groups', groupRoutes);
 router.use('/admin/halls', hallRoutes);
 router.use('/admin/offices', officeRoutes);
 router.use('/admin/buildings', buildingRoutes);
+router.use('/admin/navigation', navigationAdminRoutes);
 router.use('/admin/markers', markerRoutes);
 router.use('/admin/map/indoor-markers', indoorMarkerRoutes);
 router.use('/admin/map/nav-graph', navGraphRoutes);

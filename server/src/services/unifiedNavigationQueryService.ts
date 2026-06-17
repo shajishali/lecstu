@@ -117,6 +117,7 @@ async function routeToNextClass(
     toHallId: target.hall.id,
     toMarkerId: target.markerId || undefined,
     floor: target.floor,
+    forAdmin: false,
   });
 
   const storySupplement = formatted.found
@@ -190,6 +191,7 @@ async function routeToResolvedRoom(
     sourceQ: sourceQ ?? undefined,
     floor: room.floor,
     fromNodeId: options.fromNodeId,
+    forAdmin: options.userRole === 'ADMIN',
   });
 
   if (formatted.found && formatted.polyline?.length) {

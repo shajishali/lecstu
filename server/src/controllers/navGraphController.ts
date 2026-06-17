@@ -35,6 +35,10 @@ export async function getPublicNavGraph(req: Request, res: Response, next: NextF
     if (!buildingId || Number.isNaN(floor)) {
       throw new AppError('buildingId and floor are required', 400);
     }
+    if (req.user?.role !== 'ADMIN') {
+      const { assertStudentFloorAccess } = await import('../utils/floorPlanPublish');
+      await assertStudentFloorAccess(buildingId, floor);
+    }
     const data = await getNavGraphForFloor(buildingId, floor);
     res.json({ success: true, data });
   } catch (err) {
