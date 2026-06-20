@@ -41,6 +41,10 @@ interface PersonalSlot {
   location: string;
 }
 
+interface PersonalSlotFromApi extends Omit<PersonalSlot, 'slotType'> {
+  slotType: SlotType | 'TEACHING';
+}
+
 interface BatchGroup {
   id: string;
   name: string;
@@ -316,7 +320,7 @@ export default function LecturerMySchedule() {
       setLastUpdated(ttData.lastUpdated ?? null);
       colorMap.current.clear();
 
-      const allSched = (schedRes.data.data || []) as PersonalSlot[];
+      const allSched = (schedRes.data.data || []) as PersonalSlotFromApi[];
       setPersonalSlots(
         allSched
           .filter((s) => s.slotType !== 'TEACHING')

@@ -2,7 +2,7 @@
  * TranslatableText
  * Renders text, translating when UI language is Tamil or Sinhala.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ElementType } from 'react';
 import { useLanguageStore } from '@store/languageStore';
 import { useTranslation } from '@hooks/useTranslation';
 import { decodeHtmlEntities } from '@utils/html';
@@ -10,7 +10,7 @@ import { decodeHtmlEntities } from '@utils/html';
 interface TranslatableTextProps {
   text: string;
   sourceLang?: 'en' | 'ta' | 'si';
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
   className?: string;
 }
 

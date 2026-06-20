@@ -12,7 +12,6 @@ import type { ReactNode } from 'react';
 import {
   buildNavNodeSets,
   isEdgeVisibleOnFloorPlan,
-  NAV_NODE_COLORS,
   type NavGraphEdgeLite,
   type NavGraphNodeLite,
 } from '@utils/navGraphDisplay';

@@ -18,11 +18,6 @@ export default function QrScanPage() {
   const returnTo = searchParams.get('returnTo') || '/navigate';
   const buildingId = searchParams.get('buildingId') || '';
 
-  const backUrl =
-    returnTo +
-    (returnTo.includes('?') ? '&' : '?') +
-    `scanned=1${buildingId ? `&buildingId=${buildingId}` : ''}`;
-
   const submitCode = useCallback(
     async (code: string) => {
       const trimmed = code.trim();

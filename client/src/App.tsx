@@ -242,7 +242,7 @@ function AppRoutes() {
   );
 }
 
-function PlaceholderPage({ title, phase }: { title: string; phase: string }) {
+function PlaceholderPage({ title }: { title: string; phase?: string }) {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center text-center text-slate-500">
       <h2 className="mb-2 text-2xl text-slate-700">{title}</h2>

@@ -41,7 +41,7 @@ export default function Profile() {
     officeFloor: '0',
   });
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [, setGroups] = useState<Group[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -125,6 +125,7 @@ export default function Profile() {
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setSaving(true);
     try {
       await api.patch('/profile', {

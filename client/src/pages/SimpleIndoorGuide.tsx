@@ -7,8 +7,6 @@ import { useActiveStepScroll } from '@hooks/useActiveStepScroll';
 import {
   crossBuildingRouteViews,
   firstStepIndexForFloor,
-  routePointForStep,
-  splitRoutePathByStep,
 } from '@utils/routeStepProgress';
 import {
   getActiveNavigationSession,

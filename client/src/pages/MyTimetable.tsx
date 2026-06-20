@@ -146,7 +146,7 @@ interface TimetableEnrollment {
 export default function MyTimetable() {
   const { user } = useAuthStore();
   const location = useLocation();
-  const [weekly, setWeekly] = useState<WeeklyTimetable>({});
+  const [, setWeekly] = useState<WeeklyTimetable>({});
   const [flat, setFlat] = useState<SlotData[]>([]);
   const [gridSnapshot, setGridSnapshot] = useState<TimetableGridSnapshot | null>(null);
   const [enrollment, setEnrollment] = useState<TimetableEnrollment | null>(null);

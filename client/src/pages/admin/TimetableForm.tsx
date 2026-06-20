@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Modal from '@components/Modal';
 import api, { showApiErrorToast } from '@services/api';
-import { showToast } from '@components/Toast';
 import { AlertTriangle } from 'lucide-react';
 import type { DropdownData } from './TimetableManagement';
 

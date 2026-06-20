@@ -25,7 +25,7 @@ export function useEnrollmentFields(
   programs: RegisterOptionsProgram[],
   programCode: string,
   studyYear: string,
-  pathwayCode: string,
+  _pathwayCode: string,
 ) {
   const selectedProgram = useMemo(
     () => programs.find((p) => p.code === programCode),

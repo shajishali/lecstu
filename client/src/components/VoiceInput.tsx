@@ -96,7 +96,7 @@ export default function VoiceInput({
       if (data.success && data.data) {
         onTranscription(data.data);
       } else {
-        onError?.(data.data?.error || 'Transcription failed');
+        onError?.('Transcription failed');
       }
     } catch (err: unknown) {
       let msg = 'Transcription failed';
