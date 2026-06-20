@@ -8,7 +8,7 @@ import {
   validateStudentEnrollmentInput,
 } from '../services/studentEnrollmentService';
 import { deriveTimetableCodeFromName } from '../services/lecturerInitialsMatch';
-import type { StudyYear } from '../../prisma/fct-faculty-config';
+import type { StudyYear } from '../config/fct-faculty-config';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

@@ -3,6 +3,7 @@
  * Auto-creates missing courses, halls, groups. Uses Unassigned lecturer when lecturer not found.
  * Resolves entities from parsed rows and creates timetable entries.
  */
+import type { DayOfWeek } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
 import { detectConflicts, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
@@ -11,7 +12,7 @@ import {
   studyYearToOrdinal,
   resolveCanonicalGroupName,
   type StudyYear,
-} from '../../prisma/fct-faculty-config';
+} from '../config/fct-faculty-config';
 import { findCanonicalGroupId } from './studentGroupResolver';
 import { finalizeParsedRows, formatShortCourseDisplay } from './timetableParserService';
 import {
@@ -376,7 +377,10 @@ export async function resolveAndImport(
     return { created: 0, conflicts: allConflicts, stats, groupIds: [] };
   }
 
-  const toCreate = validEntries.map(({ _rowNum, _lecturerAssigned, _hallName, ...e }) => e);
+  const toCreate = validEntries.map(({ _rowNum, _lecturerAssigned, _hallName, ...e }) => ({
+    ...e,
+    dayOfWeek: e.dayOfWeek as DayOfWeek,
+  }));
   const result = await prisma.masterTimetable.createMany({ data: toCreate });
   stats.imported = result.count;
 

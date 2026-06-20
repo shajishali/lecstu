@@ -117,7 +117,7 @@ async function enrichTodaySlots(
   return entries.map((slot) => {
     const mapB = resolveMapBuilding(slot.hall.building, mapBuildings);
     const marker = markerByHall.get(slot.hall.id);
-    const floor = marker?.floor ?? slot.hall.floor ?? 0;
+    const floor = marker?.floor ?? 0;
     const isNow = slot.startTime <= serverTime && serverTime < slot.endTime;
     const isUpcoming = serverTime < slot.startTime;
 
@@ -133,7 +133,7 @@ async function enrichTodaySlots(
         id: slot.hall.id,
         name: slot.hall.name,
         building: slot.hall.building,
-        floor: slot.hall.floor,
+        floor: marker?.floor ?? 0,
       },
       mapBuildingId: mapB?.id ?? marker?.buildingId ?? null,
       mapBuildingName: mapB?.name ?? null,

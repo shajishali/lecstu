@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { publishedFloorPlanFilter } from '../utils/floorPlanPublish';
 import { searchMapEntities } from '../services/mapSearchService';
+import { findAvailableNow, getHallDaySchedule } from '../services/hallAvailabilityService';
 
 export interface MapSearchResult {
   kind: 'building' | 'hall' | 'office' | 'marker';

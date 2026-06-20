@@ -30,6 +30,8 @@ export type UnifiedNavigationQueryResult = {
   };
   confidence?: number;
   directionEngine?: string;
+  suggestedBuildingId?: string;
+  suggestedBuildingName?: string;
 } & Partial<FormattedRoute>;
 
 export type UnifiedNavigationQueryOptions = {

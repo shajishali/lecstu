@@ -16,7 +16,7 @@ import {
   resolveCanonicalGroupName,
   resolveCanonicalGroupNames,
   type StudyYear,
-} from '../../prisma/fct-faculty-config';
+} from '../config/fct-faculty-config';
 import {
   extractFetLecturerCodesFromCourse,
   isFetActivitySuffix,
@@ -387,7 +387,10 @@ function combineParseResults(parts: ParseResult[], headersDetected: Record<strin
     rows,
     tables,
     errors,
-    headersDetected: { ...headersDetected, format: headersDetected.format ?? 'Excel multi-sheet' },
+    headersDetected: {
+      ...headersDetected,
+      format: typeof headersDetected.format === 'string' ? headersDetected.format : 'Excel multi-sheet',
+    },
   });
 }
 
@@ -969,9 +972,9 @@ function mergeWorkbookFetTables(
     }
 
     const grid = parseExcelFetGridSheet(sheet, sheetName, `${fileName}#${sheetName}`);
-    if (grid.rows.length > 0 || grid.tables.length > 0) {
+    if (grid.rows.length > 0 || (grid.tables?.length ?? 0) > 0) {
       mergedRows.push(...grid.rows);
-      mergedTables.push(...grid.tables);
+      mergedTables.push(...(grid.tables ?? []));
       const sections = parseInt(grid.headersDetected.sections || '1', 10) || 1;
       sheetStats.push({ name: sheetName, rows: grid.rows.length, sections });
       continue;
@@ -1152,7 +1155,7 @@ const DEFAULT_FET_PERIOD = { year: 2026, month: 1, week: 1, semester: 1 as numbe
 function extractFetGenerationPeriod(
   rawLines: string[],
   fileHint = '',
-): { year: number; month: number; week: number; semester?: number } {
+): { year: number; month: number; week: number; semester: number | undefined } {
   const hintSemester = extractSemesterFromText(fileHint);
   for (const line of rawLines) {
     const m = line.match(

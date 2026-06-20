@@ -1013,7 +1013,9 @@ async function computeCampusIndoorRoute(options: {
 
   await ensureCampusConnectors(options.fromBuildingId, options.toBuildingId);
 
-  let goalResult: Awaited<ReturnType<typeof resolveGoalNodeForMarker>>;
+  let goalResult:
+    | Awaited<ReturnType<typeof resolveGoalNodeForMarker>>
+    | Awaited<ReturnType<typeof resolveGoalNodeForHall>>;
   if (options.toMarkerId) {
     goalResult = await resolveGoalNodeForMarker(options.toBuildingId, options.toMarkerId);
   } else if (options.toHallId) {
@@ -1402,19 +1404,36 @@ type RawRouteResult = Awaited<ReturnType<typeof computeIndoorRouteFlexible>> & {
   hall?: { id: string; name: string; building: string; floor: number } | null;
 };
 
-export function formatIndoorRouteResponse(raw: RawRouteResult) {
+type RouteBuilding = { id: string; name: string; code: string };
+
+export type FormattedIndoorRouteNotFound = {
+  found: false;
+  message: string;
+  building: RouteBuilding | null;
+  steps: RouteStep[];
+  segments: RouteSegment[];
+  deepLink: string | null;
+  adminFix: typeof INDOOR_ROUTE_ADMIN_FIX;
+};
+
+export function formatIndoorRouteResponse(
+  raw: RawRouteResult
+): FormattedIndoorRouteNotFound | Omit<ReturnType<typeof formatIndoorRouteResponseFound>, never> {
   if (!raw.found) {
     return {
       found: false as const,
       message: raw.message,
-      building: raw.building,
+      building: null,
       steps: [] as RouteStep[],
       segments: [] as RouteSegment[],
       deepLink: null as string | null,
       adminFix: INDOOR_ROUTE_ADMIN_FIX,
     };
   }
+  return formatIndoorRouteResponseFound(raw);
+}
 
+function formatIndoorRouteResponseFound(raw: Extract<RawRouteResult, { found: true }>) {
   const polyline = raw.polyline as RoutePolylinePoint[];
   const hasBuildingIds = polyline.some((p) => 'buildingId' in p && (p as { buildingId?: string }).buildingId);
   const segments = hasBuildingIds
@@ -1486,7 +1505,7 @@ export async function computeTodayIndoorRoutes(studentId: string) {
     mapBuildingId: string | null;
     mapBuildingName: string | null;
     markerId: string | null;
-    route: ReturnType<typeof formatIndoorRouteResponse>;
+    route: FormattedIndoorRouteNotFound | ReturnType<typeof formatIndoorRouteResponseFound>;
   }[] = [];
 
   for (const slot of today.slots) {
@@ -1514,7 +1533,7 @@ export async function computeTodayIndoorRoutes(studentId: string) {
           segments: [],
           deepLink: null,
           adminFix: INDOOR_ROUTE_ADMIN_FIX,
-        },
+        } ,
       });
       continue;
     }
@@ -1554,7 +1573,7 @@ export async function computeTodayIndoorRoutes(studentId: string) {
           segments: [],
           deepLink: null,
           adminFix: INDOOR_ROUTE_ADMIN_FIX,
-        },
+        } ,
       });
     }
   }

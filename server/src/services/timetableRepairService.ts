@@ -282,7 +282,7 @@ export async function repairMasterSlotsFromFetLines(
           where: { name: { equals: ref.hallName, mode: 'insensitive' } },
         });
         if (!hall) {
-          const { parseLectureHall } = await import('../../prisma/fct-faculty-config');
+          const { parseLectureHall } = await import('../config/fct-faculty-config');
           const parsed = parseLectureHall(ref.hallName);
           hall = await prisma.lectureHall.create({
             data: {
@@ -363,7 +363,7 @@ async function ensureHallRecord(hallName: string): Promise<string> {
     where: { name: { equals: hallName, mode: 'insensitive' } },
   });
   if (existing) return existing.id;
-  const { parseLectureHall } = await import('../../prisma/fct-faculty-config');
+  const { parseLectureHall } = await import('../config/fct-faculty-config');
   const parsed = parseLectureHall(hallName);
   const created = await prisma.lectureHall.create({
     data: {

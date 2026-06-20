@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import prisma from '../config/database';
+import type { Prisma } from '../generated/prisma/client';
 import type { TokenPayload } from '../utils/jwt';
 
 /** JWT payload uses `userId`, not `id`. */
@@ -22,7 +23,13 @@ export async function logAction(
   }
   try {
     await prisma.auditLog.create({
-      data: { userId, action, entity, entityId, details: details ?? undefined },
+      data: {
+        userId,
+        action,
+        entity,
+        entityId,
+        details: details as Prisma.InputJsonValue | undefined,
+      },
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

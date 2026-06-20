@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
+import { Prisma } from '../generated/prisma/client';
 import { getBuildingOrThrow } from './indoorMarkerService';
 import { publishedFloorPlanFilter } from '../utils/floorPlanPublish';
 import { isValidFloorIndex } from './floorPlanStorage';
@@ -616,7 +617,7 @@ export async function getStoryDirections(input: {
     where: {
       buildingId: input.buildingId,
       ...(input.floor !== undefined ? { floor: input.floor } : {}),
-      navigationGuide: { not: null },
+      navigationGuide: { not: Prisma.DbNull },
       ...publishedFloorPlanFilter(),
     },
     orderBy: { floor: 'asc' },
@@ -696,7 +697,7 @@ export async function findDestinationInOtherBuildings(
 ): Promise<{ buildingId: string; buildingName: string; destinationLabel: string } | null> {
   const plans = await prisma.floorPlan.findMany({
     where: {
-      navigationGuide: { not: null },
+      navigationGuide: { not: Prisma.DbNull },
       buildingId: { not: excludeBuildingId },
       ...publishedFloorPlanFilter(),
     },
@@ -722,7 +723,7 @@ export async function listBuildingsWithGuides(): Promise<
   Array<{ buildingId: string; buildingName: string; placeCount: number; floors: number[] }>
 > {
   const plans = await prisma.floorPlan.findMany({
-    where: { navigationGuide: { not: null }, ...publishedFloorPlanFilter() },
+    where: { navigationGuide: { not: Prisma.DbNull }, ...publishedFloorPlanFilter() },
     select: {
       floor: true,
       navigationGuide: true,
@@ -759,7 +760,7 @@ export async function listBuildingsWithGuides(): Promise<
 
 export async function listGuidePlaces(buildingId: string) {
   const plans = await prisma.floorPlan.findMany({
-    where: { buildingId, navigationGuide: { not: null }, ...publishedFloorPlanFilter() },
+    where: { buildingId, navigationGuide: { not: Prisma.DbNull }, ...publishedFloorPlanFilter() },
     select: { floor: true, navigationGuide: true, navigationNotes: true },
     orderBy: { floor: 'asc' },
   });

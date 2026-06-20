@@ -1,11 +1,10 @@
 import prisma from '../config/database';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import { invalidateAll as invalidateTimetableCache } from './timetableCache';
-import { enrichGridFromSlots, normalizeGridSnapshot, type GridSlotRef } from './timetableGridBuilder';
+import { enrichGridFromSlots, gridSnapshotsToParsedRows, normalizeGridSnapshot, type GridSlotRef } from './timetableGridBuilder';
 import { backfillSlotRefsForGroup } from './timetableRepairService';
 import { getLecturerDisplayIndex } from './lecturerDisplayService';
 import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
-import { gridSnapshotsToParsedRows, normalizeGridSnapshot } from './timetableGridBuilder';
 import { finalizeParsedRows } from './timetableParserService';
 import { resolveAndImport } from './timetableImportService';
 import { AppError } from '../middleware/errorHandler';

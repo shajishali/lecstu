@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
+import type { NotificationType } from '../generated/prisma/client';
 import { AppError } from '../middleware/errorHandler';
 import {
   registerSSEClient,
@@ -57,14 +58,14 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
     const userId = req.user!.userId;
     const types = req.query.types as string | undefined;
 
-    const where: { userId: string; isRead: boolean; type?: { in: readonly string[] } } = {
+    const where: { userId: string; isRead: boolean; type?: { in: NotificationType[] } } = {
       userId,
       isRead: false,
     };
     if (types) {
       const typeList = types.split(',').map((t) => t.trim()).filter(Boolean);
       if (typeList.length > 0) {
-        where.type = { in: typeList };
+        where.type = { in: typeList as NotificationType[] };
       }
     }
 

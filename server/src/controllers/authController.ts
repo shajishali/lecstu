@@ -16,7 +16,7 @@ import {
 } from '../services/studentEnrollmentService';
 import { deriveTimetableCodeFromName } from '../services/lecturerInitialsMatch';
 import { userProfileSelect } from '../constants/userProfileSelect';
-import type { StudyYear } from '../../prisma/fct-faculty-config';
+import type { StudyYear } from '../config/fct-faculty-config';
 import {
   consumeRegistrationVerification,
 } from '../services/registrationVerificationService';

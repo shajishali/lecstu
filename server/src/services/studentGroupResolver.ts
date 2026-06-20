@@ -2,7 +2,7 @@ import prisma from '../config/database';
 import {
   resolveCanonicalGroupName,
   resolveCanonicalGroupNames,
-} from '../../prisma/fct-faculty-config';
+} from '../config/fct-faculty-config';
 
 /** Resolve admin/import group id to the canonical seeded group when one exists */
 export async function resolveGroupIdToCanonical(groupId: string): Promise<string> {

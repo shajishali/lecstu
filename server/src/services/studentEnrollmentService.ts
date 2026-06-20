@@ -4,7 +4,7 @@ import {
   YEARS_WITH_PATHWAYS,
   buildGroupName,
   type StudyYear,
-} from '../../prisma/fct-faculty-config';
+} from '../config/fct-faculty-config';
 import { AppError } from '../middleware/errorHandler';
 
 export type RegisterOptionsProgram = {

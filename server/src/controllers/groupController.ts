@@ -62,9 +62,25 @@ export async function getGroup(req: Request, res: Response, next: NextFunction) 
 
 export async function createGroup(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, batchYear, batchLabel, departmentId, pathwayId } = req.body as Record<string, unknown>;
+    const body = req.body as {
+      name?: string;
+      batchYear?: number;
+      batchLabel?: string | null;
+      departmentId?: string;
+      pathwayId?: string | null;
+    };
+    const { name, batchYear, batchLabel, departmentId, pathwayId } = body;
+    if (!name || batchYear == null || !departmentId) {
+      throw new AppError('name, batchYear, and departmentId are required', 400);
+    }
     const group = await prisma.studentGroup.create({
-      data: { name, batchYear, batchLabel: batchLabel || null, departmentId, pathwayId: pathwayId || null },
+      data: {
+        name,
+        batchYear,
+        batchLabel: batchLabel || null,
+        departmentId,
+        pathwayId: pathwayId || null,
+      },
       include: INCLUDE,
     });
     await logActionForRequest(req, 'CREATE', 'StudentGroup', group.id, { name, batchYear });

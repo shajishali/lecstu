@@ -63,7 +63,7 @@ async function resolveHallIdByName(hallName: string): Promise<string> {
   });
   if (existing) return existing.id;
 
-  const { parseLectureHall } = await import('../../prisma/fct-faculty-config');
+  const { parseLectureHall } = await import('../config/fct-faculty-config');
   const parsed = parseLectureHall(trimmed);
   const created = await prisma.lectureHall.create({
     data: {

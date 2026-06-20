@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import type { Prisma } from '../generated/prisma/client';
 import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 import type { MapSearchResult } from '../controllers/mapController';
 import { normalizeRoomLabelForSearch } from '../utils/floorPlanMapRegion';
@@ -281,13 +282,15 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
   const markerInclude = {
     building: { select: { id: true, name: true, code: true, latitude: true, longitude: true } },
     hall: { select: { id: true, name: true } },
-  };
+  } as const;
 
-  const pushMarkers = (markers: Awaited<ReturnType<typeof prisma.mapMarker.findMany>>) => {
+  type MarkerWithRelations = Prisma.MapMarkerGetPayload<{ include: typeof markerInclude }>;
+
+  const pushMarkers = (markers: MarkerWithRelations[]) => {
     for (const m of markers) {
       if (!m.building || seenMarker.has(m.id)) continue;
       seenMarker.add(m.id);
-      results.push(markerToResult(m as MarkerRow));
+      results.push(markerToResult(m));
     }
   };
 
