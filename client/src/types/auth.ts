@@ -3,6 +3,7 @@ export type UserRole = 'ADMIN' | 'LECTURER' | 'STUDENT';
 export interface User {
   id: string;
   email: string;
+  recoveryEmail?: string | null;
   firstName: string;
   lastName: string;
   role: UserRole;
@@ -29,6 +30,8 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   role: UserRole;
+  verificationCode: string;
+  recoveryEmail?: string;
   departmentId?: string;
   phone?: string;
   /** Student only */

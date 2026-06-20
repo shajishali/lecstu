@@ -1,6 +1,6 @@
 # ════════════════════════════════════════════════════════════════
 # LECSTU — AI-Integrated Academic Platform
-# RESEARCH-DRIVEN Development Phases (11 Phases, 57 Sub-Phases)
+# RESEARCH-DRIVEN Development Phases (12 Phases, 63 Sub-Phases)
 # ════════════════════════════════════════════════════════════════
 # STATUS       : REFERENCE DOCUMENT (extended 2026-06-11 — Phase 11 indoor navigation module)
 # Created      : 2026-02-18
@@ -104,7 +104,7 @@ efficiency barriers in multilingual university environments.
 | **8.4** | NLP Error Analysis & Report | Research | RO-2 | ✅ |
 | **9.1** | Translation Service Implementation | Engineering | RO-3 | ✅ |
 | **9.2** | Parallel Corpus Curation | Research | RO-3 | ✅ |
-| **9.3** | Automated Translation Benchmarks (BLEU + Similarity) | Research | RO-3 | ⬜ |
+| **9.3** | Automated Translation Benchmarks (BLEU + Similarity) | Research | RO-3 | ✅ |
 | **9.4** | Human Evaluation & Inter-rater Analysis | Research | RO-3 | ⬜ |
 | **9.5** | Translation Comparative Report | Research | RO-3 | ⬜ |
 | **10.1** | Usability Instruments & Frontend Instrumentation | Research | RO-4 | ⬜ |
@@ -121,22 +121,28 @@ efficiency barriers in multilingual university environments.
 | **11.7** | Route Visualization on Floor Plans | Engineering | RO-5 | ✅ |
 | **11.8** | Admin Consolidation & Publish Workflow | Engineering | RO-5 | ✅ |
 | **11.9** | Active Navigation & QR Positioning | Engineering | RO-5 | ✅ |
+| **12.1** | Email Service & SMTP Configuration | Engineering | RO-5 | ✅ |
+| **12.2** | Password Reset Data Model & Token Service | Engineering | RO-5 | ✅ |
+| **12.3** | Forgot Password Backend API | Engineering | RO-5 | ✅ |
+| **12.4** | Frontend Forgot / Reset Password UI | Engineering | RO-5 | ✅ |
+| **12.5** | Security, Rate Limiting & Deliverability | Engineering | RO-5 | ✅ |
+| **12.6** | Testing, Documentation & Production Cutover | Engineering | RO-5 | ✅ |
 
 
 ---
 
-## SUB-PHASE STATUS AT A GLANCE (updated 2026-06-17)
+## SUB-PHASE STATUS AT A GLANCE (updated 2026-06-19)
 
 **Legend:** ✅ Finished (built or report done) · ⬜ Not finished · ⚠️ Partial (started, not closed)
 
 | Count | |
 |-------|---|
-| **Finished** | **48** sub-phases |
+| **Finished** | **55** sub-phases |
 | **Partial** | **0** sub-phases (see notes) |
-| **Not finished** | **8** sub-phases |
-| **Total** | **56** sub-phases tracked |
+| **Not finished** | **7** sub-phases |
+| **Total** | **63** sub-phases tracked |
 
-### ✅ Finished (48)
+### ✅ Finished (55)
 
 | Phase | Sub-phases |
 |-------|------------|
@@ -148,16 +154,17 @@ efficiency barriers in multilingual university environments.
 | 6 outdoor + indoor maps | 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9 |
 | 7 | 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8 |
 | 8 | 8.1, 8.2, 8.3, 8.4 |
-| 9 | 9.1, 9.2 |
+| 9 | 9.1, 9.2, 9.3 |
 | 11 indoor navigation module | 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9 |
+| 12 password reset via email | 12.1, 12.2, 12.3, 12.4, 12.5, 12.6 |
 
 **Notes:** Phase 7 — ASR benchmark may need a **full re-run** (hypothesis H1) before thesis submission. Phase 11 — code complete; some admin floors still need walking paths / QR codes for full demo data (content gap, not code).
 
-### ⬜ Not finished (8)
+### ⬜ Not finished (7)
 
 | Phase | Sub-phases | What it is |
 |-------|------------|------------|
-| **9 Translation research** | 9.3, 9.4, 9.5 | Benchmarks, human eval, report |
+| **9 Translation research** | 9.4, 9.5 | Human eval, report |
 | **10 Usability & wrap-up** | 10.1, 10.2, 10.3, 10.4, 10.5 | User study, hardening, final combined report |
 
 ---
@@ -1424,23 +1431,25 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 9.3 — Automated Translation Benchmarks (BLEU + Similarity)
-**Type**: Research | **Effort**: ~1 day
+**Type**: Research | **Effort**: ~1 day | **Status**: ✅
 
-- [ ] Build benchmark runner (`/research/translation-eval/scripts/run_benchmark.py`):
+- [x] Build benchmark runner (`/research/translation-eval/scripts/run_benchmark.py`):
   - For each sentence pair × each engine:
     - Run translation
     - Compute BLEU score against human reference
     - Compute semantic similarity (cosine, using multilingual sentence-BERT)
     - Record latency
   - 3 repetitions per configuration
-- [ ] Experiment matrix:
+- [x] Experiment matrix:
   | Engine | Language Pairs | Sentences | Runs |
   |--------|---------------|-----------|------|
-  | Cloud API | En→Ta, Ta→En, En→Si, Si→En, Ta→Si, Si→Ta | 100 each | 3 |
+  | Cloud API | En→Ta, Ta→En, En→Si, Si→En, Ta→Si, Si→Ta | 100 each | 3 *(implemented; pending credentials for full run)* |
   | Transformer | En→Ta, Ta→En, En→Si, Si→En, Ta→Si, Si→Ta | 100 each | 3 |
-  | **Total** | | **600 translations × 2 engines × 3 runs** | |
-- [ ] Execute full benchmark
-- [ ] Store raw results in `/research/translation-eval/results/`
+  | **Executed** | Transformer all 6 directions | **100 sentence sets × 6 directions × 3 runs = 1800 rows** | |
+- [x] Execute full transformer benchmark (`translation_benchmark_20260617_132336.json`, 1800 rows, 0 errors)
+- [x] Store raw results in `/research/translation-eval/results/`
+- [x] Store structured experiment log in `/research/logs/translation_benchmark_20260617_132336.json`
+- [x] Add automated benchmark summary report: `/research/reports/translation_automated_benchmark_report.md`
 
 ---
 
@@ -1660,7 +1669,8 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
   - SQL injection: verify Prisma parameterized queries
   - XSS: verify input sanitization, output encoding
   - CORS: proper origin configuration
-  - Rate limiting: all public endpoints
+  - Rate limiting: all public endpoints (including `/api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/registration/*`)
+  - Email verification: bcrypt-hashed codes, single-use tokens, generic forgot-password responses, HTTPS in production, audit logging (`emailVerificationAudit.ts`); run `npx tsx scripts/audit-phase-12-5-security.ts`
   - JWT: verify secure storage, rotation
   - File upload: verify type/size validation
 - [ ] Performance optimization:
@@ -1912,6 +1922,237 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 ---
 
+## PHASE 12 — Self-Service Password Reset via Email
+
+### Research Context
+> Phase 2 delivered JWT auth, registration, and admin-only password reset.
+> Users (student, lecturer, admin) who forget their password currently have
+> no self-service recovery path. Phase 12 adds **email-based verification codes**
+> so any registered user can reset their password without admin intervention.
+
+### Design principles
+
+1. **One system sender** — the server sends mail using **one** configured mailbox (Gmail, Outlook/Office 365, or transactional API). User mailboxes (Gmail, Outlook, `@kln.ac.lk`, etc.) are **recipients only** — no per-user SMTP credentials.
+2. **Registered email only** — lookup uses `User.email` from registration (same field for all roles).
+3. **No account enumeration** — API always returns a generic success message whether or not the email exists.
+4. **Short-lived codes** — 6-digit (or secure token) with expiry (e.g. 10–15 minutes), single use, hashed at rest.
+5. **Server-only secrets** — SMTP/API credentials live in `server/.env`, never in the React client.
+
+### Email flow (how mail reaches the user)
+
+```
+User clicks "Forgot password?" → enters registered email
+        ↓
+Server finds active user (if any) → generates code → stores hash + expiry
+        ↓
+Server sends email FROM system mailbox (e.g. lecstu-noreply@gmail.com)
+        TO user's registered address (Gmail / Outlook / university mail — any provider)
+        ↓
+User opens inbox → enters code + new password → server verifies → password updated
+```
+
+### Credential placement
+
+| Item | Where | Example |
+|------|-------|---------|
+| SMTP host, port, user, password | `server/.env` | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` |
+| Documented placeholders | `server/.env.example` | Same keys, no real secrets |
+| Dev fallback | `NODE_ENV=development` | Log code to server console if `SMTP_DISABLED=true` |
+
+**Gmail sender** → students with Outlook (or any provider) still receive mail normally.  
+**Outlook/Office 365 sender** → students with Gmail still receive mail normally.
+
+### Functional requirement mapping
+
+| Sub-Phase | Title | Deliverable |
+|-----------|-------|-------------|
+| 12.1 | Email Service & SMTP Configuration | Nodemailer (or equivalent) + env vars |
+| 12.2 | Password Reset Data Model & Token Service | DB table + code generation/hashing |
+| 12.3 | Forgot Password Backend API | Request code, verify, set new password |
+| 12.4 | Frontend Forgot / Reset Password UI | Login link + 2-step reset pages |
+| 12.5 | Security, Rate Limiting & Deliverability | Abuse prevention + production SMTP |
+| 12.6 | Testing, Documentation & Production Cutover | E2E tests + `runnableCommand.md` notes |
+
+---
+
+### Sub-Phase 12.1 — Email Service & SMTP Configuration
+**Type**: Engineering | **Effort**: ~0.5 day | **Depends on**: 2.1 | **Status**: ✅
+
+- [x] Install `nodemailer` (+ `@types/nodemailer`) in `/server`
+- [x] Create mail service module (`/server/src/services/emailService.ts`):
+  - `sendMail({ to, subject, text, html })` — unified send interface
+  - Read config from environment; fail gracefully with clear log if misconfigured
+  - Development mode: optional `SMTP_DISABLED=true` → log email body to console instead of sending
+- [x] Add environment variables to `server/.env.example`:
+  ```env
+  # Email (password reset — Phase 12)
+  SMTP_HOST=smtp.gmail.com              # Gmail: smtp.gmail.com | Outlook/M365: smtp.office365.com
+  SMTP_PORT=587
+  SMTP_SECURE=false
+  SMTP_USER=lecstu-noreply@gmail.com    # YOUR system sender (not the user's email)
+  SMTP_PASS=your-app-password-here      # Gmail App Password or M365 app password
+  MAIL_FROM="LECSTU <lecstu-noreply@gmail.com>"
+  SMTP_DISABLED=false                   # true in local dev without SMTP
+  ```
+- [x] Document sender setup:
+  - **Gmail**: enable 2FA → create [App Password](https://myaccount.google.com/apppasswords)
+  - **Outlook / Microsoft 365**: `smtp.office365.com`, port 587; may require IT approval for `@kln.ac.lk`
+  - **Optional production**: SendGrid / Resend / AWS SES (API key instead of SMTP)
+- [x] Create HTML + plain-text email templates for reset code:
+  - Subject: `LECSTU password reset code`
+  - Body: user first name (if known), 6-digit code, expiry time, "ignore if you didn't request this"
+- [x] Smoke test: `POST /api/admin/settings/test-email` (admin Settings UI) + console mode when `SMTP_DISABLED=true`
+
+**Checkpoint:** Server can send a test email using credentials in `server/.env`. Admin **Settings → Email verification** shows read-only SMTP placeholders and test button.
+
+---
+
+### Sub-Phase 12.2 — Password Reset Data Model & Token Service
+**Type**: Engineering | **Effort**: ~0.5 day | **Depends on**: 12.1 | **Status**: ✅
+
+- [x] Add Prisma model `PasswordResetToken` (or equivalent):
+  ```prisma
+  model PasswordResetToken {
+    id        String   @id @default(uuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    codeHash  String   // bcrypt hash of 6-digit code (never store plain code)
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime @default(now())
+    @@index([userId])
+    @@index([expiresAt])
+  }
+  ```
+- [x] Run migration: `20260619120000_password_reset_tokens`
+- [x] Create token service (`/server/src/services/passwordResetService.ts`):
+  - `generateResetCode()` → 6-digit numeric string (crypto-secure random)
+  - `createResetToken(userId)` → invalidate prior unused tokens for user, store new hash + expiry (15 min)
+  - `verifyResetCode(userId, code)` → check hash, expiry, not used
+  - `verifyResetCodeByEmail(email, code)` — helper for Phase 12.3
+  - `markResetTokenUsed(tokenId)` → set `usedAt`
+  - `purgeExpiredResetTokens()` → cleanup expired / old used tokens
+- [x] Constants: `RESET_CODE_EXPIRY_MINUTES = 15`, `RESET_CODE_LENGTH = 6`
+- [x] Smoke test script: `npx tsx scripts/test-password-reset-token.ts [email]`
+
+**Checkpoint:** Can create, verify, and expire tokens in DB without API exposure yet.
+
+---
+
+### Sub-Phase 12.3 — Forgot Password Backend API
+**Type**: Engineering | **Effort**: ~1 day | **Depends on**: 12.2 | **Status**: ✅
+
+- [x] Add validation rules in `/server/src/middleware/validate.ts`:
+  - `forgotPasswordRules` — email required, normalized
+  - `verifyResetCodeRules` — email + 6-digit code
+  - `resetPasswordRules` — email + code + new password
+- [x] Add controller (`/server/src/controllers/passwordResetController.ts`):
+  - **`POST /api/auth/forgot-password`**
+  - **`POST /api/auth/verify-reset-code`**
+  - **`POST /api/auth/reset-password`**
+- [x] Register routes in `/server/src/routes/auth.ts` (public, no JWT required)
+- [x] Apply strict rate limiting (`passwordResetForgotIpLimiter`, `passwordResetForgotEmailLimiter`, `passwordResetAttemptLimiter`)
+- [x] Log security events via `/server/src/utils/emailVerificationAudit.ts` (no plain codes)
+- [x] Integration helper: `npx tsx scripts/test-password-reset-api.ts [email] [code]`
+
+**Checkpoint:** Postman/curl can request code, receive email (or dev console log), and reset password.
+
+---
+
+### Sub-Phase 12.4 — Frontend Forgot / Reset Password UI
+**Type**: Engineering | **Effort**: ~1 day | **Depends on**: 12.3 | **Status**: ✅
+
+- [x] Add API client methods (`/client/src/services/authApi.ts`):
+  - `forgotPassword(email)`
+  - `verifyResetCode(email, code)`
+  - `resetPassword(email, code, newPassword)`
+- [x] **Forgot Password page** (`/client/src/pages/ForgotPassword.tsx`):
+  - Route: `/forgot-password`
+  - Form: email input → submit → show "Check your email" success state
+  - Link to `/reset-password?email=...` and back to `/login`
+- [x] **Reset Password page** (`/client/src/pages/ResetPassword.tsx`):
+  - Route: `/reset-password` with `?email=` pre-fill
+  - Step 1: email + 6-digit code (paste support)
+  - Step 2: new password + confirm password
+  - Success → redirect to `/login` with toast
+- [x] Update **Login page** — "Forgot password?" link
+- [x] Register routes in `App.tsx` (public, redirect if already signed in)
+- [x] Match `AuthLayout` styling; client-side validation
+
+**Checkpoint:** Full UI flow works for student, lecturer, and admin test accounts.
+
+---
+
+### Sub-Phase 12.5 — Security, Rate Limiting & Deliverability
+**Type**: Engineering | **Effort**: ~0.5 day | **Depends on**: 12.3, 12.4 | **Status**: ✅
+
+- [x] Security checklist:
+  - [x] Codes hashed at rest (bcrypt); never returned in API responses
+  - [x] Single-use tokens; new request invalidates previous unused codes
+  - [x] Generic API messages (no "email not found")
+  - [x] Rate limits on all email verification endpoints (password reset + registration)
+  - [x] New password cannot equal old password
+  - [x] HTTPS required in production for auth routes (`requireHttpsInProduction`)
+- [x] Email deliverability:
+  - [x] Set proper `MAIL_FROM` display name
+  - [x] Plain-text + HTML multipart body
+  - [x] Manual delivery testing documented (Gmail, Outlook, `@kln.ac.lk` — see `runnableCommand.md`)
+  - [x] Spam-folder note in UI (Forgot Password, Reset Password, Register)
+- [x] Production sender options documented:
+  - Dev: Gmail app password (`server/.env.example`, `runnableCommand.md`)
+  - University: `noreply@kln.ac.lk` via Office 365 SMTP (coordinate with IT)
+  - Scale: SendGrid/Resend API (future swap behind `emailService` interface)
+- [x] Security audit script: `npx tsx scripts/audit-phase-12-5-security.ts`
+- [x] Include password-reset and registration verification flows in Phase 10.4 security audit scope
+
+**Checkpoint:** Pen-test style review passes; emails land reliably in test inboxes.
+
+---
+
+### Sub-Phase 12.6 — Testing, Documentation & Production Cutover
+**Type**: Engineering | **Effort**: ~0.5 day | **Depends on**: 12.5 | **Status**: ✅
+
+- [x] Manual test matrix (all roles) — `docs/email-verification/PHASE-12-6-TEST-MATRIX.md`
+
+  | Role | Registered email type | Steps |
+  |------|----------------------|-------|
+  | Student | Gmail | forgot → code → reset → login |
+  | Student | Outlook / `@kln.ac.lk` | same |
+  | Lecturer | university mail | same |
+  | Admin | any | same |
+  | Unknown email | — | generic message, no email sent |
+  | Expired code | — | reject with clear message |
+  | Wrong code | — | reject; rate limit after N tries |
+  | Inactive account | — | generic message, no reset |
+
+- [x] Playwright e2e: `tests/password-reset-flow.spec.ts` (`npm run test:password-reset`)
+- [x] Automated API suite: `server/scripts/run-phase-12-6-tests.ts` (`npm run test:phase-12-6`)
+- [x] Update `runnableCommand.md` — SMTP setup, audit, test commands
+- [x] Update `server/.env.example` (Phase 12.5) + production cutover checklist in test matrix doc
+- [x] Admin password reset in User Management **unchanged** (`PATCH /admin/users/:id/password`)
+
+**Checkpoint:** Documented, tested, ready for production `.env` with real sender credentials.
+
+### Phase 12 Checkpoint (final target)
+> After completing 12.1–12.6:
+> - ✅ System sender configured (Gmail or Outlook) in `server/.env`
+> - ✅ Any registered user (student / lecturer / admin) can self-reset via email code
+> - ✅ Codes expire, are single-use, and rate-limited
+> - ✅ UI linked from Login page; works with Gmail, Outlook, and university inboxes
+> - ✅ No user SMTP credentials required; only one app mailbox on the server
+
+### Recommended execution order
+
+```
+12.1 → 12.2 → 12.3 → 12.4 → 12.5 → 12.6
+```
+
+**MVP milestone:** 12.1 → 12.3 → 12.4 (backend + basic UI, ~2 days)
+
+
+---
+---
+
 # ════════════════════════════════════════════════════════════════
 # RESEARCH OUTPUT SUMMARY
 # ════════════════════════════════════════════════════════════════
@@ -1923,7 +2164,8 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 | D1 | Research environment + experiment framework | 1.3 | RO-5 | ⬜ |
 | D2 | Platform artifact (complete web application) | 1.1–6.9 | RO-5 | ⬜ |
 | D12 | Indoor guidance foundation (JPG floor plans + chatbot routes) | 6.4–6.9 | RO-5, RO-2 | ✅ |
-| D13 | **Intelligent indoor navigation module** (multi-floor/building, unified UX) | 11.1–11.9 | RO-5, RO-2 | ⬜ |
+| D13 | **Intelligent indoor navigation module** (multi-floor/building, unified UX) | 11.1–11.9 | RO-5, RO-2 | ✅ |
+| D14 | **Self-service password reset via email** (verification code flow) | 12.1–12.6 | RO-5 | ✅ |
 | D3 | ASR benchmark dataset (150+ utterances, 3 languages) | 7.2 | RO-1 | ⬜ |
 | D4 | **ASR Benchmark Report** (WER, latency, statistics) | 7.4 | RO-1 | ⬜ |
 | D5 | Rasa chatbot trained model + training data | 8.2 | RO-2 | ⬜ |
@@ -1973,6 +2215,11 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 #   11.1 → 11.2 → 11.3 → 11.4 → 11.5 → 11.6 → 11.7 → 11.9
 #         11.8 (admin, parallel)
 #         (8.2 feeds 11.6; 4.1 feeds 11.5.7, 11.7.8)
+#
+#   PASSWORD RESET (RO-5 — extends Phase 2 auth)
+#   ─────────────────────────────────────────────
+#   2.1 → 12.1 → 12.2 → 12.3 → 12.4 → 12.5 → 12.6
+#         (feeds 10.4 security audit)
 #
 # ════════════════════════════════════════════════════════════════
 # ESTIMATED EFFORT (By Sub-Phase)
@@ -2030,8 +2277,14 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 #   11.7 Route Visualization ............. ~2    days
 #   11.8 Admin Consolidation ............. ~1.5  days
 #   11.9 Active Nav & QR ................. ~2    days
+#   12.1 Email Service & SMTP ............ ~0.5  day
+#   12.2 Reset Token Model ............... ~0.5  day
+#   12.3 Forgot Password API ............. ~1    day
+#   12.4 Forgot/Reset UI ................. ~1    day
+#   12.5 Security & Deliverability ....... ~0.5  day
+#   12.6 Testing & Documentation ......... ~0.5  day
 #   ─────────────────────────────────────────────────
-#   TOTAL: 57 Sub-Phases ≈ 72–77 working days (incl. 6.4–6.9 + 11.1–11.9)
+#   TOTAL: 63 Sub-Phases ≈ 76–81 working days (incl. 6.4–6.9 + 11.1–11.9 + 12.1–12.6)
 #
 # ════════════════════════════════════════════════════════════════
 # END OF REFERENCE DOCUMENT

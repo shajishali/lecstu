@@ -1,13 +1,13 @@
 import prisma from '../config/database';
-import { MapMarkerType, NavNodeType } from '../generated/prisma/client';
+import { MapMarkerType } from '../generated/prisma/client';
 import {
   CROSS_BUILDING_EDGE_LABEL,
   floorsForBuildingPair,
   getNeighborBuildingCodes,
   isSameFloorLinkAllowed,
+  isValidCrossBuildingDoorwayPair,
 } from '../constants/buildingConnections';
 import { FACULTY_BUILDING_CODES } from '../constants/campusTopology';
-import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 import { AppError } from '../middleware/errorHandler';
 import {
   type BuildingConnectionMeta,
@@ -85,27 +85,25 @@ export type NeighborFloorLinks = {
   expectedCount: number;
 };
 
+const ROUTING_ONLY_NODE_LABEL = /^(Path point \d+|Stairs \d+|Lift \d+)$/i;
+
+function isRoutingOnlyNavLabel(label: string): boolean {
+  return ROUTING_ONLY_NODE_LABEL.test(label.trim());
+}
+
+function hasExplicitBuildingConnection(
+  metadata: unknown,
+  targetBuildingCode: string
+): boolean {
+  const meta = parseMarkerMetadata(metadata);
+  const conn = meta.buildingConnection as BuildingConnectionMeta | undefined;
+  return conn?.targetBuildingCode === targetBuildingCode.toUpperCase();
+}
+
 function euclidean(ax: number, ay: number, bx: number, by: number): number {
   const dx = ax - bx;
   const dy = ay - by;
   return Math.sqrt(dx * dx + dy * dy);
-}
-
-function isConnectorNavType(type: NavNodeType): boolean {
-  return type === 'ENTRANCE' || type === 'EXIT' || type === 'CORRIDOR';
-}
-
-function labelMatchesTarget(label: string, targetBuildingCode: string): boolean {
-  const lower = label.toLowerCase();
-  const code = targetBuildingCode.toLowerCase();
-  if (lower.includes(code)) return true;
-  const building = getFacultyBuildingByCode(targetBuildingCode);
-  if (!building) return false;
-  return building.name
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 4)
-    .some((w) => lower.includes(w));
 }
 
 async function findConnectorNodeOnFloor(
@@ -113,11 +111,33 @@ async function findConnectorNodeOnFloor(
   targetBuildingCode: string,
   floor: number
 ): Promise<BuildingConnectorNode | null> {
+  const target = targetBuildingCode.toUpperCase();
+  const markerTypes: MapMarkerType[] = ['EXIT', 'ENTRANCE'];
+
+  const markers = await prisma.mapMarker.findMany({
+    where: { buildingId, floor, type: { in: markerTypes } },
+    include: { navNode: { select: { id: true, x: true, y: true } } },
+    orderBy: { label: 'asc' },
+  });
+
+  for (const m of markers) {
+    if (!hasExplicitBuildingConnection(m.metadata, target) || !m.navNode) continue;
+    return {
+      markerId: m.id,
+      nodeId: m.navNode.id,
+      label: m.label,
+      floor: m.floor,
+      x: m.navNode.x,
+      y: m.navNode.y,
+    };
+  }
+
   const nodes = await prisma.navNode.findMany({
     where: {
       buildingId,
       floor,
-      type: { in: ['ENTRANCE', 'EXIT', 'CORRIDOR'] },
+      type: { in: ['ENTRANCE', 'EXIT'] },
+      mapMarkerId: { not: null },
     },
     include: {
       mapMarker: {
@@ -128,79 +148,14 @@ async function findConnectorNodeOnFloor(
   });
 
   for (const n of nodes) {
-    if (n.mapMarker) {
-      const meta = parseMarkerMetadata(n.mapMarker.metadata);
-      const conn = meta.buildingConnection as BuildingConnectionMeta | undefined;
-      if (conn?.targetBuildingCode === targetBuildingCode.toUpperCase()) {
-        return {
-          markerId: n.mapMarker.id,
-          nodeId: n.id,
-          label: n.label,
-          floor: n.floor,
-          x: n.x,
-          y: n.y,
-        };
-      }
-    }
-  }
-
-  const markerTypes: MapMarkerType[] = ['EXIT', 'ENTRANCE'];
-  const markers = await prisma.mapMarker.findMany({
-    where: { buildingId, floor, type: { in: markerTypes } },
-    include: { navNode: { select: { id: true, x: true, y: true } } },
-  });
-
-  for (const m of markers) {
-    const meta = parseMarkerMetadata(m.metadata);
-    const conn = meta.buildingConnection as BuildingConnectionMeta | undefined;
-    if (conn?.targetBuildingCode === targetBuildingCode.toUpperCase() && m.navNode) {
-      return {
-        markerId: m.id,
-        nodeId: m.navNode.id,
-        label: m.label,
-        floor: m.floor,
-        x: m.navNode.x,
-        y: m.navNode.y,
-      };
-    }
-  }
-
-  for (const n of nodes) {
-    if (labelMatchesTarget(n.label, targetBuildingCode)) {
-      return {
-        markerId: n.mapMarker?.id ?? null,
-        nodeId: n.id,
-        label: n.label,
-        floor: n.floor,
-        x: n.x,
-        y: n.y,
-      };
-    }
-  }
-
-  for (const m of markers) {
-    if (!m.navNode) continue;
-    if (labelMatchesTarget(m.label, targetBuildingCode)) {
-      return {
-        markerId: m.id,
-        nodeId: m.navNode.id,
-        label: m.label,
-        floor: m.floor,
-        x: m.navNode.x,
-        y: m.navNode.y,
-      };
-    }
-  }
-
-  const corridor = nodes.find((n) => n.type === 'CORRIDOR');
-  if (corridor) {
+    if (!n.mapMarker || !hasExplicitBuildingConnection(n.mapMarker.metadata, target)) continue;
     return {
-      markerId: corridor.mapMarker?.id ?? null,
-      nodeId: corridor.id,
-      label: corridor.label,
-      floor: corridor.floor,
-      x: corridor.x,
-      y: corridor.y,
+      markerId: n.mapMarker.id,
+      nodeId: n.id,
+      label: n.mapMarker.label,
+      floor: n.floor,
+      x: n.x,
+      y: n.y,
     };
   }
 
@@ -250,9 +205,43 @@ export async function createCrossBuildingNavEdge(fromNodeId: string, toNodeId: s
   if (!from.mapMarkerId || !to.mapMarkerId) {
     throw new AppError('Select place markers on each floor (not path points)', 400);
   }
+  if (isRoutingOnlyNavLabel(from.label) || isRoutingOnlyNavLabel(to.label)) {
+    throw new AppError('Cannot link path points or stairs/lifts — pick doorway or room markers only', 400);
+  }
   if (!isSameFloorLinkAllowed(from.building.code, to.building.code, from.floor)) {
     throw new AppError(
-      `${from.building.code} and ${to.building.code} cannot be linked on floor ${from.floor}. Administration ↔ Laboratory links are only allowed on floors 0–9.`,
+      `${from.building.code} and ${to.building.code} cannot be linked on floor ${from.floor}. Check which buildings may connect for ${from.building.code}.`,
+      400
+    );
+  }
+
+  const [fromMarker, toMarker] = await Promise.all([
+    from.mapMarkerId
+      ? prisma.mapMarker.findUnique({
+          where: { id: from.mapMarkerId },
+          select: { metadata: true, label: true },
+        })
+      : null,
+    to.mapMarkerId
+      ? prisma.mapMarker.findUnique({
+          where: { id: to.mapMarkerId },
+          select: { metadata: true, label: true },
+        })
+      : null,
+  ]);
+
+  if (
+    !isValidCrossBuildingDoorwayPair(
+      from.building.code,
+      to.building.code,
+      fromMarker?.label ?? from.label,
+      toMarker?.label ?? to.label,
+      fromMarker?.metadata,
+      toMarker?.metadata
+    )
+  ) {
+    throw new AppError(
+      `Invalid doorway pair: ${from.building.code} [${from.label}] cannot link directly to ${to.building.code} [${to.label}]. Use the doorway that faces ${to.building.code} on the ${from.building.code} side.`,
       400
     );
   }
@@ -385,27 +374,9 @@ export type FloorLinkSuggestion = {
   reason: string;
 };
 
-export async function suggestBuildingFloorPairs(buildingId: string): Promise<FloorLinkSuggestion[]> {
-  const data = await listBuildingFloorConnectors(buildingId);
-  const suggestions: FloorLinkSuggestion[] = [];
-
-  for (const neighbor of data.neighbors) {
-    for (const row of neighbor.floors) {
-      if (!row.allowed || row.paired) continue;
-      if (!row.localNode || !row.remoteNode) continue;
-      suggestions.push({
-        floor: row.floor,
-        fromNodeId: row.localNode.nodeId,
-        toNodeId: row.remoteNode.nodeId,
-        fromLabel: row.localNode.label,
-        toLabel: row.remoteNode.label,
-        neighborCode: neighbor.neighborCode,
-        reason: `Same-floor doorway on ${row.floor === 0 ? 'Ground' : `F${row.floor}`}`,
-      });
-    }
-  }
-
-  return suggestions;
+export async function suggestBuildingFloorPairs(_buildingId: string): Promise<FloorLinkSuggestion[]> {
+  // Manual links only — never auto-suggest corridor/path-point pairings.
+  return [];
 }
 
 export async function pairBuildingFloorNodes(fromNodeId: string, toNodeId: string) {
@@ -429,7 +400,9 @@ export async function listConnectorNodesOnFloor(
     orderBy: [{ label: 'asc' }],
   });
 
-  return nodes.map((n) => {
+  return nodes
+    .filter((n) => n.mapMarker && !isRoutingOnlyNavLabel(n.mapMarker.label) && !isRoutingOnlyNavLabel(n.label))
+    .map((n) => {
     const display = placeDisplayCoords(n, lockedByMarkerId);
     return {
       markerId: n.mapMarker!.id,
@@ -579,30 +552,8 @@ export async function getFloorConnectorLinkOptions(
   };
 }
 
-export async function autoPairBuildingFloorConnectors(buildingId: string, dryRun = false) {
-  const suggestions = await suggestBuildingFloorPairs(buildingId);
-  const created: FloorLinkSuggestion[] = [];
-
-  for (const s of suggestions) {
-    if (dryRun) {
-      created.push(s);
-      continue;
-    }
-    try {
-      await pairBuildingFloorNodes(s.fromNodeId, s.toNodeId);
-      created.push(s);
-    } catch (err) {
-      const e = err as { statusCode?: number; message?: string };
-      const code = e.statusCode;
-      const msg = e.message ?? '';
-      // Skip duplicates and legacy path-point links without blocking routing.
-      if (code === 409) continue;
-      if (code === 400 && msg.includes('Select place markers on each floor')) continue;
-      throw err;
-    }
-  }
-
-  return { paired: created.length, suggestions: suggestions.length, pairs: created };
+export async function autoPairBuildingFloorConnectors(_buildingId: string, _dryRun = false) {
+  return { paired: 0, suggestions: 0, pairs: [] as FloorLinkSuggestion[] };
 }
 
 /** @deprecated Use listBuildingFloorConnectors */

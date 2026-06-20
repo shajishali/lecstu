@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
-import { clientToImagePercent } from '@utils/floorPlanCanvas';
+import { clientToImagePercent, setFloorPlanCanvasAspect } from '@utils/floorPlanCanvas';
 import {
   formatMarkerTypeLabel,
   isMapMarkerType,
@@ -667,6 +667,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
             src={imageUrl}
             alt={floorLabel(floor)}
             draggable={false}
+            onLoad={(e) => setFloorPlanCanvasAspect(imgRef.current, e.currentTarget)}
           />
           {(data?.markers ?? []).map((m) => (
             <button

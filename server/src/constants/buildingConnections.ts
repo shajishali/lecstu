@@ -1,12 +1,16 @@
 import type { FacultyBuildingCode } from './facultyBuildings';
+import { parseMarkerMetadata, type BuildingConnectionMeta } from '../utils/markerMetadata';
 
 export const CROSS_BUILDING_EDGE_LABEL = 'cross-building';
 
-const FACULTY_ADJACENCY: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
-  ADMIN: ['ACAD'],
-  ACAD: ['ADMIN', 'LAB'],
-  LAB: ['ACAD'],
+/** Same-floor horizontal link neighbors (admin dropdown + routing adjacency). */
+export const FACULTY_SAME_FLOOR_NEIGHBORS: Record<FacultyBuildingCode, FacultyBuildingCode[]> = {
+  ADMIN: ['ACAD', 'LAB'],
+  ACAD: ['ADMIN'],
+  LAB: ['ADMIN'],
 };
+
+const FACULTY_ADJACENCY = FACULTY_SAME_FLOOR_NEIGHBORS;
 
 function isFacultyCode(code: string): code is FacultyBuildingCode {
   return code === 'ADMIN' || code === 'ACAD' || code === 'LAB';
@@ -20,7 +24,7 @@ export type BuildingConnectionDef = {
   label: string;
 };
 
-/** Four connection points: ADMIN↔ACAD and ACAD↔LAB (ADMIN↔LAB only via ACAD). */
+/** Doorway markers: ADMIN↔ACAD and ADMIN↔LAB (no direct ACAD↔LAB). */
 export const FACULTY_BUILDING_CONNECTIONS: BuildingConnectionDef[] = [
   {
     hostBuildingCode: 'ADMIN',
@@ -35,16 +39,16 @@ export const FACULTY_BUILDING_CONNECTIONS: BuildingConnectionDef[] = [
     label: 'Entrance from Administration Building',
   },
   {
-    hostBuildingCode: 'ACAD',
+    hostBuildingCode: 'ADMIN',
     targetBuildingCode: 'LAB',
     markerType: 'EXIT',
     label: 'Exit to Laboratory Building',
   },
   {
     hostBuildingCode: 'LAB',
-    targetBuildingCode: 'ACAD',
+    targetBuildingCode: 'ADMIN',
     markerType: 'ENTRANCE',
-    label: 'Entrance from Academic Building',
+    label: 'Entrance from Administration Building',
   },
 ];
 
@@ -66,11 +70,7 @@ export function isDirectBuildingLinkAllowed(fromCode: string, toCode: string): b
 export function getNeighborBuildingCodes(code: string, _floor: number): FacultyBuildingCode[] {
   const c = code.toUpperCase();
   if (!isFacultyCode(c)) return [];
-
-  if (c === 'ADMIN') return ['ACAD'];
-  if (c === 'ACAD') return ['ADMIN', 'LAB'];
-  if (c === 'LAB') return ['ACAD'];
-  return [];
+  return [...FACULTY_SAME_FLOOR_NEIGHBORS[c]];
 }
 
 /** Floors where a same-floor link between two buildings is allowed. */
@@ -104,13 +104,58 @@ export function isSameFloorLinkAllowed(
   if (!isFacultyCode(from) || !isFacultyCode(to)) return false;
   if (!isDirectBuildingLinkAllowed(from, to)) return false;
 
-  // No direct ADMIN ↔ LAB — cross-building routes use Academic as hub.
-  if (
-    (from === 'ADMIN' && to === 'LAB') ||
-    (from === 'LAB' && to === 'ADMIN')
-  ) {
-    return false;
+  return true;
+}
+
+/** Which neighbor building a doorway marker faces (metadata first, then label heuristics). */
+export function inferDoorwayTargetBuilding(
+  hostBuildingCode: string,
+  label: string,
+  metadata?: unknown
+): FacultyBuildingCode | null {
+  const meta = parseMarkerMetadata(metadata);
+  const conn = meta.buildingConnection as BuildingConnectionMeta | undefined;
+  if (conn?.targetBuildingCode && isFacultyCode(conn.targetBuildingCode)) {
+    return conn.targetBuildingCode;
   }
 
-  return true;
+  const host = hostBuildingCode.toUpperCase();
+  const L = label.toUpperCase();
+
+  if (host === 'ADMIN') {
+    if (L.includes('ACADEMIC') || /\bACAD\b/.test(L)) return 'ACAD';
+    if (L.includes('LABORATORY') || /\bLAB\b/.test(L)) return 'LAB';
+    if (L.includes('FACULTY') && !L.includes('ACADEMIC') && !L.includes('LABORATORY')) return 'ACAD';
+  }
+  if (host === 'ACAD') {
+    if (L.includes('ADMIN') || L.includes('ADMINISTRATION')) return 'ADMIN';
+    if (L.includes('FACULTY')) return 'ADMIN';
+  }
+  if (host === 'LAB') {
+    if (L.includes('ADMIN') || L.includes('ADMINISTRATION')) return 'ADMIN';
+  }
+
+  return null;
+}
+
+/** Cross-building edge must connect matching doorway pairs (ADMIN ACAD door ↔ ACAD, not ADMIN ACAD door ↔ LAB). */
+export function isValidCrossBuildingDoorwayPair(
+  fromCode: string,
+  toCode: string,
+  fromLabel: string,
+  toLabel: string,
+  fromMetadata?: unknown,
+  toMetadata?: unknown
+): boolean {
+  if (!isDirectBuildingLinkAllowed(fromCode, toCode)) return false;
+
+  const fromTarget = inferDoorwayTargetBuilding(fromCode, fromLabel, fromMetadata);
+  const toTarget = inferDoorwayTargetBuilding(toCode, toLabel, toMetadata);
+
+  if (fromTarget && toTarget) {
+    return fromTarget === toCode.toUpperCase() && toTarget === fromCode.toUpperCase();
+  }
+
+  // Legacy markers without metadata: require topology only (admin should add metadata).
+  return fromTarget == null && toTarget == null;
 }

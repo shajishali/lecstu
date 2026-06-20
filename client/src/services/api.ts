@@ -17,12 +17,23 @@ const api = axios.create({
   },
 });
 
-const SKIP_REFRESH = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/me'];
+const SKIP_REFRESH = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/me',
+  '/auth/registration/send-code',
+  '/auth/registration/verify-code',
+  '/auth/forgot-password',
+  '/auth/verify-reset-code',
+  '/auth/reset-password',
+];
 
 let last403Toast = 0;
 const TOAST_COOLDOWN_MS = 5000;
 
 let refreshPromise: Promise<string | null> | null = null;
+let refreshFailed = false;
 
 async function refreshAccessToken(): Promise<string | null> {
   const storedRefresh = getRefreshToken();
@@ -30,13 +41,23 @@ async function refreshAccessToken(): Promise<string | null> {
     clearAuthTokens();
     return null;
   }
+  if (refreshFailed) {
+    return null;
+  }
   if (!refreshPromise) {
     refreshPromise = api
       .post<{ success: boolean; data?: { accessToken?: string; refreshToken?: string } }>(
         '/auth/refresh',
-        { refreshToken: storedRefresh }
+        { refreshToken: storedRefresh },
+        { validateStatus: (status) => status < 500 },
       )
       .then((res) => {
+        if (res.status !== 200) {
+          refreshFailed = true;
+          clearAuthTokens();
+          return null;
+        }
+        refreshFailed = false;
         const token = res.data?.data?.accessToken ?? null;
         const nextRefresh = res.data?.data?.refreshToken ?? null;
         if (token) setAccessToken(token);
@@ -44,6 +65,7 @@ async function refreshAccessToken(): Promise<string | null> {
         return token;
       })
       .catch(() => {
+        refreshFailed = true;
         clearAuthTokens();
         return null;
       })
@@ -52,6 +74,22 @@ async function refreshAccessToken(): Promise<string | null> {
       });
   }
   return refreshPromise;
+}
+
+/** Refresh tokens only when a refresh token exists. Returns true if access token is available after. */
+export async function tryRefreshSession(): Promise<boolean> {
+  if (getAccessToken() && !isAccessTokenExpired()) {
+    return true;
+  }
+  if (!getRefreshToken()) {
+    return false;
+  }
+  const token = await refreshAccessToken();
+  return Boolean(token);
+}
+
+export function resetAuthRefreshState(): void {
+  refreshFailed = false;
 }
 
 api.interceptors.request.use(async (config) => {
@@ -98,7 +136,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       }
       clearAuthTokens();
-      if (!window.location.pathname.startsWith('/login')) {
+      if (!window.location.pathname.startsWith('/login') &&
+          !window.location.pathname.startsWith('/forgot-password') &&
+          !window.location.pathname.startsWith('/reset-password')) {
         showToast('info', 'Your session expired. Please sign in again.');
         window.location.href = '/login';
       }

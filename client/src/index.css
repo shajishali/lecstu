@@ -315,7 +315,7 @@
 .indoor-canvas-wrap {
   @apply min-w-0;
 }
-/* Shared floor plan map — same layout as Locations & publish (no fixed aspect-ratio letterbox). */
+/* Shared floor plan map — same layout as Locations & publish. */
 .fp-map-panel {
   @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
 }
@@ -495,8 +495,6 @@
 .find-my-way-loading {
   @apply animate-pulse;
 }
-/* Student route map — fixed canvas height so every floor plan renders in the
-   same box (portrait and landscape). Matches the Find My Way preview size. */
 .find-my-way-map .fp-route-canvas {
   @apply flex h-[20rem] w-full items-center justify-center;
 }
@@ -1565,6 +1563,15 @@
     background-attachment: local;
   }
   .lecturer-schedule-page .tt-slot-group-merged,
+  .lecturer-schedule-page .tt-lecture-card-wrap-clickable {
+    @apply cursor-pointer;
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-clickable:focus-visible {
+    @apply outline outline-2 outline-offset-1 outline-[var(--color-primary)] z-[3];
+  }
+  .lecturer-schedule-page .tt-lecture-card-wrap-clickable:hover .tt-lecture-card {
+    @apply shadow-md ring-1 ring-slate-300/80;
+  }
   .lecturer-schedule-page .tt-lecture-card-wrap {
     @apply z-[1] overflow-hidden;
     contain: layout paint;
@@ -1573,7 +1580,7 @@
     @apply z-[2];
   }
   .lecturer-schedule-page .tt-lecture-card {
-    @apply flex h-full min-h-0 cursor-default flex-col items-stretch justify-start gap-0 overflow-hidden rounded-md px-0 py-0 shadow-sm transition-none hover:shadow-sm;
+    @apply flex h-full min-h-0 cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-md px-0 py-0 shadow-sm transition-shadow hover:shadow-sm;
   }
   .lecturer-schedule-page .tt-lecture-card-top {
     @apply flex shrink-0 items-start justify-between gap-1.5 border-b border-slate-200/80 bg-white/95 px-2 py-1.5;
@@ -1809,7 +1816,8 @@
     max-height: 92vh;
   }
   .timetable-page .tt-edit-modal,
-  .timetable-page .tt-create-modal {
+  .timetable-page .tt-create-modal,
+  .timetable-page .tt-lecturer-detail-modal {
     min-height: auto;
   }
   .timetable-page .tt-edit-modal {
@@ -1838,5 +1846,14 @@
   }
   .tt-detail-row span {
     @apply text-slate-800;
+  }
+  .tt-lecturer-detail-modal .tt-lecturer-detail-session:first-of-type {
+    @apply mt-0;
+  }
+  .tt-lecturer-detail-modal .modal-body {
+    @apply pb-2;
+  }
+  .tt-lecturer-detail-footer {
+    @apply flex justify-center border-t border-slate-200 p-3;
   }
 }

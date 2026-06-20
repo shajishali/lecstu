@@ -17,6 +17,10 @@ import {
 import { deriveTimetableCodeFromName } from '../services/lecturerInitialsMatch';
 import { userProfileSelect } from '../constants/userProfileSelect';
 import type { StudyYear } from '../../prisma/fct-faculty-config';
+import {
+  consumeRegistrationVerification,
+} from '../services/registrationVerificationService';
+import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -39,8 +43,21 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       programCode,
       studyYear,
       pathwayCode,
+      verificationCode,
+      recoveryEmail,
     } = req.body;
     const normalizedEmail = normalizeEmail(email);
+
+    const code = String(verificationCode || '').trim();
+    if (!/^\d{6}$/.test(code)) {
+      throw new AppError('Email verification code is required. Send and enter the 6-digit code.', 400);
+    }
+
+    const verification = await consumeRegistrationVerification(normalizedEmail, code);
+    if (!verification.valid) {
+      logEmailVerificationEvent('register', req, { email: normalizedEmail, success: false });
+      throw new AppError('Invalid or expired verification code. Request a new code and try again.', 400);
+    }
 
     const existing = await prisma.user.findFirst({
       where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
@@ -66,9 +83,18 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const lecturerCode =
       role === 'LECTURER' ? deriveTimetableCodeFromName(String(firstName), String(lastName)) : null;
 
+    let normalizedRecovery: string | null = null;
+    if (recoveryEmail && String(recoveryEmail).trim()) {
+      normalizedRecovery = normalizeEmail(String(recoveryEmail));
+      if (normalizedRecovery === normalizedEmail) {
+        throw new AppError('Recovery email must be different from your login email', 400);
+      }
+    }
+
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
+        recoveryEmail: normalizedRecovery,
         password: hashedPassword,
         firstName,
         lastName,
@@ -129,6 +155,8 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const refreshToken = generateRefreshToken(payload);
 
     setAuthCookies(res, accessToken, refreshToken);
+
+    logEmailVerificationEvent('register', req, { userId: user.id, email: normalizedEmail, success: true });
 
     res.status(201).json({
       success: true,

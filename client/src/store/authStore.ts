@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import api from '@services/api';
 import {
   clearAuthTokens,
   getAccessToken,
+  getRefreshToken,
   setAccessToken,
   setRefreshToken,
 } from '@services/authToken';
+import api, { tryRefreshSession, resetAuthRefreshState } from '@services/api';
 import type { User, LoginRequest, RegisterRequest, AuthResponse } from '../types/auth';
 
 interface AuthState {
@@ -27,6 +28,8 @@ function getPrimaryGroupId(user: User | null | undefined): string | undefined {
   return user?.studentGroupMemberships?.[0]?.group?.id;
 }
 
+let bootstrapSessionPromise: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -35,22 +38,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (data) => {
     set({ isLoading: true, error: null });
-    try {
-      const res = await api.post<AuthResponse>('/auth/login', data);
-      setAccessToken(res.data.data.accessToken);
-      if (res.data.data.refreshToken) setRefreshToken(res.data.data.refreshToken);
-      set({
-        user: res.data.data.user,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-    } catch (err: any) {
+    const res = await api.post<AuthResponse>('/auth/login', data, {
+      validateStatus: (status) => status < 500,
+    });
+    if (res.status === 401 || !res.data?.data?.accessToken) {
       set({
         isLoading: false,
-        error: err.response?.data?.message || 'Login failed',
+        error: res.data?.message || 'Invalid email or password',
       });
-      throw err;
+      return;
     }
+    setAccessToken(res.data.data.accessToken);
+    if (res.data.data.refreshToken) setRefreshToken(res.data.data.refreshToken);
+    resetAuthRefreshState();
+    set({
+      user: res.data.data.user,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   register: async (data) => {
@@ -59,6 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await api.post<AuthResponse>('/auth/register', data);
       setAccessToken(res.data.data.accessToken);
       if (res.data.data.refreshToken) setRefreshToken(res.data.data.refreshToken);
+      resetAuthRefreshState();
       set({
         user: res.data.data.user,
         isAuthenticated: true,
@@ -80,44 +86,56 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // proceed with local cleanup even if request fails
     }
     clearAuthTokens();
+    resetAuthRefreshState();
     set({ user: null, isAuthenticated: false, error: null });
   },
 
   getMe: async (opts) => {
     const silent = opts?.silent === true;
-    if (!silent) {
-      set({ isLoading: true });
-    }
-    try {
-      if (!getAccessToken()) {
-        await api.post('/auth/refresh').catch(() => {});
+    const run = async () => {
+      if (!silent) {
+        set({ isLoading: true });
       }
-      let res = await api.get<{ success: boolean; data: { user: User | null } }>('/auth/me');
-      let user = res.data.data.user;
-      if (!user) {
-        try {
-          await api.post('/auth/refresh');
-          res = await api.get('/auth/me');
-          user = res.data.data.user;
-        } catch {
-          /* no valid session */
+      try {
+        if (!getAccessToken() && !getRefreshToken()) {
+          set({ user: null, isAuthenticated: false, isLoading: false });
+          return;
         }
+
+        if (!getAccessToken() && getRefreshToken()) {
+          await tryRefreshSession();
+        }
+
+        const res = await api.get<{ success: boolean; data: { user: User | null } }>('/auth/me');
+        const user = res.data.data.user;
+        const prevGroupId = getPrimaryGroupId(get().user);
+        const nextGroupId = getPrimaryGroupId(user);
+        set({
+          user: user ?? null,
+          isAuthenticated: !!user,
+          isLoading: false,
+        });
+        if (!user) clearAuthTokens();
+        if (prevGroupId !== nextGroupId && nextGroupId) {
+          window.dispatchEvent(new CustomEvent('timetable-updated'));
+        }
+      } catch {
+        clearAuthTokens();
+        set({ user: null, isAuthenticated: false, isLoading: false });
       }
-      const prevGroupId = getPrimaryGroupId(get().user);
-      const nextGroupId = getPrimaryGroupId(user);
-      set({
-        user: user ?? null,
-        isAuthenticated: !!user,
-        isLoading: false,
-      });
-      if (!user) clearAuthTokens();
-      if (prevGroupId !== nextGroupId && nextGroupId) {
-        window.dispatchEvent(new CustomEvent('timetable-updated'));
-      }
-    } catch {
-      clearAuthTokens();
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    };
+
+    if (silent) {
+      await run();
+      return;
     }
+
+    if (!bootstrapSessionPromise) {
+      bootstrapSessionPromise = run().finally(() => {
+        bootstrapSessionPromise = null;
+      });
+    }
+    await bootstrapSessionPromise;
   },
 
   setUser: (user: User) => {

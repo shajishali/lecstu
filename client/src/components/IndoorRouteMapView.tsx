@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
 import api from '@services/api';
@@ -50,7 +50,7 @@ function floorLabel(floor: number): string {
   return floor === 0 ? 'Ground floor' : `Floor ${floor}`;
 }
 
-/** Student map — same data + markup as admin Test route (A*). */
+/** Student map ÔÇö same data + markup as admin Test route (A*). */
 export default function IndoorRouteMapView({
   buildingId,
   floor,
@@ -110,7 +110,7 @@ export default function IndoorRouteMapView({
     })();
   }, [buildingId, floor]);
 
-  /** Polyline points for this floor — exact coordinates from the server (same as admin). */
+  /** Polyline points for this floor ÔÇö exact coordinates from the server (same as admin). */
   const routePathPoints = useMemo(() => {
     const onFloor = polyline.filter(
       (p) => p.floor === floor && (!p.buildingId || p.buildingId === buildingId)
@@ -292,7 +292,7 @@ export default function IndoorRouteMapView({
         createPortal(
           <div className="fp-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="Floor plan">
             <div className="fp-fullscreen-toolbar">
-              <span className="fp-fullscreen-title">{floorLabel(floor)} · floor plan</span>
+              <span className="fp-fullscreen-title">{floorLabel(floor)} ┬À floor plan</span>
               <button
                 type="button"
                 className="fp-fullscreen-close"
@@ -306,7 +306,7 @@ export default function IndoorRouteMapView({
               <ZoomableFloorPlanMap
                 focusPoints={routePathPoints}
                 autoFitKey={`${buildingId}-${floor}-${routePathPoints.length}-${stepIndex ?? 0}`}
-                hint="Scroll or pinch to zoom · drag to pan · Esc to close"
+                hint="Scroll or pinch to zoom ┬À drag to pan ┬À Esc to close"
                 className="fp-fullscreen-zoom"
               >
                 <FloorPlanRouteMap {...mapProps} />

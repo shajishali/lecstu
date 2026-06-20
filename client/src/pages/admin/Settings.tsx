@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Globe,
   KeyRound,
+  Mail,
   MapPin,
   RefreshCw,
   Save,
@@ -22,8 +23,22 @@ import {
 interface ServiceStatus {
   label: string;
   healthy: boolean;
-  url: string;
+  url?: string;
   enabled?: boolean;
+}
+
+interface EmailVerificationStatus extends ServiceStatus {
+  mode: 'smtp' | 'console' | 'unconfigured';
+  configured: boolean;
+  passwordResetReady: boolean;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure?: boolean;
+  smtpUser: string;
+  mailFrom: string;
+  senderMasked: string;
+  smtpDisabled: boolean;
+  hasAppPassword: boolean;
 }
 
 interface AdminSettings {
@@ -41,6 +56,7 @@ interface AdminSettings {
     asr: ServiceStatus;
     indoorNavigation: ServiceStatus;
     floorplanVision: ServiceStatus;
+    email: EmailVerificationStatus;
   };
   facultySetup: {
     ready: boolean;
@@ -131,6 +147,16 @@ export default function Settings() {
     confirmPassword: '',
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [savingEmailSettings, setSavingEmailSettings] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPass: '',
+    mailFrom: 'LECSTU <lecstu.system@gmail.com>',
+    smtpDisabled: false,
+  });
 
   const loadSettings = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -150,6 +176,19 @@ export default function Settings() {
     void loadSettings();
   }, [loadSettings]);
 
+  useEffect(() => {
+    const email = settings?.services.email;
+    if (!email) return;
+    setEmailForm({
+      smtpHost: email.smtpHost && email.smtpHost !== '(console log)' ? email.smtpHost : 'smtp.gmail.com',
+      smtpPort: String(email.smtpPort || 587),
+      smtpUser: email.smtpUser || '',
+      smtpPass: '',
+      mailFrom: email.mailFrom || 'LECSTU <lecstu.system@gmail.com>',
+      smtpDisabled: email.smtpDisabled ?? false,
+    });
+  }, [settings?.services.email]);
+
   const handleSeedFaculty = async () => {
     setSeeding(true);
     try {
@@ -160,6 +199,50 @@ export default function Settings() {
       showApiErrorToast(err, 'Failed to seed faculty buildings');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setSendingTestEmail(true);
+    try {
+      const res = await api.post<{ success: boolean; message: string }>('/admin/settings/test-email');
+      showToast('success', res.data.message);
+    } catch (err) {
+      showApiErrorToast(err, 'Failed to send test email');
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
+  const handleSaveEmailSettings = async (e: FormEvent) => {
+    e.preventDefault();
+    setSavingEmailSettings(true);
+    try {
+      const res = await api.patch<{ success: boolean; message: string; data: { email: EmailVerificationStatus } }>(
+        '/admin/settings/email',
+        {
+          smtpHost: emailForm.smtpHost.trim(),
+          smtpPort: parseInt(emailForm.smtpPort, 10) || 587,
+          smtpUser: emailForm.smtpUser.trim(),
+          mailFrom: emailForm.mailFrom.trim(),
+          smtpDisabled: emailForm.smtpDisabled,
+          ...(emailForm.smtpPass.trim() ? { smtpPass: emailForm.smtpPass.trim() } : {}),
+        },
+      );
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              services: { ...prev.services, email: res.data.data.email },
+            }
+          : prev,
+      );
+      setEmailForm((prev) => ({ ...prev, smtpPass: '' }));
+      showToast('success', res.data.message || 'Email settings saved');
+    } catch (err) {
+      showApiErrorToast(err, 'Failed to save email settings');
+    } finally {
+      setSavingEmailSettings(false);
     }
   };
 
@@ -197,8 +280,19 @@ export default function Settings() {
   }
 
   const serviceEntries = settings
-    ? (Object.entries(settings.services) as [keyof AdminSettings['services'], ServiceStatus][])
+    ? (Object.entries(settings.services).filter(([key]) => key !== 'email') as [
+        keyof Omit<AdminSettings['services'], 'email'>,
+        ServiceStatus,
+      ][])
     : [];
+
+  const emailVerification = settings?.services.email;
+
+  const emailModeLabel: Record<EmailVerificationStatus['mode'], string> = {
+    smtp: 'SMTP (live send)',
+    console: 'Console log (dev)',
+    unconfigured: 'Not configured',
+  };
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -327,6 +421,170 @@ export default function Settings() {
         </SectionCard>
       </div>
 
+      {emailVerification && (
+        <SectionCard
+          title="Email verification (password reset)"
+          description="System sender for forgot-password codes — saved on the server (admin only)"
+          icon={<Mail size={20} />}
+          action={
+            <StatusBadge
+              ok={emailVerification.passwordResetReady}
+              label={emailVerification.passwordResetReady ? 'Ready' : 'Not ready'}
+            />
+          }
+        >
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-medium">Phase 12 — sender mailbox (Gmail or Outlook)</p>
+            <p className="mt-1 text-amber-800">
+              Users receive codes at their <strong>registered email</strong> (Gmail, Outlook, or
+              university mail). Configure the one system sender below.
+            </p>
+          </div>
+
+          <form onSubmit={handleSaveEmailSettings} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="smtpHost" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  SMTP host
+                </label>
+                <input
+                  id="smtpHost"
+                  type="text"
+                  value={emailForm.smtpHost}
+                  onChange={(e) => setEmailForm((p) => ({ ...p, smtpHost: e.target.value }))}
+                  placeholder="smtp.gmail.com"
+                  className={inputCls}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="smtpPort" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  SMTP port
+                </label>
+                <input
+                  id="smtpPort"
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={emailForm.smtpPort}
+                  onChange={(e) => setEmailForm((p) => ({ ...p, smtpPort: e.target.value }))}
+                  className={inputCls}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="senderEmail" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Sender email (SMTP_USER)
+                </label>
+                <input
+                  id="senderEmail"
+                  type="email"
+                  value={emailForm.smtpUser}
+                  onChange={(e) => setEmailForm((p) => ({ ...p, smtpUser: e.target.value }))}
+                  placeholder="lecstu.system@gmail.com"
+                  className={inputCls}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="smtpPass" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  App password
+                </label>
+                <input
+                  id="smtpPass"
+                  type="password"
+                  value={emailForm.smtpPass}
+                  onChange={(e) => setEmailForm((p) => ({ ...p, smtpPass: e.target.value }))}
+                  placeholder={
+                    emailVerification.hasAppPassword
+                      ? 'Leave blank to keep current password'
+                      : 'Gmail App Password (16 characters)'
+                  }
+                  autoComplete="new-password"
+                  className={inputCls}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="mailFrom" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  From display name (MAIL_FROM)
+                </label>
+                <input
+                  id="mailFrom"
+                  type="text"
+                  value={emailForm.mailFrom}
+                  onChange={(e) => setEmailForm((p) => ({ ...p, mailFrom: e.target.value }))}
+                  placeholder='LECSTU <lecstu.system@gmail.com>'
+                  className={inputCls}
+                  required
+                />
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={emailForm.smtpDisabled}
+                onChange={(e) => setEmailForm((p) => ({ ...p, smtpDisabled: e.target.checked }))}
+                className="mt-1 h-4 w-4 rounded border-slate-300"
+              />
+              <span className="text-sm text-slate-700">
+                <span className="font-medium">Console mode (do not send real email)</span>
+                <span className="mt-0.5 block text-slate-500">
+                  Log emails to the API terminal instead of SMTP — useful for local testing.
+                </span>
+              </span>
+            </label>
+
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3">
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Delivery mode</dt>
+                <dd className="mt-1 text-sm font-medium text-slate-800">
+                  {emailModeLabel[emailVerification.mode]}
+                </dd>
+              </div>
+              <div className="rounded-lg border border-slate-100 bg-slate-50/60 px-4 py-3">
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Forgot-password flow</dt>
+                <dd className="mt-1 text-sm font-medium text-slate-800">
+                  {emailVerification.configured
+                    ? 'SMTP ready — Phase 12.2+ will enable user reset'
+                    : emailVerification.mode === 'console'
+                      ? 'Dev mode — codes log to API terminal'
+                      : 'Add app password and save, or enable console mode'}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={savingEmailSettings}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
+              >
+                {savingEmailSettings ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <Save size={16} />
+                )}
+                Save email settings
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSendTestEmail()}
+                disabled={sendingTestEmail || !emailVerification.passwordResetReady}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sendingTestEmail ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                ) : (
+                  <Mail size={16} />
+                )}
+                Send test email to my inbox
+              </button>
+            </div>
+          </form>
+        </SectionCard>
+      )}
+
       <SectionCard
         title="AI & platform services"
         description="Live health checks for backend and Python microservices"
@@ -341,7 +599,7 @@ export default function Settings() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-800">{svc.label}</p>
                 <p className="truncate text-xs text-slate-500" title={svc.url}>
-                  {svc.url}
+                  {svc.url || '—'}
                 </p>
                 {svc.enabled === false && (
                   <p className="mt-1 text-xs text-amber-700">Disabled in server config</p>

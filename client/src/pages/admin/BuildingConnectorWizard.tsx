@@ -9,7 +9,6 @@ import {
   Eye,
   Link2,
   RefreshCw,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 
@@ -64,11 +63,9 @@ export default function BuildingConnectorWizard({
 }: Props) {
   const [loading, setLoading] = useState(true);
   const [pairing, setPairing] = useState(false);
-  const [autoPairing, setAutoPairing] = useState(false);
   const [options, setOptions] = useState<FloorLinkOptions | null>(null);
   const [totalPaired, setTotalPaired] = useState(0);
   const [totalExpected, setTotalExpected] = useState(0);
-  const [suggestionCount, setSuggestionCount] = useState(0);
   const [preview, setPreview] = useState<BuildingLinkPreviewTarget | null>(null);
 
   const [selectedNeighborCode, setSelectedNeighborCode] = useState('');
@@ -77,23 +74,14 @@ export default function BuildingConnectorWizard({
 
   const loadSummary = useCallback(async () => {
     try {
-      const [statusRes, sugRes] = await Promise.all([
-        api.get(`/admin/buildings/${buildingId}/building-connectors`),
-        api.get(`/admin/buildings/${buildingId}/building-connectors/suggestions`),
-      ]);
+      const statusRes = await api.get(`/admin/buildings/${buildingId}/building-connectors`);
       const data = statusRes.data.data;
       setTotalPaired(data.totalPaired ?? 0);
       setTotalExpected(data.totalExpected ?? 0);
-      const suggestions = sugRes.data.data ?? [];
-      setSuggestionCount(
-        currentFloor === undefined
-          ? suggestions.length
-          : suggestions.filter((s: { floor: number }) => s.floor === currentFloor).length
-      );
     } catch {
       /* summary is optional */
     }
-  }, [buildingId, currentFloor]);
+  }, [buildingId]);
 
   const loadFloorOptions = useCallback(async () => {
     if (!buildingId || currentFloor === undefined) return;
@@ -158,23 +146,6 @@ export default function BuildingConnectorWizard({
     }
   };
 
-  const runAutoPair = async () => {
-    setAutoPairing(true);
-    try {
-      const res = await api.post(`/admin/buildings/${buildingId}/building-connectors/auto-pair`, {});
-      const paired = res.data.data?.paired ?? 0;
-      showToast(
-        'success',
-        paired > 0 ? `Auto-linked ${paired} same-floor connection(s)` : 'No new links to create'
-      );
-      await loadFloorOptions();
-    } catch (err) {
-      showApiErrorToast(err, 'Auto-pair failed');
-    } finally {
-      setAutoPairing(false);
-    }
-  };
-
   const openPreview = (local: ConnectorNode, remote: ConnectorNode & { buildingCode: string }) => {
     if (!options?.selectedNeighbor) return;
     setPreview({
@@ -224,12 +195,12 @@ export default function BuildingConnectorWizard({
 
   const connectionRules =
     buildingCode === 'ADMIN'
-      ? 'Administration can link to Academic on every shared floor, and to Laboratory on floors 0–9.'
+      ? 'Administration can link to Academic or Laboratory on the same floor — manual links only.'
       : buildingCode === 'ACAD'
-        ? 'Academic links to Administration only on the same floor.'
+        ? 'Academic can link to Administration only on the same floor — manual links only.'
         : buildingCode === 'LAB'
-          ? 'Laboratory links to Administration only on floors 0–9 (Administration has no floors 10–11).'
-          : 'Select doorway or corridor locations on the same floor in each building.';
+          ? 'Laboratory can link to Administration only on the same floor — manual links only.'
+          : 'Pick doorway or room markers on the same floor in each building.';
 
   return (
     <div className="space-y-6">
@@ -259,15 +230,6 @@ export default function BuildingConnectorWizard({
             >
               <RefreshCw size={14} /> Refresh
             </button>
-            <button
-              type="button"
-              disabled={autoPairing || suggestionCount === 0}
-              onClick={() => void runAutoPair()}
-              className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-sm text-white disabled:opacity-50"
-            >
-              <Sparkles size={14} />
-              {autoPairing ? 'Linking…' : `Auto-link (${suggestionCount})`}
-            </button>
           </div>
         </div>
         <p className="text-sm font-medium text-slate-700">
@@ -278,8 +240,8 @@ export default function BuildingConnectorWizard({
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h4 className="mb-1 font-semibold text-slate-900">Create a horizontal link</h4>
         <p className="mb-4 text-sm text-slate-500">
-          Step 1 — pick the building on this floor. Step 2 — pick one place (room, entrance, etc.) in
-          each building to connect. Path points are not shown.
+          Step 1 — pick the building on this floor. Step 2 — pick one doorway or room in each
+          building to connect manually. Path points, stairs, and lifts cannot be used.
         </p>
 
         {connectableNeighbors.length === 0 ? (

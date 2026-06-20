@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from '@components/ConfirmDialog';
 import { createQrCode, deleteQrCode, listQrCodes } from '@services/indoorNavApi';
-import { clientToImagePercent } from '@utils/floorPlanCanvas';
+import { clientToImagePercent, setFloorPlanCanvasAspect } from '@utils/floorPlanCanvas';
 import { floorPlanImageUrl } from '@utils/floorPlanImageUrl';
 
 function floorLabel(floor: number): string {
@@ -989,6 +989,9 @@ export default function IndoorNavGraphEditor({
                   src={imageUrl}
                   alt={`${ctx.building.name} paths`}
                   draggable={false}
+                  onLoad={(e) =>
+                    setFloorPlanCanvasAspect(canvasRef.current, e.currentTarget)
+                  }
                 />
                 <svg
                   className={`fp-map-overlay indoor-nav-edges ${

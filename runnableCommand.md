@@ -129,6 +129,50 @@ Excel timetable import does **not** need the PDF terminal.
 
 ---
 
+## Email verification (password reset & registration)
+
+Uses the **API server only** — no extra terminal. Configure in `server\.env` (see `.env.example`).
+
+**Gmail (development):**
+
+1. Create an [App Password](https://myaccount.google.com/apppasswords) for the sender mailbox.
+2. In `server\.env`: set `SMTP_PASS`, `MAIL_FROM="LECSTU <your@gmail.com>"`, and `SMTP_DISABLED=false`.
+3. Restart Terminal 1 (API).
+
+**Admin UI:** Admin → Settings → Email verification can override SMTP and toggle console mode (`server/data/email-settings.json`).
+
+**University mail (@stu.kln.ac.lk):** Microsoft 365 often quarantines external Gmail senders. Users should set a **personal recovery email** in Profile, or IT should provide `noreply@kln.ac.lk` via Office 365 SMTP.
+
+**Security audit (Phase 12.5):**
+
+```powershell
+cd d:\Reasearch\lecstu\server
+npx tsx scripts/audit-phase-12-5-security.ts
+```
+
+**Automated tests (Phase 12.6):**
+
+```powershell
+cd d:\Reasearch\lecstu\server
+npm run test:phase-12-6
+
+cd d:\Reasearch\lecstu
+npm run test:password-reset
+```
+
+Manual inbox matrix and production cutover checklist: `docs/email-verification/PHASE-12-6-TEST-MATRIX.md`
+
+**Before hosting (remove test logins only):**
+
+```powershell
+cd d:\Reasearch\lecstu\server
+npm run db:remove-test-hosting-accounts
+```
+
+See `hostingSteps.md` Phase 0 and Phase 7.3 for PuTTY / database export.
+
+---
+
 ## Retrain chatbot (only after changing `data/nlu.yml`)
 
 ```powershell

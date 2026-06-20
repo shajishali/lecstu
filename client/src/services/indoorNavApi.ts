@@ -5,7 +5,7 @@ export type IndoorRouteResult = {
   destinationLabel?: string;
   startLabel?: string;
   startFloor?: number;
-  steps?: Array<{ instruction: string; floor: number; polylineIndex?: number } | string>;
+  steps?: Array<{ instruction: string; floor: number; polylineIndex?: number; buildingId?: string } | string>;
   polyline?: Array<{ x: number; y: number; floor: number; buildingId?: string; label?: string }>;
   distanceMeters?: number;
   estimatedMinutes?: number;
@@ -19,7 +19,7 @@ export type IndoorRouteResult = {
     pathNodeIds: string[];
     polyline: Array<{ x: number; y: number; floor: number; buildingId?: string; label?: string }>;
     segments: Array<{ buildingId: string; floor: number; polyline: [number, number][] }>;
-    steps: Array<{ instruction: string; floor: number; polylineIndex?: number }>;
+    steps: Array<{ instruction: string; floor: number; polylineIndex?: number; buildingId?: string }>;
   }>;
   fromBuilding?: { id: string; name: string; code: string };
   building?: { id: string; name: string; code: string };

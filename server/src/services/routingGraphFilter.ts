@@ -1,4 +1,8 @@
-import { CROSS_BUILDING_EDGE_LABEL, isSameFloorLinkAllowed } from '../constants/buildingConnections';
+import {
+  CROSS_BUILDING_EDGE_LABEL,
+  isSameFloorLinkAllowed,
+  isValidCrossBuildingDoorwayPair,
+} from '../constants/buildingConnections';
 import { isVerticalConnectorType } from '../utils/verticalConnectorLabels';
 
 export type RoutingGraphNode = {
@@ -7,6 +11,8 @@ export type RoutingGraphNode = {
   floor: number;
   type: string;
   mapMarkerId: string | null;
+  label?: string;
+  mapMarkerMetadata?: unknown;
 };
 
 export type RoutingGraphEdge = {
@@ -44,7 +50,15 @@ export function filterRoutingEdges<T extends RoutingGraphEdge>(
         to.mapMarkerId != null &&
         from.floor === to.floor &&
         from.buildingId !== to.buildingId &&
-        isSameFloorLinkAllowed(fromCode, toCode, from.floor)
+        isSameFloorLinkAllowed(fromCode, toCode, from.floor) &&
+        isValidCrossBuildingDoorwayPair(
+          fromCode,
+          toCode,
+          from.label ?? '',
+          to.label ?? '',
+          from.mapMarkerMetadata,
+          to.mapMarkerMetadata
+        )
       );
     }
 

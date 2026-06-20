@@ -12,6 +12,15 @@ import { isValidFloorIndex } from './floorPlanStorage';
 import { getStudentTodayOnCampus } from './studentTodayCampusService';
 import { FACULTY_BUILDING_CODES } from '../constants/campusTopology';
 import { filterRoutingEdges } from './routingGraphFilter';
+import {
+  buildPhasedCampusPath,
+  estimatePhasedPathWeight,
+  findDoorwayNavNodeId,
+  getFeasibleTransferFloors,
+  pathfindWithinBuilding,
+  pickCampusTransferFloor,
+  resolveBuildingPath,
+} from './campusRoutePlanner';
 
 const NODE_INCLUDE = {
   mapMarker: {
@@ -861,22 +870,78 @@ async function loadFacultyCampusGraph() {
 
   const nodes = await prisma.navNode.findMany({
     where: { buildingId: { in: buildingIds } },
+    include: { mapMarker: { select: { metadata: true } } },
   });
-  const nodeIds = nodes.map((n) => n.id);
+  const routingNodes = nodes.map((n) => ({
+    ...n,
+    mapMarkerMetadata: n.mapMarker?.metadata,
+  }));
+  const nodeIds = routingNodes.map((n) => n.id);
   const allEdges = await prisma.navEdge.findMany({
     where: {
       fromNodeId: { in: nodeIds },
       toNodeId: { in: nodeIds },
     },
   });
-  const edges = filterRoutingEdges(nodes, allEdges, buildingCodeById);
+  const edges = filterRoutingEdges(routingNodes, allEdges, buildingCodeById);
 
-  return { nodes, edges, buildingById };
+  return { nodes: routingNodes, edges, buildingById };
 }
 
 /** Admin-configured horizontal links are used as-is — no auto-pair during student routing. */
 async function ensureCampusConnectors(_fromBuildingId: string, _toBuildingId: string) {
   /* no-op */
+}
+
+type CampusGraphNode = Awaited<ReturnType<typeof loadFacultyCampusGraph>>['nodes'][number];
+
+/** Walk through corridor graph inside a transit building when campus routing only hops doorways. */
+async function expandTransitBuildingPaths(
+  pathNodeIds: string[],
+  nodes: CampusGraphNode[],
+  buildingCodeById: Map<string, string>
+): Promise<string[]> {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const runs: { buildingId: string; ids: string[] }[] = [];
+
+  for (const id of pathNodeIds) {
+    const n = byId.get(id);
+    if (!n) continue;
+    const last = runs[runs.length - 1];
+    if (last?.buildingId === n.buildingId) last.ids.push(id);
+    else runs.push({ buildingId: n.buildingId, ids: [id] });
+  }
+
+  const out: string[] = [];
+  for (let r = 0; r < runs.length; r++) {
+    const run = runs[r];
+    const isMiddle = r > 0 && r < runs.length - 1;
+    if (isMiddle && run.ids.length === 1) {
+      const entryId = run.ids[0];
+      const entry = byId.get(entryId);
+      const nextBuildingId = runs[r + 1].buildingId;
+      const nextCode = buildingCodeById.get(nextBuildingId);
+      const hostCode = buildingCodeById.get(run.buildingId);
+      if (entry && nextCode && hostCode) {
+        const exitId = findDoorwayNavNodeId(
+          nodes,
+          run.buildingId,
+          entry.floor,
+          nextCode,
+          buildingCodeById
+        );
+        if (exitId && exitId !== entryId) {
+          const interior = await pathfindWithinBuilding(run.buildingId, entryId, exitId);
+          if (interior && interior.length >= 2) {
+            out.push(...interior);
+            continue;
+          }
+        }
+      }
+    }
+    out.push(...run.ids);
+  }
+  return out;
 }
 
 function buildCampusRouteLegs(
@@ -968,21 +1033,61 @@ async function computeCampusIndoorRoute(options: {
   }
 
   const { nodes, edges, buildingById } = await loadFacultyCampusGraph();
-  const pathResult = findShortestPath(nodes, edges, startNode.id, goalResult.node.id);
+  const buildingCodeById = new Map([...buildingById.entries()].map(([id, b]) => [id, b.code]));
+  const codeToBuildingId = new Map([...buildingById.entries()].map(([id, b]) => [b.code, id]));
 
-  if (!pathResult?.pathNodeIds) {
-    return {
-      found: false as const,
-      building: { id: toBuilding.id, name: toBuilding.name, code: toBuilding.code },
-      fromBuilding: { id: fromBuilding.id, name: fromBuilding.name, code: fromBuilding.code },
-      message:
-        'No cross-building path found. Pair ACAD↔ADMIN and ACAD↔LAB doorway links on the same floor in Admin → Building links, and connect stairs/lift between floors where needed.',
-    };
+  const buildingCodes = resolveBuildingPath(fromBuilding.code, toBuilding.code);
+  const destFloor = goalResult.marker?.floor ?? goalResult.node.floor;
+  let expandedPathIds: string[] | null = null;
+  let pathfindingAlgorithm: 'phased-campus' | 'astar' | 'dijkstra' = 'phased-campus';
+
+  if (buildingCodes && buildingCodes.length >= 2) {
+    const feasibleFloors = getFeasibleTransferFloors(
+      nodes,
+      edges,
+      buildingCodes,
+      buildingCodeById,
+      codeToBuildingId
+    );
+    if (feasibleFloors.length > 0) {
+      const transferFloor = pickCampusTransferFloor(feasibleFloors, destFloor);
+      expandedPathIds = await buildPhasedCampusPath({
+        buildingCodes,
+        nodes,
+        startNodeId: startNode.id,
+        goalNodeId: goalResult.node.id,
+        transferFloor,
+        buildingCodeById,
+        codeToBuildingId,
+      });
+    }
+  }
+
+  if (!expandedPathIds) {
+    const pathResult = findShortestPath(nodes, edges, startNode.id, goalResult.node.id);
+    if (!pathResult?.pathNodeIds) {
+      return {
+        found: false as const,
+        building: { id: toBuilding.id, name: toBuilding.name, code: toBuilding.code },
+        fromBuilding: { id: fromBuilding.id, name: fromBuilding.name, code: fromBuilding.code },
+        message:
+          'No cross-building path found. Pair ADMIN↔ACAD and ADMIN↔LAB doorway links on the same floor in Admin → Building links, and connect stairs/lift between floors where needed.',
+      };
+    }
+    expandedPathIds = await expandTransitBuildingPaths(
+      pathResult.pathNodeIds,
+      nodes,
+      buildingCodeById
+    );
+    pathfindingAlgorithm = pathResult.algorithm;
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const pathNodes = pathResult.pathNodeIds.map((id) => byId.get(id)!).filter(Boolean);
-  let totalDistance = pathResult.totalWeight ?? 0;
+  const pathNodes = expandedPathIds.map((id) => byId.get(id)!).filter(Boolean);
+  let totalDistance =
+    pathfindingAlgorithm === 'phased-campus'
+      ? estimatePhasedPathWeight(expandedPathIds, nodes, edges)
+      : 0;
   if (totalDistance === 0) {
     for (let i = 1; i < pathNodes.length; i++) {
       const prev = pathNodes[i - 1];
@@ -1042,13 +1147,16 @@ async function computeCampusIndoorRoute(options: {
       : undefined
   );
 
-  const buildingPath = [...new Set(pathNodeLite.map((n) => n.buildingCode).filter(Boolean))] as string[];
+  const buildingPath =
+    buildingCodes && buildingCodes.length >= 2
+      ? buildingCodes
+      : ([...new Set(pathNodeLite.map((n) => n.buildingCode).filter(Boolean))] as string[]);
   const crossBuilding = buildingPath.length > 1;
   const legs =
     crossBuilding
       ? buildCampusRouteLegs(
           pathNodeLite,
-          pathResult.pathNodeIds,
+          expandedPathIds,
           stepRows,
           polyline,
           buildingById
@@ -1070,14 +1178,14 @@ async function computeCampusIndoorRoute(options: {
       : null,
     startNodeId: startNode.id,
     goalNodeId: goalResult.node.id,
-    pathNodeIds: pathResult.pathNodeIds,
+    pathNodeIds: expandedPathIds,
     polyline,
     steps: stepRows.map((s) => s.instruction),
     stepDetails: stepRows,
     distance: Math.round(totalDistance * 10) / 10,
     distanceMeters: routeMetrics.distanceMeters,
     estimatedMinutes: routeMetrics.estimatedMinutes,
-    pathfindingAlgorithm: pathResult.algorithm,
+    pathfindingAlgorithm,
   };
 }
 

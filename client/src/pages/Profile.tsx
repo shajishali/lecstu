@@ -30,6 +30,8 @@ export default function Profile() {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    email: '',
+    recoveryEmail: '',
     phone: '',
     departmentId: '',
     groupId: '',
@@ -51,6 +53,8 @@ export default function Profile() {
       setForm({
         firstName: user.firstName,
         lastName: user.lastName,
+        email: user.email,
+        recoveryEmail: user.recoveryEmail ?? '',
         phone: user.phone || '',
         departmentId: user.department?.id || '',
         groupId: primaryGroup?.id || '',
@@ -126,6 +130,8 @@ export default function Profile() {
       await api.patch('/profile', {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        recoveryEmail: form.recoveryEmail.trim() || null,
         phone: form.phone.trim() || null,
         ...(user.role !== 'STUDENT' && { departmentId: form.departmentId || null }),
         ...(user.role === 'LECTURER' && {
@@ -258,7 +264,36 @@ export default function Profile() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pEmail" className="text-sm font-semibold text-slate-700">Email</label>
-              <input id="pEmail" type="email" value={user.email} disabled className={inputCls} />
+              <input
+                id="pEmail"
+                type="email"
+                value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                autoComplete="email"
+                required
+                className={inputCls}
+              />
+              <p className="text-xs text-slate-500">
+                Used to sign in. Password reset codes are sent to your recovery email when set.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="pRecoveryEmail" className="text-sm font-semibold text-slate-700">
+                Recovery email (password reset)
+              </label>
+              <input
+                id="pRecoveryEmail"
+                type="email"
+                value={form.recoveryEmail}
+                onChange={(e) => update('recoveryEmail', e.target.value)}
+                autoComplete="email"
+                placeholder="your.personal@gmail.com"
+                className={inputCls}
+              />
+              <p className="text-xs text-slate-500">
+                Optional personal Gmail/Outlook for reset codes. Recommended if your university
+                (@stu.kln.ac.lk) inbox blocks external senders.
+              </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pPhone" className="text-sm font-semibold text-slate-700">Phone</label>

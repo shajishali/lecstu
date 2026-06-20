@@ -17,7 +17,12 @@ export type PathNodeLite = {
   buildingCode?: string;
 };
 
-export type TurnStep = { instruction: string; floor: number; polylineIndex: number };
+export type TurnStep = {
+  instruction: string;
+  floor: number;
+  polylineIndex: number;
+  buildingId?: string;
+};
 
 function segmentBearingDeg(from: { x: number; y: number }, to: { x: number; y: number }): number {
   const dx = to.x - from.x;
@@ -62,14 +67,17 @@ function verticalNodeOnFloor(node: PathNodeLite): PathNodeLite | null {
 }
 
 function shaftKeyForVerticalHop(hopPrev: PathNodeLite, hopCur: PathNodeLite): string | null {
-  const keys = [hopPrev, hopCur]
-    .map(verticalNodeOnFloor)
-    .filter((n): n is PathNodeLite => n != null)
-    .map((n) => verticalConnectorKey(n.type, n.label))
-    .filter((k): k is string => k != null);
-  if (keys.length === 0) return null;
-  if (keys.length === 2 && keys[0] !== keys[1]) return null;
-  return keys[0];
+  const prevV = verticalNodeOnFloor(hopPrev);
+  const curV = verticalNodeOnFloor(hopCur);
+  if (prevV && curV) {
+    const a = verticalConnectorKey(prevV.type, prevV.label);
+    const b = verticalConnectorKey(curV.type, curV.label);
+    if (a && b && a === b) return a;
+    return null;
+  }
+  const single = prevV ?? curV;
+  if (!single) return null;
+  return verticalConnectorKey(single.type, single.label);
 }
 
 function extendVerticalShaftRun(
@@ -133,6 +141,7 @@ export function buildTurnByTurnSteps(
     }`,
     floor: start.floor,
     polylineIndex: 0,
+    buildingId: start.buildingId,
   });
 
   for (let i = 1; i < pathNodes.length; i++) {
@@ -146,11 +155,13 @@ export function buildTurnByTurnSteps(
         instruction: `Exit ${exitLabel}`,
         floor: prev.floor,
         polylineIndex: Math.max(0, i - 1),
+        buildingId: prev.buildingId,
       });
       steps.push({
         instruction: `Enter ${enterLabel}`,
         floor: cur.floor,
         polylineIndex: i,
+        buildingId: cur.buildingId,
       });
     }
 
@@ -161,6 +172,7 @@ export function buildTurnByTurnSteps(
           instruction: `Go to ${floorLabelShort(cur.floor)}`,
           floor: cur.floor,
           polylineIndex: i,
+          buildingId: cur.buildingId,
         });
         continue;
       }
@@ -177,20 +189,25 @@ export function buildTurnByTurnSteps(
       const vertical = endFloor > prev.floor ? 'up' : 'down';
       const exitName = connectorDisplayName(exitNode.type, exitNode.label);
 
+      const shaftBuildingId = enterNode.buildingId ?? cur.buildingId ?? prev.buildingId;
+
       steps.push({
         instruction: `Walk to ${enterName}`,
         floor: prev.floor,
         polylineIndex: Math.max(0, i - 1),
+        buildingId: shaftBuildingId,
       });
       steps.push({
         instruction: `Take ${enterName} ${vertical} to ${floorLabelShort(endFloor)}`,
         floor: prev.floor,
         polylineIndex: Math.max(0, i - 1),
+        buildingId: shaftBuildingId,
       });
       steps.push({
         instruction: `Exit at ${exitName} on ${floorLabelShort(endFloor)} and continue`,
         floor: endFloor,
         polylineIndex: lastIdx,
+        buildingId: pathNodes[lastIdx]?.buildingId ?? cur.buildingId,
       });
 
       i = lastIdx;
@@ -221,16 +238,18 @@ export function buildTurnByTurnSteps(
       else instruction = `Go straight into ${cur.label}`;
     }
 
-    steps.push({ instruction, floor: cur.floor, polylineIndex: i });
+    steps.push({ instruction, floor: cur.floor, polylineIndex: i, buildingId: cur.buildingId });
   }
 
   const lastMotion = steps[steps.length - 1]?.instruction ?? '';
+  const lastNode = pathNodes[pathNodes.length - 1];
 
   if (finalMarker && !lastMotion.toLowerCase().includes(finalMarker.label.toLowerCase())) {
     steps.push({
       instruction: `Enter ${finalMarker.label}`,
       floor: finalMarker.floor,
       polylineIndex: pathNodes.length - 1,
+      buildingId: lastNode?.buildingId,
     });
   }
 
@@ -239,6 +258,7 @@ export function buildTurnByTurnSteps(
       instruction: `You have arrived at ${destinationLabel}`,
       floor: destFloor,
       polylineIndex: pathNodes.length - 1,
+      buildingId: lastNode?.buildingId,
     });
   }
 

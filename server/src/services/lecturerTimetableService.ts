@@ -125,6 +125,7 @@ export interface LecturerMasterSlotUpdate {
   month?: number;
   week?: number;
   courseName?: string;
+  courseCode?: string;
   hallName?: string;
   hallDoorPassword?: string | null;
   notes?: string | null;
@@ -187,7 +188,26 @@ export async function updateLecturerMasterSlot(
     throw new AppError(`Schedule conflict: ${conflicts[0].message}`, 409);
   }
 
-  if (patch.courseName?.trim()) {
+  let courseId: string | undefined;
+  if (patch.courseCode?.trim()) {
+    const newCode = patch.courseCode.trim().toUpperCase();
+    if (newCode !== existing.course.code) {
+      const lecturer = await prisma.user.findUnique({
+        where: { id: lecturerId },
+        select: { departmentId: true },
+      });
+      courseId = await resolveOrCreateCourse(
+        newCode,
+        patch.courseName ?? existing.course.name,
+        lecturer?.departmentId ?? null,
+      );
+    } else if (patch.courseName?.trim()) {
+      await prisma.course.update({
+        where: { id: existing.course.id },
+        data: { name: patch.courseName.trim() },
+      });
+    }
+  } else if (patch.courseName?.trim()) {
     await prisma.course.update({
       where: { id: existing.course.id },
       data: { name: patch.courseName.trim() },
@@ -202,6 +222,7 @@ export async function updateLecturerMasterSlot(
     month: number;
     week: number;
     hallId: string;
+    courseId?: string;
     notes?: string | null;
     lecturerId?: string;
   } = {
@@ -213,6 +234,10 @@ export async function updateLecturerMasterSlot(
     week,
     hallId,
   };
+
+  if (courseId) {
+    updateData.courseId = courseId;
+  }
 
   if (patch.notes !== undefined) {
     updateData.notes = patch.notes?.trim() || null;

@@ -5,6 +5,8 @@ import prisma from '../config/database';
 import { getFacultySetupStatus } from '../services/facultyBuildingSeed';
 import { isNavigationEngineHealthy } from '../services/floorNavigationEngineService';
 import { isVisionServiceHealthy } from '../services/floorPlanVisionService';
+import { getEmailServiceStatus, sendTestEmail, saveEmailAdminSettings } from '../services/emailService';
+import { AppError } from '../middleware/errorHandler';
 
 const APPOINTMENT_MIN_NOTICE_HOURS = 24;
 
@@ -28,6 +30,8 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
       isVisionServiceHealthy(),
       getFacultySetupStatus(prisma),
     ]);
+
+    const emailStatus = getEmailServiceStatus();
 
     res.json({
       success: true,
@@ -61,6 +65,10 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
             url: config.floorplanVision.serviceUrl,
             enabled: config.floorplanVision.enabled,
           },
+          email: {
+            ...emailStatus,
+            healthy: emailStatus.passwordResetReady,
+          },
         },
         facultySetup: {
           ready: facultySetup.ready,
@@ -83,6 +91,57 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
           })),
         },
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateAdminEmailSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { smtpHost, smtpPort, smtpUser, smtpPass, mailFrom, smtpDisabled, smtpSecure } = req.body;
+
+    const email = saveEmailAdminSettings({
+      smtpHost: String(smtpHost).trim(),
+      smtpPort: Number(smtpPort),
+      smtpUser: String(smtpUser).trim().toLowerCase(),
+      ...(smtpPass ? { smtpPass: String(smtpPass).trim() } : {}),
+      mailFrom: String(mailFrom).trim(),
+      smtpDisabled: Boolean(smtpDisabled),
+      ...(smtpSecure !== undefined ? { smtpSecure: Boolean(smtpSecure) } : {}),
+    });
+
+    res.json({
+      success: true,
+      message: 'Email settings saved',
+      data: { email: { ...email, healthy: email.passwordResetReady } },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sendAdminTestEmail(req: Request, res: Response, next: NextFunction) {
+  try {
+    const adminEmail = req.user?.email;
+    if (!adminEmail) throw new AppError('Admin email not found', 400);
+
+    const status = getEmailServiceStatus();
+    if (!status.passwordResetReady) {
+      throw new AppError(
+        'Email service is not ready. Set SMTP_* in server/.env or SMTP_DISABLED=true for console mode.',
+        503,
+      );
+    }
+
+    const result = await sendTestEmail(adminEmail);
+    res.json({
+      success: true,
+      message:
+        result.mode === 'smtp'
+          ? `Test email sent to ${adminEmail}`
+          : `SMTP disabled — test email logged to server console (check API terminal)`,
+      data: { mode: result.mode, delivered: result.delivered, to: adminEmail },
     });
   } catch (err) {
     next(err);

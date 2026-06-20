@@ -203,6 +203,7 @@ export async function patchMyTimetableSlot(req: Request, res: Response, next: Ne
       month,
       week,
       courseName,
+      courseCode,
       hallName,
       hallDoorPassword,
       notes,
@@ -214,6 +215,7 @@ export async function patchMyTimetableSlot(req: Request, res: Response, next: Ne
       month?: number;
       week?: number;
       courseName?: string;
+      courseCode?: string;
       hallName?: string;
       hallDoorPassword?: string | null;
       notes?: string | null;
@@ -227,6 +229,7 @@ export async function patchMyTimetableSlot(req: Request, res: Response, next: Ne
       month != null ||
       week != null ||
       courseName?.trim() ||
+      courseCode?.trim() ||
       hallName?.trim() ||
       hallDoorPassword !== undefined ||
       notes !== undefined;
@@ -242,6 +245,7 @@ export async function patchMyTimetableSlot(req: Request, res: Response, next: Ne
       month,
       week,
       courseName,
+      courseCode,
       hallName,
       hallDoorPassword,
       notes,

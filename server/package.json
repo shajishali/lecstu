@@ -21,11 +21,13 @@
     "db:seed-faculty-buildings": "tsx scripts/seed-faculty-buildings.ts",
     "db:seed-phase-11-demo": "tsx scripts/seed-phase-11-demo.ts",
     "check:phase-11-9": "tsx scripts/check-phase-11-9.ts",
+    "test:phase-12-6": "tsx scripts/run-phase-12-6-tests.ts",
     "db:import-floorplans": "tsx scripts/import-floorplans-from-folder.ts",
     "db:scrape-fct-lecturers": "tsx scripts/scrape-fct-lecturers.ts",
     "db:seed-et-y1": "tsx scripts/seed-et-y1-timetable.ts",
     "db:reset": "npx prisma migrate reset",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "db:remove-test-hosting-accounts": "tsx scripts/remove-test-hosting-accounts.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -53,6 +55,7 @@
     "form-data": "^4.0.5",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "nodemailer": "^9.0.1",
     "pdf-parse": "^2.4.5",
     "pg": "^8.18.0",
     "xlsx": "^0.18.5"
@@ -65,6 +68,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.2.3",
+    "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.16.0",
     "nodemon": "^3.1.11",
     "prisma": "^7.4.0",

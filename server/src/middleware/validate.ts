@@ -19,6 +19,15 @@ export const registerRules = [
     .isEmail()
     .normalizeEmail(emailNormalize)
     .withMessage('Valid email is required'),
+  body('verificationCode')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Email verification code must be 6 digits'),
+  body('recoveryEmail')
+    .optional({ values: 'null' })
+    .trim()
+    .custom((val) => val === '' || val === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)))
+    .withMessage('Valid recovery email is required'),
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters')
@@ -79,6 +88,17 @@ export const profileUpdateRules = [
     .optional()
     .trim()
     .escape(),
+  body('email')
+    .optional()
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  body('recoveryEmail')
+    .optional({ values: 'null' })
+    .trim()
+    .custom((val) => val === '' || val === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)))
+    .withMessage('Valid recovery email is required'),
   body('departmentId')
     .optional({ values: 'null' })
     .custom((val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val))
@@ -285,6 +305,17 @@ export const adminUpdateUserRules = [
 
 export const adminResetPasswordRules = [...passwordRules, handleValidationErrors];
 
+export const adminEmailSettingsRules = [
+  body('smtpHost').trim().notEmpty().withMessage('SMTP host is required'),
+  body('smtpPort').isInt({ min: 1, max: 65535 }).withMessage('SMTP port must be between 1 and 65535'),
+  body('smtpUser').trim().isEmail().normalizeEmail(emailNormalize).withMessage('Valid sender email is required'),
+  body('smtpPass').optional().trim(),
+  body('mailFrom').trim().notEmpty().withMessage('From display name is required'),
+  body('smtpDisabled').optional().isBoolean().withMessage('smtpDisabled must be boolean'),
+  body('smtpSecure').optional().isBoolean().withMessage('smtpSecure must be boolean'),
+  handleValidationErrors,
+];
+
 export const passwordChangeRules = [
   body('currentPassword')
     .notEmpty()
@@ -296,5 +327,75 @@ export const passwordChangeRules = [
     .withMessage('Password must contain an uppercase letter')
     .matches(/[0-9]/)
     .withMessage('Password must contain a number'),
+  handleValidationErrors,
+];
+
+export const forgotPasswordRules = [
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  handleValidationErrors,
+];
+
+export const verifyResetCodeRules = [
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  body('code')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Reset code must be 6 digits'),
+  handleValidationErrors,
+];
+
+export const resetPasswordRules = [
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  body('code')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Reset code must be 6 digits'),
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters')
+    .matches(/[A-Z]/)
+    .withMessage('Password must contain an uppercase letter')
+    .matches(/[0-9]/)
+    .withMessage('Password must contain a number'),
+  handleValidationErrors,
+];
+
+export const sendRegistrationCodeRules = [
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  body('firstName').optional().trim().escape(),
+  body('recoveryEmail')
+    .optional({ values: 'null' })
+    .trim()
+    .custom((val) => val === '' || val === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)))
+    .withMessage('Valid recovery email is required'),
+  handleValidationErrors,
+];
+
+export const verifyRegistrationCodeRules = [
+  body('email')
+    .trim()
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Valid email is required'),
+  body('code')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Verification code must be 6 digits'),
   handleValidationErrors,
 ];

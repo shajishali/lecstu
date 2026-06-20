@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { createNotification } from './notificationService';
+import { sendUpcomingLectureReminders } from './lectureReminderService';
 
 const REMINDER_MINUTES = 30;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // Every 5 minutes
@@ -74,11 +75,14 @@ function runReminderCheck(): void {
   void sendUpcomingReminders().catch((err) => {
     console.warn('[LECSTU] Appointment reminder check failed:', err);
   });
+  void sendUpcomingLectureReminders().catch((err) => {
+    console.warn('[LECSTU] Lecture reminder check failed:', err);
+  });
 }
 
 export function startReminderJob(): void {
   if (intervalId) return;
   runReminderCheck();
   intervalId = setInterval(runReminderCheck, CHECK_INTERVAL_MS);
-  console.log('[LECSTU] Appointment reminder job started (every 5 min)');
+  console.log('[LECSTU] Reminder job started — appointments + lectures (every 5 min)');
 }

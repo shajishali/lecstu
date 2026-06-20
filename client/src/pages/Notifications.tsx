@@ -13,7 +13,7 @@ interface NotificationItem {
   title: string;
   message: string;
   isRead: boolean;
-  metadata?: { appointmentId?: string; hallBookingId?: string };
+  metadata?: { appointmentId?: string; hallBookingId?: string; slotId?: string };
   createdAt: string;
 }
 
@@ -57,6 +57,8 @@ export default function Notifications() {
     if (!n.isRead) handleMarkRead(n.id);
     if (user?.role === 'ADMIN' && n.type === 'HALL_BOOKING_REQUEST') {
       navigate('/admin/approvals');
+    } else if (n.type === 'LECTURE_REMINDER' || n.type === 'TIMETABLE_CHANGE') {
+      navigate('/timetable');
     } else if (n.metadata?.appointmentId) {
       navigate('/appointments');
     } else if (n.metadata?.hallBookingId) {

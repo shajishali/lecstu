@@ -16,7 +16,8 @@
     "build": "npm run build:server & npm run build:client",
     "lint": "npm run lint --prefix client & npm run lint --prefix server",
     "test": "playwright test",
-    "test:timetable": "playwright test tests/student-timetable.spec.ts --reporter=list"
+    "test:timetable": "playwright test tests/student-timetable.spec.ts --reporter=list",
+    "test:password-reset": "playwright test tests/password-reset-flow.spec.ts --reporter=list"
   },
   "devDependencies": {
     "@playwright/test": "latest",

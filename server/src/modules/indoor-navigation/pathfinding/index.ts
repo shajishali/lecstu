@@ -7,7 +7,7 @@ import { DEFAULT_METERS_PER_PERCENT, WALKING_SPEED_MPS } from './types';
 export * from './types';
 export { astar } from './astar';
 export { dijkstra } from './dijkstra';
-export { euclidean, buildAdjacency } from './graph-utils';
+export { euclidean, buildAdjacency, pathTotalWeight } from './graph-utils';
 
 /** Run A* first; fall back to Dijkstra if no path found. */
 export function findShortestPath(

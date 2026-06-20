@@ -247,10 +247,12 @@ export default function LecturerMySchedule() {
   const [refreshing, setRefreshing] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null);
+  const [detailBlock, setDetailBlock] = useState<MergedTimeBlock | null>(null);
   const [editDay, setEditDay] = useState<DayOfWeek>('MONDAY');
   const [editStart, setEditStart] = useState('09:00');
   const [editEnd, setEditEnd] = useState('10:00');
   const [editCourseName, setEditCourseName] = useState('');
+  const [editCourseCode, setEditCourseCode] = useState('');
   const [editHallName, setEditHallName] = useState('');
   const [editDoorPassword, setEditDoorPassword] = useState('');
   const [editNotes, setEditNotes] = useState('');
@@ -355,16 +357,27 @@ export default function LecturerMySchedule() {
       )
       .map((s) => s.group.name)
       .sort();
+    setDetailBlock(null);
     setSelectedSlot(slot);
     setEditMergedClasses(mergedPeers);
     setEditDay(slot.dayOfWeek as DayOfWeek);
     setEditStart(slot.startTime);
     setEditEnd(slot.endTime);
     setEditCourseName(slot.course.name);
+    setEditCourseCode(slot.course.code);
     setEditHallName(slot.hall.name);
     setEditDoorPassword(slot.hall.doorPassword || '');
     setEditNotes(slot.notes || '');
   };
+
+  const openDetailModal = (block: MergedTimeBlock) => {
+    setDetailBlock(block);
+  };
+
+  const lecturerDisplayName = user
+    ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'You'
+    : 'You';
+  const timetableCodeLabel = timetableCodes.length > 0 ? timetableCodes.join(', ') : '—';
 
   const openCreateModal = async () => {
     setShowCreateModal(true);
@@ -496,12 +509,17 @@ export default function LecturerMySchedule() {
 
   const handleSaveSlot = async () => {
     if (!selectedSlot) return;
+    if (!editCourseCode.trim()) {
+      showToast('error', 'Subject code is required');
+      return;
+    }
     setSavingSlot(true);
     try {
       await api.patch(`/lecturers/me/timetable/${selectedSlot.id}`, {
         dayOfWeek: editDay,
         startTime: editStart,
         endTime: editEnd,
+        courseCode: editCourseCode.trim(),
         courseName: editCourseName.trim(),
         hallName: editHallName.trim(),
         hallDoorPassword: editDoorPassword.trim() || null,
@@ -585,9 +603,10 @@ export default function LecturerMySchedule() {
             class{flat.length !== 1 ? 'es' : ''} merged by schedule)
           </p>
           <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-            Pathways taught together at the same time appear in one box. Use the <strong>Edit</strong>{' '}
-            button on a lecture to change day, time, place, or notes — students see updates on their
-            timetable. You can also add lectures manually for your batches.
+            Pathways taught together at the same time appear in one box.{' '}
+            <strong>Click a lecture</strong> for full subject details, or use <strong>Edit</strong> to
+            change day, time, place, or notes — students see updates on their timetable. You can also
+            add lectures manually for your batches.
           </p>
         </div>
         <div className="tt-actions">
@@ -669,12 +688,21 @@ export default function LecturerMySchedule() {
                           return (
                             <div
                               key={block.key}
-                              className={`tt-slot-group tt-slot-group-merged tt-lecture-card-wrap${isCompact ? ' tt-lecture-card-wrap-compact' : ''}`}
+                              className={`tt-slot-group tt-slot-group-merged tt-lecture-card-wrap tt-lecture-card-wrap-clickable${isCompact ? ' tt-lecture-card-wrap-compact' : ''}`}
                               style={{
                                 top: `${topPx}px`,
                                 height: `${heightPx}px`,
                               }}
-                              title={cardTitle}
+                              title={`${cardTitle} — click for details`}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => openDetailModal(block)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  openDetailModal(block);
+                                }
+                              }}
                             >
                               <div
                                 className="tt-slot tt-slot-merged tt-lecture-card"
@@ -704,7 +732,10 @@ export default function LecturerMySchedule() {
                                       type="button"
                                       className={`tt-lecture-edit-btn${isCompact ? ' tt-lecture-edit-btn-compact' : ''}`}
                                       title="Edit this lecture"
-                                      onClick={() => openEditModal(block.sessions[0].slots[0])}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditModal(block.sessions[0].slots[0]);
+                                      }}
                                     >
                                       <Pencil size={isCompact ? 12 : 14} />
                                       {!isCompact && <span>Edit</span>}
@@ -748,7 +779,10 @@ export default function LecturerMySchedule() {
                                             type="button"
                                             className="tt-lecture-edit-btn tt-lecture-edit-btn-inline"
                                             title="Edit this lecture"
-                                            onClick={() => openEditModal(session.slots[0])}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openEditModal(session.slots[0]);
+                                            }}
                                           >
                                             <Pencil size={12} />
                                             {!isCompact && <span>Edit</span>}
@@ -1119,6 +1153,123 @@ export default function LecturerMySchedule() {
         </div>
       )}
 
+      {detailBlock && (
+        <div className="modal-overlay" onClick={() => setDetailBlock(null)}>
+          <div className="modal tt-detail-modal tt-lecturer-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Lecture details</h3>
+              <button type="button" className="btn-close" onClick={() => setDetailBlock(null)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="tt-detail-grid">
+                <div className="tt-detail-row">
+                  <label>Day</label>
+                  <span>{WEEKDAY_FULL[detailBlock.dayOfWeek as DayOfWeek] ?? detailBlock.dayOfWeek}</span>
+                </div>
+                <div className="tt-detail-row">
+                  <label>Time</label>
+                  <span>
+                    {formatTimeRange(detailBlock.startTime, detailBlock.endTime)}
+                    <span className="block text-xs text-slate-500 mt-0.5">
+                      {formatTimeRange24(detailBlock.startTime, detailBlock.endTime)}
+                    </span>
+                  </span>
+                </div>
+                <div className="tt-detail-row">
+                  <label>Lecturer</label>
+                  <span>
+                    {lecturerDisplayName}
+                    {timetableCodeLabel !== '—' && (
+                      <span className="block text-xs text-slate-500 mt-0.5">
+                        Timetable code: {timetableCodeLabel}
+                      </span>
+                    )}
+                    {user?.designation && (
+                      <span className="block text-xs text-slate-500 mt-0.5">{user.designation}</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {detailBlock.sessions.map((session, sessionIndex) => {
+                const primarySlot = session.slots[0];
+                const classNames = session.slots.map((s) => s.group.name).join(', ');
+                const courseColor = getCourseColor(session.course.id, colorMap.current);
+                return (
+                  <div
+                    key={session.key}
+                    className={`tt-lecturer-detail-session${sessionIndex > 0 ? ' mt-4 border-t border-slate-200 pt-4' : ' mt-4'}`}
+                  >
+                    <div
+                      className="mb-3 rounded-lg px-3 py-2 text-sm font-bold"
+                      style={{
+                        backgroundColor: `${courseColor}18`,
+                        borderLeft: `4px solid ${courseColor}`,
+                        color: courseColor,
+                      }}
+                    >
+                      {formatCourseLabel(session.course.code, session.course.name)}
+                    </div>
+                    <div className="tt-detail-grid">
+                      <div className="tt-detail-row">
+                        <label>Subject code</label>
+                        <span className="font-mono">{session.course.code || '—'}</span>
+                      </div>
+                      <div className="tt-detail-row">
+                        <label>Lecture name</label>
+                        <span>{session.course.name || '—'}</span>
+                      </div>
+                      <div className="tt-detail-row">
+                        <label>Place</label>
+                        <span>
+                          {session.hall.name}
+                          {session.hall.building ? ` · ${session.hall.building}` : ''}
+                        </span>
+                      </div>
+                      <div className="tt-detail-row">
+                        <label>Door password</label>
+                        <span>
+                          {session.hall.doorPassword ? (
+                            <code className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-sm text-emerald-800">
+                              {session.hall.doorPassword}
+                            </code>
+                          ) : (
+                            <span className="text-slate-500">Not set</span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="tt-detail-row">
+                        <label>Classes</label>
+                        <span>{classNames}</span>
+                      </div>
+                      <div className="tt-detail-row">
+                        <label>Semester / year</label>
+                        <span>
+                          Semester {primarySlot.semester}, {primarySlot.year}
+                        </span>
+                      </div>
+                      {primarySlot.notes?.trim() && (
+                        <div className="tt-detail-row">
+                          <label>Notes</label>
+                          <span>{primarySlot.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="modal-footer tt-lecturer-detail-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setDetailBlock(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedSlot && (
         <div className="modal-overlay" onClick={() => setSelectedSlot(null)}>
           <div className="modal tt-detail-modal tt-edit-modal" onClick={(e) => e.stopPropagation()}>
@@ -1140,16 +1291,28 @@ export default function LecturerMySchedule() {
                 </p>
               )}
 
-              <label className="block text-sm">
-                <span className="text-slate-600">Lecture name</span>
-                <input
-                  type="text"
-                  className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
-                  value={editCourseName}
-                  onChange={(e) => setEditCourseName(e.target.value)}
-                  placeholder="e.g. ETEC 22033 T"
-                />
-              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm">
+                  <span className="text-slate-600">Subject code</span>
+                  <input
+                    type="text"
+                    className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5 font-mono uppercase"
+                    value={editCourseCode}
+                    onChange={(e) => setEditCourseCode(e.target.value.toUpperCase())}
+                    placeholder="ETEC22033"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-slate-600">Lecture name</span>
+                  <input
+                    type="text"
+                    className="mt-1 w-full border border-slate-300 rounded px-2 py-1.5"
+                    value={editCourseName}
+                    onChange={(e) => setEditCourseName(e.target.value)}
+                    placeholder="e.g. ETEC 22033 T"
+                  />
+                </label>
+              </div>
 
               <label className="block text-sm">
                 <span className="text-slate-600">Place (hall / room)</span>

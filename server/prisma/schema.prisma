@@ -43,6 +43,7 @@ enum NotificationType {
   HALL_BOOKING_REJECTED
   TIMETABLE_CHANGE
   ANNOUNCEMENT
+  LECTURE_REMINDER
 }
 
 enum DayOfWeek {
@@ -125,6 +126,8 @@ enum NavigationSessionStatus {
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
+  /** Optional personal inbox for password reset when primary email (e.g. @stu.kln.ac.lk) blocks external mail. */
+  recoveryEmail String?
   password     String
   role         UserRole
   firstName    String
@@ -155,11 +158,41 @@ model User {
   notifications       Notification[]
   auditLogs           AuditLog[]
   navigationSessions  NavigationSession[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
+  @@index([recoveryEmail])
   @@index([role])
   @@index([departmentId])
   @@map("users")
+}
+
+model RegistrationVerificationToken {
+  id         String    @id @default(uuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("registration_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // ─────────────────────────────────────────

@@ -6,6 +6,8 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import ToastContainer from '@components/Toast';
 import Login from '@pages/Login';
 import Register from '@pages/Register';
+import ForgotPassword from '@pages/ForgotPassword';
+import ResetPassword from '@pages/ResetPassword';
 import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
 import AdminDashboard from '@pages/admin/AdminDashboard';
@@ -27,7 +29,6 @@ import LecturerProfile from '@pages/LecturerProfile';
 import Appointments from '@pages/Appointments';
 import BookAppointment from '@pages/BookAppointment';
 import Notifications from '@pages/Notifications';
-import VoiceAssistant from '@pages/VoiceAssistant';
 import QrScanPage from '@pages/QrScanPage';
 import Settings from '@pages/admin/Settings';
 
@@ -94,6 +95,14 @@ function AppRoutes() {
       <Route
         path="/register"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
+      />
+      <Route
+        path="/forgot-password"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+      />
+      <Route
+        path="/reset-password"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ResetPassword />}
       />
 
       <Route
@@ -212,7 +221,6 @@ function AppRoutes() {
         <Route path="/lecturers/:id" element={<LecturerProfile />} />
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/appointments/book/:lecturerId" element={<BookAppointment />} />
-        <Route path="/assistant" element={<VoiceAssistant />} />
         <Route path="/navigate" element={<SimpleIndoorGuide />} />
         <Route path="/navigate/scan" element={<QrScanPage />} />
         <Route path="/map" element={<MapLegacyRedirect />} />

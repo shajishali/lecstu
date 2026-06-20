@@ -4,7 +4,12 @@ import { ArrowRight, ChevronLeft, ChevronRight, Navigation, QrCode, Search } fro
 import api, { showApiErrorToast } from '@services/api';
 import IndoorRouteMapView from '@components/IndoorRouteMapView';
 import { useActiveStepScroll } from '@hooks/useActiveStepScroll';
-import { firstStepIndexForFloor } from '@utils/routeStepProgress';
+import {
+  crossBuildingRouteViews,
+  firstStepIndexForFloor,
+  routePointForStep,
+  splitRoutePathByStep,
+} from '@utils/routeStepProgress';
 import {
   getActiveNavigationSession,
   getBuildingsWithGuides,
@@ -31,7 +36,7 @@ interface SelectablePlace {
   markerId?: string;
 }
 
-type RouteStep = { instruction: string; floor: number; polylineIndex?: number };
+type RouteStep = { instruction: string; floor: number; polylineIndex?: number; buildingId?: string };
 
 type RouteView = { buildingId: string; floor: number; label: string };
 
@@ -118,6 +123,7 @@ export default function SimpleIndoorGuide() {
   const resultRef = useRef<HTMLDivElement>(null);
   const autoRouteDone = useRef(false);
   const prevStepFloorRef = useRef<number | null>(null);
+  const prevToBuildingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -180,7 +186,11 @@ export default function SimpleIndoorGuide() {
 
   useEffect(() => {
     void refreshToPlaces();
-    setToPlaceId('');
+    if (prevToBuildingIdRef.current !== null && prevToBuildingIdRef.current !== toBuildingId) {
+      setToPlaceId('');
+      setToQuery('');
+    }
+    prevToBuildingIdRef.current = toBuildingId;
   }, [toBuildingId, refreshToPlaces]);
 
   const fromBuilding = buildings.find((b) => b.id === fromBuildingId);
@@ -297,12 +307,29 @@ export default function SimpleIndoorGuide() {
   const routeViews = useMemo((): RouteView[] => {
     if (!route?.found) return [];
 
+    if (
+      route.crossBuilding &&
+      route.buildingPath?.length &&
+      route.segments?.length &&
+      buildings.length > 0
+    ) {
+      const crossViews = crossBuildingRouteViews(
+        route.segments,
+        route.buildingPath,
+        buildings,
+        floorLabel
+      );
+      if (crossViews.length > 0) return crossViews;
+    }
+
     if (route.segments?.length) {
-      return route.segments.map((s) => ({
-        buildingId: s.buildingId,
-        floor: s.floor,
-        label: `${buildingNameById.get(s.buildingId) ?? 'Building'} · ${floorLabel(s.floor)}`,
-      }));
+      return route.segments
+        .filter((s) => s.polyline.length >= 2)
+        .map((s) => ({
+          buildingId: s.buildingId,
+          floor: s.floor,
+          label: `${buildingNameById.get(s.buildingId) ?? 'Building'} · ${floorLabel(s.floor)}`,
+        }));
     }
 
     if (route.polyline?.length) {
@@ -330,9 +357,32 @@ export default function SimpleIndoorGuide() {
         label: `${buildingNameById.get(toBuildingId) ?? 'Building'} · ${floorLabel(toFloor)}`,
       },
     ];
-  }, [route, toBuildingId, toFloor, buildingNameById]);
+  }, [route, toBuildingId, toFloor, buildingNameById, buildings]);
 
-  const polylineForView = useMemo(() => route?.polyline ?? [], [route]);
+  const polylineForView = useMemo(() => {
+    if (!route?.found) return [];
+
+    const segment = route.segments?.find(
+      (s) =>
+        s.buildingId === viewBuildingId &&
+        s.floor === viewFloor &&
+        s.polyline.length >= 2
+    );
+    if (segment) {
+      return segment.polyline.map(([x, y]) => ({
+        x,
+        y,
+        floor: viewFloor,
+        buildingId: viewBuildingId,
+      }));
+    }
+
+    return (route.polyline ?? []).filter(
+      (p) =>
+        p.floor === viewFloor &&
+        (!p.buildingId || !viewBuildingId || p.buildingId === viewBuildingId)
+    );
+  }, [route, viewBuildingId, viewFloor]);
 
   const buildingBanner = useMemo(() => {
     const step = stepList[stepIndex];
@@ -350,13 +400,36 @@ export default function SimpleIndoorGuide() {
     if (!route?.found) return;
     const step = stepList[stepIndex];
     if (step) {
+      if (step.buildingId) {
+        setViewBuildingId(step.buildingId);
+        setViewFloor(step.floor);
+        return;
+      }
+
+      const enter = step.instruction.match(/^Enter (.+)$/);
+      if (enter) {
+        const name = enter[1].trim().toLowerCase();
+        const match = buildings.find(
+          (b) =>
+            b.name.toLowerCase().includes(name) ||
+            name.includes(b.name.toLowerCase().replace(/\s+building$/i, ''))
+        );
+        if (match) {
+          setViewBuildingId(match.id);
+          setViewFloor(step.floor);
+          return;
+        }
+      }
+
       setViewFloor(step.floor);
       const polyIdx = step.polylineIndex ?? 0;
       const pt = route.polyline?.[polyIdx];
       if (pt?.buildingId) {
         setViewBuildingId(pt.buildingId);
       } else {
-        const seg = route.segments?.find((s) => s.floor === step.floor);
+        const seg = route.segments?.find(
+          (s) => s.floor === step.floor && s.buildingId && s.polyline.length >= 2
+        );
         if (seg) setViewBuildingId(seg.buildingId);
         else if (stepIndex === 0) setViewBuildingId(fromBuildingId);
         else setViewBuildingId(toBuildingId);
@@ -365,7 +438,7 @@ export default function SimpleIndoorGuide() {
       setViewFloor(fromFloor);
       setViewBuildingId(fromBuildingId);
     }
-  }, [route, stepIndex, stepList, fromFloor, fromBuildingId, toBuildingId]);
+  }, [route, stepIndex, stepList, fromFloor, fromBuildingId, toBuildingId, buildings]);
 
   const destinationLabel = toPlace?.name || toQuery.trim();
   const canGuide = Boolean(toBuildingId && destinationLabel);
@@ -690,6 +763,7 @@ export default function SimpleIndoorGuide() {
                 onChange={(e) => {
                   setFromFloor(parseInt(e.target.value, 10));
                   setFromPlaceId('');
+                  setFromQuery('');
                 }}
               >
                 {floorOptions(fromBuilding?.floors ?? 1).map((f) => (
@@ -749,6 +823,8 @@ export default function SimpleIndoorGuide() {
                   setToBuildingId(id);
                   const b = buildings.find((x) => x.id === id);
                   if (b) setToFloor(0);
+                  setToPlaceId('');
+                  setToQuery('');
                 }}
               >
                 {buildings.map((b) => (
@@ -767,6 +843,7 @@ export default function SimpleIndoorGuide() {
                 onChange={(e) => {
                   setToFloor(parseInt(e.target.value, 10));
                   setToPlaceId('');
+                  setToQuery('');
                 }}
               >
                 {floorOptions(toBuilding?.floors ?? 1).map((f) => (
@@ -806,7 +883,7 @@ export default function SimpleIndoorGuide() {
                 Places on {floorLabel(toFloor)}
               </p>
               <div className="flex flex-wrap gap-2">
-                {toFiltered.slice(0, 12).map((p) => (
+                {toFiltered.slice(0, toQuery.trim() ? 12 : 30).map((p) => (
                   <button
                     key={p.id}
                     type="button"

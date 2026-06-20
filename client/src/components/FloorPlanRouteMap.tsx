@@ -1,8 +1,8 @@
-/**
- * Student route map — same DOM structure as admin IndoorNavGraphEditor.
+﻿/**
+ * Student route map ÔÇö same DOM structure as admin IndoorNavGraphEditor.
  *
  * The floor plan image uses height:auto (no object-contain letterboxing).
- * This means the fp-map-canvas element IS the image content box — no empty
+ * This means the fp-map-canvas element IS the image content box ÔÇö no empty
  * horizontal/vertical strips.  x,y % coordinates therefore always map 1:1 to
  * actual floor-plan pixels regardless of the container width, so the path
  * rendered here EXACTLY matches the nodes placed in the admin Walking Paths
@@ -90,7 +90,7 @@ export default function FloorPlanRouteMap({
             </div>
           )}
           {routeStart && routeEnd && (
-            <span className="fp-route-endpoints-arrow" aria-hidden>→</span>
+            <span className="fp-route-endpoints-arrow" aria-hidden>ÔåÆ</span>
           )}
           {routeEnd && (
             <div className="fp-route-endpoint-card fp-route-endpoint-end">
@@ -113,7 +113,7 @@ export default function FloorPlanRouteMap({
           className="fp-route-img"
         />
 
-        {/* SVG overlay — absolute inset-0, same coordinate space as admin */}
+        {/* SVG overlay ÔÇö absolute inset-0, same coordinate space as admin */}
         <svg
           className="fp-map-overlay indoor-nav-edges"
           viewBox="0 0 100 100"

@@ -2,6 +2,7 @@
 export const userProfileSelect = {
   id: true,
   email: true,
+  recoveryEmail: true,
   firstName: true,
   lastName: true,
   role: true,

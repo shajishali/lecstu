@@ -51,4 +51,15 @@ export const config = {
     pythonPath: process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3'),
     scriptPath: path.resolve(__dirname, '../../../ai-services/translation/run_translate.py'),
   },
+
+  email: {
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
+    smtpSecure: process.env.SMTP_SECURE === 'true',
+    smtpUser: process.env.SMTP_USER || '',
+    smtpPass: process.env.SMTP_PASS || '',
+    mailFrom: process.env.MAIL_FROM || 'LECSTU <lecstu.system@gmail.com>',
+    /** When true, emails are logged to the server console instead of sent via SMTP. */
+    smtpDisabled: process.env.SMTP_DISABLED === 'true',
+  },
 } as const;

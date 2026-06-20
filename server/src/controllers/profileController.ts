@@ -18,6 +18,10 @@ import { comparePassword, hashPassword } from '../utils/password';
 const FCT_BUILDING_DEFAULT =
   'Faculty of Computing and Technology, University of Kelaniya';
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 async function syncLecturerOffice(
   userId: string,
   office: { roomNumber?: string; building?: string; floor?: number | string } | null | undefined,
@@ -65,7 +69,7 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
 
 export async function updateProfile(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, phone, departmentId, groupId, timetableCode, office } = req.body;
+    const { firstName, lastName, phone, email, recoveryEmail, departmentId, groupId, timetableCode, office } = req.body;
     const userId = req.user!.userId;
 
     // Validate departmentId if provided; if it references a deleted department, treat as "clear" (null)
@@ -89,6 +93,8 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       firstName?: string;
       lastName?: string;
       phone?: string | null;
+      email?: string;
+      recoveryEmail?: string | null;
       departmentId?: string | null;
       timetableCode?: string | null;
     } = {
@@ -96,6 +102,51 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       ...(lastName !== undefined && { lastName }),
       ...(phone !== undefined && { phone: phone || null }),
     };
+
+    if (email !== undefined) {
+      const normalizedEmail = normalizeEmail(String(email));
+      const existingEmail = await prisma.user.findFirst({
+        where: {
+          email: { equals: normalizedEmail, mode: 'insensitive' },
+          NOT: { id: userId },
+        },
+        select: { id: true },
+      });
+      if (existingEmail) {
+        throw new AppError('This email is already registered to another account.', 409);
+      }
+      profileData.email = normalizedEmail;
+    }
+
+    if (recoveryEmail !== undefined) {
+      const normalized =
+        recoveryEmail && String(recoveryEmail).trim()
+          ? normalizeEmail(String(recoveryEmail))
+          : null;
+      const currentEmail = email !== undefined
+        ? normalizeEmail(String(email))
+        : (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email.toLowerCase();
+      if (normalized && normalized === currentEmail) {
+        throw new AppError('Recovery email must be different from your login email', 400);
+      }
+      if (normalized) {
+        const taken = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: { equals: normalized, mode: 'insensitive' } },
+              { recoveryEmail: { equals: normalized, mode: 'insensitive' } },
+            ],
+            NOT: { id: userId },
+          },
+          select: { id: true },
+        });
+        if (taken) {
+          throw new AppError('This recovery email is already used by another account.', 409);
+        }
+      }
+      profileData.recoveryEmail = normalized;
+    }
+
     if (currentUser.role !== 'STUDENT' && departmentId !== undefined) {
       profileData.departmentId = resolvedDepartmentId ?? null;
     }

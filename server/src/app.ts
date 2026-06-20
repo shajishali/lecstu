@@ -8,6 +8,10 @@ import routes from './routes';
 
 const app = express();
 
+if (config.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(cors({
   origin: config.clientUrl,
   credentials: true,

@@ -17,6 +17,7 @@ function normalizeEmail(email: string): string {
 const userListSelect = {
   id: true,
   email: true,
+  recoveryEmail: true,
   firstName: true,
   lastName: true,
   role: true,
@@ -187,6 +188,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
       firstName,
       lastName,
       phone,
+      recoveryEmail,
       departmentId,
       designation,
       timetableCode,
@@ -214,6 +216,32 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     if (lastName !== undefined) data.lastName = String(lastName).trim();
     if (phone !== undefined) data.phone = phone?.trim() || null;
     if (isActive !== undefined) data.isActive = Boolean(isActive);
+
+    if (recoveryEmail !== undefined) {
+      const normalized =
+        recoveryEmail && String(recoveryEmail).trim()
+          ? normalizeEmail(String(recoveryEmail))
+          : null;
+      if (normalized && normalized === existing.email.toLowerCase()) {
+        throw new AppError('Recovery email must be different from the login email', 400);
+      }
+      if (normalized) {
+        const taken = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: { equals: normalized, mode: 'insensitive' } },
+              { recoveryEmail: { equals: normalized, mode: 'insensitive' } },
+            ],
+            NOT: { id },
+          },
+          select: { id: true },
+        });
+        if (taken) {
+          throw new AppError('This recovery email is already used by another account', 409);
+        }
+      }
+      data.recoveryEmail = normalized;
+    }
 
     if (existing.role === 'LECTURER' || existing.role === 'ADMIN') {
       if (departmentId !== undefined) {

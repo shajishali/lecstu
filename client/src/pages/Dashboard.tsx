@@ -5,7 +5,6 @@ import api from '@services/api';
 import {
   Calendar,
   Users,
-  MessageSquare,
   Map,
   GraduationCap,
   Bell,
@@ -14,6 +13,7 @@ import {
 } from 'lucide-react';
 import TodayOnCampus from '@components/TodayOnCampus';
 import IndoorNavigationPanel from '@components/IndoorNavigationPanel';
+import { usePendingAppointmentCount } from '@hooks/usePendingAppointmentCount';
 
 const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 const DAY_LABELS: Record<string, string> = {
@@ -97,6 +97,27 @@ function computeLecturerTodayCount(flat: SlotData[]): number {
   return flat.filter((s) => s.dayOfWeek === today).length;
 }
 
+function formatPendingAppointments(count: number): string {
+  if (count === 0) return 'None pending';
+  return `${count} pending`;
+}
+
+function applyLecturerCardUpdates(
+  base: { title: string; desc: string; icon: React.ReactNode; color: string }[],
+  todayCount: number,
+  pendingCount: number,
+) {
+  return base.map((c) => {
+    if (c.title === 'My Classes Today') {
+      return { ...c, desc: `${todayCount} lecture${todayCount !== 1 ? 's' : ''}` };
+    }
+    if (c.title === 'Appointments') {
+      return { ...c, desc: formatPendingAppointments(pendingCount) };
+    }
+    return c;
+  });
+}
+
 const roleCardsBase: Record<string, { title: string; desc: string; icon: React.ReactNode; color: string }[]> = {
   ADMIN: [
     { title: 'Total Users', desc: '122 registered', icon: <Users size={24} />, color: '#3b82f6' },
@@ -106,14 +127,12 @@ const roleCardsBase: Record<string, { title: string; desc: string; icon: React.R
   ],
   LECTURER: [
     { title: 'My Classes Today', desc: '3 lectures', icon: <Calendar size={24} />, color: '#3b82f6' },
-    { title: 'Appointments', desc: '2 pending', icon: <Users size={24} />, color: '#8b5cf6' },
-    { title: 'AI Assistant', desc: 'Ask anything', icon: <MessageSquare size={24} />, color: '#10b981' },
+    { title: 'Appointments', desc: '—', icon: <Users size={24} />, color: '#8b5cf6' },
     { title: 'Office Hours', desc: '2:00 - 4:00 PM', icon: <Clock size={24} />, color: '#f59e0b' },
   ],
   STUDENT: [
     { title: 'Next Lecture', desc: '-', icon: <GraduationCap size={24} />, color: '#3b82f6' },
     { title: 'My Schedule', desc: '-', icon: <Calendar size={24} />, color: '#8b5cf6' },
-    { title: 'AI Assistant', desc: 'Ask about campus', icon: <MessageSquare size={24} />, color: '#10b981' },
     { title: 'Analytics', desc: 'Attendance: 92%', icon: <BarChart3 size={24} />, color: '#f59e0b' },
   ],
 };
@@ -128,6 +147,7 @@ export default function Dashboard() {
   const { user } = useAuthStore();
   const studentGroupId =
     user?.role === 'STUDENT' ? user?.studentGroupMemberships?.[0]?.group?.id : undefined;
+  const pendingAppointmentCount = usePendingAppointmentCount(user?.role);
   const [cards, setCards] = useState<{ title: string; desc: string; icon: React.ReactNode; color: string }[]>([]);
 
   const fetchTimetable = useCallback(async () => {
@@ -151,19 +171,18 @@ export default function Dashboard() {
         );
       } else if (user.role === 'LECTURER') {
         const todayCount = computeLecturerTodayCount(flat);
-        setCards(
-          base.map((c) => {
-            if (c.title === 'My Classes Today') return { ...c, desc: `${todayCount} lecture${todayCount !== 1 ? 's' : ''}` };
-            return c;
-          })
-        );
+        setCards(applyLecturerCardUpdates(base, todayCount, pendingAppointmentCount));
       } else {
         setCards(base);
       }
     } catch {
-      setCards(base);
+      if (user.role === 'LECTURER') {
+        setCards(applyLecturerCardUpdates(base, 0, pendingAppointmentCount));
+      } else {
+        setCards(base);
+      }
     }
-  }, [user?.id, user?.role, studentGroupId]);
+  }, [user?.id, user?.role, studentGroupId, pendingAppointmentCount]);
 
   useEffect(() => {
     if (!user) {
@@ -180,6 +199,17 @@ export default function Dashboard() {
       fetchTimetable();
     }
   }, [user, fetchTimetable]);
+
+  useEffect(() => {
+    if (user?.role !== 'LECTURER') return;
+    setCards((prev) =>
+      prev.map((c) =>
+        c.title === 'Appointments'
+          ? { ...c, desc: formatPendingAppointments(pendingAppointmentCount) }
+          : c,
+      ),
+    );
+  }, [pendingAppointmentCount, user?.role]);
 
   useEffect(() => {
     const onTimetableUpdated = () => fetchTimetable();
@@ -216,9 +246,9 @@ export default function Dashboard() {
           );
           const className =
             'flex items-center gap-4 rounded-lg bg-white p-5 shadow-sm transition-shadow hover:shadow-md no-underline text-inherit';
-          if (user?.role === 'STUDENT' && card.title === 'AI Assistant') {
+          if (user?.role === 'LECTURER' && card.title === 'Appointments') {
             return (
-              <Link key={card.title} to="/navigate" className={className}>
+              <Link key={card.title} to="/appointments" className={className}>
                 {cardBody}
               </Link>
             );

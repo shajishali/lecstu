@@ -48,6 +48,7 @@ venv/
 # Prisma
 server/prisma/*.db
 server/src/generated/
+server/data/email-settings.json
 
 # Models (large binary files)
 ai-services/*/models/*.bin

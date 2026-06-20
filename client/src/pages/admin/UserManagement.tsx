@@ -21,6 +21,7 @@ import {
 interface AdminUser {
   id: string;
   email: string;
+  recoveryEmail?: string | null;
   firstName: string;
   lastName: string;
   role: UserRole;
@@ -87,6 +88,7 @@ export default function UserManagement() {
     firstName: '',
     lastName: '',
     phone: '',
+    recoveryEmail: '',
     departmentId: '',
     designation: '',
     timetableCode: '',
@@ -177,6 +179,7 @@ export default function UserManagement() {
       firstName: u.firstName,
       lastName: u.lastName,
       phone: u.phone || '',
+      recoveryEmail: u.recoveryEmail || '',
       departmentId: u.department?.id || '',
       designation: u.designation || '',
       timetableCode: u.timetableCode || '',
@@ -233,6 +236,7 @@ export default function UserManagement() {
         firstName: editForm.firstName.trim(),
         lastName: editForm.lastName.trim(),
         phone: editForm.phone.trim() || null,
+        recoveryEmail: editForm.recoveryEmail.trim() || null,
       };
       if (editUser.role === 'LECTURER' || editUser.role === 'ADMIN') {
         payload.departmentId = editForm.departmentId || null;
@@ -570,6 +574,19 @@ export default function UserManagement() {
             <label>
               Phone
               <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+            </label>
+            <label>
+              Recovery email (password reset)
+              <input
+                type="email"
+                value={editForm.recoveryEmail}
+                onChange={(e) => setEditForm({ ...editForm, recoveryEmail: e.target.value })}
+                placeholder="personal Gmail for reset codes"
+              />
+              <span className="text-xs text-slate-500">
+                Optional. Reset codes go here instead of {editUser.email} when set. Use when
+                university mail blocks external senders.
+              </span>
             </label>
 
             {editUser.role === 'STUDENT' && (

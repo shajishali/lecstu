@@ -245,7 +245,6 @@ export async function updateMarkerReviewStatus(markerId: string, reviewStatus: M
   });
 
   await syncNavGraphForFloor(marker.buildingId, marker.floor);
-  await markFloorPlanStaleAfterEdit(marker.buildingId, marker.floor);
   return updated;
 }
 
@@ -273,7 +272,6 @@ export async function bulkApproveMarkers(markerIds: string[]) {
     const [buildingId, floor] = key.split(':');
     const floorNum = parseInt(floor, 10);
     await syncNavGraphForFloor(buildingId, floorNum);
-    await markFloorPlanStaleAfterEdit(buildingId, floorNum);
   }
 
   return { approved: markers.length };

@@ -53,7 +53,7 @@ export default function NotificationCenter({ darkNav }: NotificationCenterProps)
     if (n.type === 'APPOINTMENT_RESCHEDULED') return;
     markAsRead(n.id);
     setOpen(false);
-    if (n.type === 'TIMETABLE_CHANGE') {
+    if (n.type === 'TIMETABLE_CHANGE' || n.type === 'LECTURE_REMINDER') {
       navigate('/timetable');
     } else if (user?.role === 'ADMIN' && n.type === 'HALL_BOOKING_REQUEST') {
       navigate('/admin/approvals');

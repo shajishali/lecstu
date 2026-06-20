@@ -1,0 +1,92 @@
+{
+  "experiment_id": "20260617_132050",
+  "timestamp": "2026-06-17T13:23:00.493281Z",
+  "phase": "9.3",
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.5",
+    "processor": "Intel64 Family 6 Model 154 Stepping 4, GenuineIntel"
+  },
+  "config": {
+    "corpus_manifest": "D:\\Reasearch\\lecstu\\research\\datasets\\translation\\corpus_manifest.json",
+    "num_sentences": 2,
+    "num_directions": 1,
+    "num_tasks": 2,
+    "engines": [
+      "marian"
+    ],
+    "num_runs": 1,
+    "engine_filter": "marian",
+    "pair_filter": "en-ta",
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "limit": 2
+  },
+  "summary": {
+    "total_rows": 2,
+    "errors": 0,
+    "bleu_stats": {
+      "transformer_marian_en-ta": {
+        "mean": 0.0,
+        "median": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "count": 2
+      }
+    },
+    "semantic_similarity_stats": {
+      "transformer_marian_en-ta": {
+        "mean": 0.7732,
+        "median": 0.7732,
+        "std": 0.157,
+        "min": 0.6162,
+        "max": 0.9301,
+        "count": 2
+      }
+    },
+    "latency_stats": {
+      "transformer_marian_en-ta": {
+        "mean": 744.15,
+        "median": 744.15,
+        "std": 186.56,
+        "min": 557.59,
+        "max": 930.71,
+        "count": 2
+      }
+    }
+  },
+  "raw_results": [
+    {
+      "sentence_id": "001",
+      "language_pair": "en-ta",
+      "source_lang": "en",
+      "target_lang": "ta",
+      "category": "timetable",
+      "engine_group": "transformer",
+      "engine": "marian",
+      "run": 1,
+      "source_text": "When is my next Data Structures lecture?",
+      "reference_text": "என் அடுத்த தரவு கட்டமைப்பு வகுப்பு எப்போது?",
+      "hypothesis_text": "என் அடுத்த தரவு கட்டமைப்புகள் எப்போது?",
+      "bleu": 0.0,
+      "semantic_similarity": 0.9301,
+      "latency_ms": 930.71
+    },
+    {
+      "sentence_id": "002",
+      "language_pair": "en-ta",
+      "source_lang": "en",
+      "target_lang": "ta",
+      "category": "timetable",
+      "engine_group": "transformer",
+      "engine": "marian",
+      "run": 1,
+      "source_text": "What lectures do I have on Monday?",
+      "reference_text": "திங்கள் கிழமை என்ன வகுப்புகள் உள்ளன?",
+      "hypothesis_text": "நான் என்ன பேச்சுகள் உள்ளன?",
+      "bleu": 0.0,
+      "semantic_similarity": 0.6162,
+      "latency_ms": 557.59
+    }
+  ]
+}

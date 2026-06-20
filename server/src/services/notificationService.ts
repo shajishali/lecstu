@@ -15,7 +15,8 @@ export type NotificationTypeEnum =
   | 'HALL_BOOKING_APPROVED'
   | 'HALL_BOOKING_REJECTED'
   | 'TIMETABLE_CHANGE'
-  | 'ANNOUNCEMENT';
+  | 'ANNOUNCEMENT'
+  | 'LECTURE_REMINDER';
 
 export interface CreateNotificationParams {
   userId: string;

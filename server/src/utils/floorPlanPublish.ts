@@ -16,11 +16,17 @@ export function publishedFloorPlanFilter() {
 export async function assertStudentFloorAccess(buildingId: string, floor: number): Promise<void> {
   const plan = await prisma.floorPlan.findUnique({
     where: { buildingId_floor: { buildingId, floor } },
-    select: { publishStatus: true },
+    select: {
+      publishStatus: true,
+      building: { select: { code: true, name: true } },
+    },
   });
   if (!isFloorPlanPublished(plan?.publishStatus)) {
+    const buildingLabel = plan?.building?.code ?? plan?.building?.name ?? 'This building';
+    const floorLabel = floor === 0 ? 'Ground floor' : `Floor ${floor}`;
+    const statusHint = plan?.publishStatus ? ` (status: ${plan.publishStatus})` : '';
     throw new AppError(
-      'This floor is not published for student navigation yet. Ask an admin to publish it in Indoor Navigation.',
+      `${buildingLabel} — ${floorLabel} is not published for student navigation yet${statusHint}. Ask an admin to publish it in Indoor Navigation.`,
       404
     );
   }
