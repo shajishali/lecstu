@@ -3,7 +3,7 @@ import { config } from '../config';
 
 /** In production, reject non-HTTPS auth requests (supports reverse-proxy via X-Forwarded-Proto). */
 export function requireHttpsInProduction(req: Request, res: Response, next: NextFunction): void {
-  if (config.nodeEnv !== 'production') {
+  if (config.nodeEnv !== 'production' || config.allowHttpAuth) {
     next();
     return;
   }

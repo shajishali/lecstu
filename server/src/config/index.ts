@@ -6,6 +6,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  /** IP-only HTTP hosting (no SSL yet): set ALLOW_HTTP_AUTH=true in .env */
+  allowHttpAuth: process.env.ALLOW_HTTP_AUTH === 'true',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
 
   db: {

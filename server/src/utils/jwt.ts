@@ -30,9 +30,10 @@ export function verifyRefreshToken(token: string): TokenPayload {
 
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   const isProd = config.nodeEnv === 'production';
+  const secureCookies = isProd && !config.allowHttpAuth;
   res.cookie('access_token', accessToken, {
     httpOnly: true,
-    secure: isProd,
+    secure: secureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: 15 * 60 * 1000, // 15 minutes
@@ -40,7 +41,7 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
 
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: isProd,
+    secure: secureCookies,
     sameSite: 'lax',
     // Dev proxy often drops path-scoped cookies; use '/' locally so refresh still works.
     path: isProd ? '/api/auth/refresh' : '/',
