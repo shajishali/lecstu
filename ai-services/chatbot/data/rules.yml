@@ -4,12 +4,14 @@
 version: "3.1"
 
 rules:
-  - rule: Timetable confirmation reply
-    condition:
-      - type: slot
-        name: awaiting_timetable_confirm
-        value: true
+  - rule: Affirm (e.g. yes after timetable confirm)
     steps:
+      - intent: affirm
+      - action: action_recover_or_fallback
+
+  - rule: Deny (e.g. no after timetable confirm)
+    steps:
+      - intent: deny
       - action: action_recover_or_fallback
 
   - rule: Ask timetable
