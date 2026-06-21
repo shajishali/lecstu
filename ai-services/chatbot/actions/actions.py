@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Any, Text, Dict, List, Optional
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet
+from rasa_sdk.events import SlotSet, FollowupAction
 
 import requests
 
@@ -108,6 +108,21 @@ def _resolve_day(day_raw: Optional[str]) -> Optional[str]:
     return None
 
 
+def _day_from_message_text(text: str) -> Optional[str]:
+    """Extract weekday from free text (handles 'the friday', 'tomorrows', etc.)."""
+    t = (text or "").lower()
+    if re.search(r"\btomorrow", t):
+        return (datetime.now() + timedelta(days=1)).strftime("%A").upper()
+    if re.search(r"\btoday", t):
+        return datetime.now().strftime("%A").upper()
+    for token, alias in DAY_ALIASES.items():
+        if not alias or len(token) < 3:
+            continue
+        if re.search(rf"\b(?:the\s+)?{re.escape(token)}\b", t):
+            return alias
+    return None
+
+
 def _requested_timetable_day(tracker: Tracker) -> Optional[str]:
     """Resolve weekday from NLU day slot or message text (handles tomorrows, etc.)."""
     day_slot = tracker.get_slot("day")
@@ -115,16 +130,102 @@ def _requested_timetable_day(tracker: Tracker) -> Optional[str]:
         resolved = _resolve_day(day_slot)
         if resolved:
             return resolved
+    return _day_from_message_text(((tracker.latest_message or {}).get("text") or ""))
 
-    text = ((tracker.latest_message or {}).get("text") or "").lower()
-    if re.search(r"\btomorrow", text):
-        return (datetime.now() + timedelta(days=1)).strftime("%A").upper()
-    if re.search(r"\btoday", text):
-        return datetime.now().strftime("%A").upper()
-    for token, alias in DAY_ALIASES.items():
-        if alias and len(token) >= 3 and re.search(rf"\b{re.escape(token)}\b", text):
-            return alias
-    return None
+
+TIMETABLE_QUERY_RE = re.compile(
+    r"\b(?:time\s*table|timetable|schedule|my\s+classes|lectures?\s+on)\b",
+    re.I,
+)
+_WEEKDAY_NAMES = "monday|tuesday|wednesday|thursday|friday|saturday|sunday"
+
+
+def _looks_like_timetable_query(text: str) -> bool:
+    if not text or not text.strip():
+        return False
+    if TIMETABLE_QUERY_RE.search(text):
+        return True
+    t = text.lower()
+    return "class" in t and bool(_day_from_message_text(text))
+
+
+def _looks_messy_timetable_phrase(text: str) -> bool:
+    """True when grammar is likely wrong — ask the student to confirm before answering."""
+    t = text.lower()
+    if re.search(rf"\bthe\s+(?:{_WEEKDAY_NAMES})\b", t):
+        return True
+    if re.search(rf"\bof\s+the\s+(?:{_WEEKDAY_NAMES})\b", t):
+        return True
+    if re.search(r"\btime\s+table\b", t):
+        return True
+    return False
+
+
+def _is_affirmation(text: str) -> bool:
+    t = text.strip().lower()
+    if not t:
+        return False
+    if t in (
+        "yes", "yeah", "yep", "yup", "correct", "right", "confirm", "confirmed",
+        "ok", "okay", "sure", "exactly", "that's right", "thats right", "please", "y",
+    ):
+        return True
+    return t.startswith("yes ") or t.startswith("yeah ")
+
+
+def _is_denial(text: str) -> bool:
+    t = text.strip().lower()
+    if t in ("no", "nope", "nah", "wrong", "cancel", "not that", "incorrect"):
+        return True
+    return t.startswith("no ") or t.startswith("nope ")
+
+
+def _maybe_prompt_timetable_confirm(
+    dispatcher: CollectingDispatcher,
+    day: str,
+) -> List[Dict[Text, Any]]:
+    dispatcher.utter_message(
+        text=(
+            f"Did you mean your timetable for **{day.title()}**? "
+            "Reply **yes** to confirm or **no** to try again."
+        )
+    )
+    return [
+        SlotSet("pending_timetable_day", day),
+        SlotSet("awaiting_timetable_confirm", True),
+    ]
+
+
+def _handle_awaiting_timetable_confirm(
+    tracker: Tracker,
+    dispatcher: CollectingDispatcher,
+    text: str,
+) -> Optional[List[Dict[Text, Any]]]:
+    if not tracker.get_slot("awaiting_timetable_confirm"):
+        return None
+
+    pending = tracker.get_slot("pending_timetable_day")
+    clear_events = [
+        SlotSet("awaiting_timetable_confirm", False),
+        SlotSet("pending_timetable_day", None),
+    ]
+
+    if _is_affirmation(text):
+        day = pending or _day_from_message_text(text)
+        return clear_events + [SlotSet("day", day or ""), FollowupAction("action_query_timetable")]
+
+    if _is_denial(text):
+        dispatcher.utter_message(
+            text="No problem. Which day would you like? For example: Monday, tomorrow, or today."
+        )
+        return clear_events
+
+    if _looks_like_timetable_query(text):
+        # Student asked a new timetable question instead of yes/no — re-interpret below.
+        return clear_events
+
+    dispatcher.utter_message(text="Please reply **yes** or **no**.")
+    return []
 
 
 def _resolve_time(time_raw: Optional[str]) -> Optional[str]:
@@ -411,6 +512,44 @@ def _timetable_lines_from_weekly(weekly: Dict[str, Any], requested_day: Optional
     return lines
 
 
+class ActionRecoverOrFallback(Action):
+    """Recover timetable asks from fallback/out-of-scope; confirm when phrasing is unclear."""
+
+    def name(self) -> Text:
+        return "action_recover_or_fallback"
+
+    async def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
+        confirm_handled = _handle_awaiting_timetable_confirm(tracker, dispatcher, text)
+        if confirm_handled is not None:
+            return confirm_handled
+
+        if _looks_like_timetable_query(text):
+            day = _day_from_message_text(text)
+            if day:
+                return _maybe_prompt_timetable_confirm(dispatcher, day)
+            dispatcher.utter_message(
+                text="Which day's timetable would you like? For example: Monday, tomorrow, or today."
+            )
+            return []
+
+        intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
+        if intent == "fallback":
+            dispatcher.utter_message(
+                text="I'm not sure I understood. Could you rephrase that? I can help with timetables, hall availability, appointments, and campus directions."
+            )
+        else:
+            dispatcher.utter_message(
+                text="I'm focused on academic help—timetables, halls, appointments, and campus info. Is there something in that area I can help with?"
+            )
+        return []
+
+
 class ActionQueryTimetable(Action):
     """Call GET /api/timetable/my and format response. Filters by day when user asks for today/tomorrow/specific day."""
 
@@ -430,8 +569,22 @@ class ActionQueryTimetable(Action):
             )
             return []
 
-        day_slot = tracker.get_slot("day")
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
+        confirm_handled = _handle_awaiting_timetable_confirm(tracker, dispatcher, text)
+        if confirm_handled is not None:
+            return confirm_handled
+
         requested_day = _requested_timetable_day(tracker)
+        intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
+
+        if intent == "ask_timetable" and requested_day and _looks_messy_timetable_phrase(text):
+            return _maybe_prompt_timetable_confirm(dispatcher, requested_day)
+
+        if intent == "ask_timetable" and not requested_day and _looks_like_timetable_query(text):
+            dispatcher.utter_message(
+                text="Which day's timetable would you like? Try Monday, tomorrow, or today."
+            )
+            return []
 
         try:
             r = requests.get(

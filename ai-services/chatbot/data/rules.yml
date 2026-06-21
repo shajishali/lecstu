@@ -4,6 +4,14 @@
 version: "3.1"
 
 rules:
+  - rule: Timetable confirmation reply
+    condition:
+      - type: slot
+        name: awaiting_timetable_confirm
+        value: true
+    steps:
+      - action: action_recover_or_fallback
+
   - rule: Say greeting
     steps:
       - intent: greeting
@@ -17,9 +25,9 @@ rules:
   - rule: Fallback
     steps:
       - intent: fallback
-      - action: utter_fallback
+      - action: action_recover_or_fallback
 
   - rule: Out of scope
     steps:
       - intent: out_of_scope
-      - action: utter_out_of_scope
+      - action: action_recover_or_fallback

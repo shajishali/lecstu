@@ -51,6 +51,11 @@ nlu:
       - give me tomorrow's timetable
       - tomorrows timetable please
       - what is my timetable for tomorrows
+      - give the time table of the friday
+      - give the timetable of friday
+      - time table of the monday
+      - show me schedule of the wednesday
+      - i want timetable of the thursday
 
   - intent: ask_hall_availability
     examples: |
@@ -452,6 +457,26 @@ nlu:
       - Where do I need to be next?
       - Indoor route to next class
       - My next class is where?
+
+  - intent: affirm
+    examples: |
+      - yes
+      - yeah
+      - yep
+      - correct
+      - that's right
+      - confirm
+      - ok
+      - okay
+      - sure
+
+  - intent: deny
+    examples: |
+      - no
+      - nope
+      - wrong
+      - cancel
+      - not that
 
   - intent: fallback
     examples: |

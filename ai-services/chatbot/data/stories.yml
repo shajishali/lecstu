@@ -74,12 +74,12 @@ stories:
   - story: fallback path
     steps:
       - intent: fallback
-      - action: utter_fallback
+      - action: action_recover_or_fallback
 
   - story: out of scope path
     steps:
       - intent: out_of_scope
-      - action: utter_out_of_scope
+      - action: action_recover_or_fallback
 
   # Multi-turn: greet then ask timetable
   - story: greet then timetable
@@ -133,14 +133,26 @@ stories:
   - story: fallback then succeed
     steps:
       - intent: fallback
-      - action: utter_fallback
+      - action: action_recover_or_fallback
       - intent: ask_timetable
       - action: action_query_timetable
+
+  - story: messy timetable confirm then show
+    steps:
+      - intent: ask_timetable
+      - action: action_query_timetable
+      - intent: affirm
+      - action: action_query_timetable
+
+  - story: out of scope recover timetable
+    steps:
+      - intent: out_of_scope
+      - action: action_recover_or_fallback
 
   # Out of scope then redirect
   - story: out of scope then redirect
     steps:
       - intent: out_of_scope
-      - action: utter_out_of_scope
+      - action: action_recover_or_fallback
       - intent: greeting
       - action: utter_greeting

@@ -16,6 +16,8 @@ intents:
   - ask_office_location
   - greeting
   - goodbye
+  - affirm
+  - deny
   - fallback
   - out_of_scope
 
@@ -58,6 +60,17 @@ slots:
     mappings:
       - type: from_entity
         entity: building
+  pending_timetable_day:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+  awaiting_timetable_confirm:
+    type: bool
+    influence_conversation: true
+    initial_value: false
+    mappings:
+      - type: custom
 
 responses:
   utter_greeting:
@@ -90,6 +103,7 @@ responses:
     - text: "Looking up the office location."
 
 actions:
+  - action_recover_or_fallback
   - action_query_timetable
   - action_check_hall_availability
   - action_check_lecturer_availability
