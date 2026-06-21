@@ -574,9 +574,13 @@ curl -s http://149.118.54.64/api/health
 
 Changes made on the Windows PC after Phases 1–7 went live. Deploy each batch with the standard update flow in [hostingSteps.md](./hostingSteps.md) (`git pull`, rebuild server/client, `pm2 restart`, `nginx reload`).
 
+**Rule:** Edit code on **Windows** → `git push` → on **production** run `git pull` + rebuild/restart. Do **not** edit tracked files directly on the server (see Fix 2).
+
+---
+
 ### Fix 1 — Admin can manage lecturers on the Lecturer Directory page
 
-**Status:** Resolved (local — pending push to production)
+**Status:** Resolved on production (21 June 2026)
 
 **Problem:** After hosting, the Lecturer Directory showed **duplicate lecturer records** (same person or timetable code listed more than once). Admins had no way to fix this from the lecturer page itself — only generic User Management elsewhere in the admin panel.
 
@@ -589,28 +593,89 @@ Changes made on the Windows PC after Phases 1–7 went live. Deploy each batch w
 
 2. **API** — `DELETE /api/admin/users/:id` (lecturer accounts only).
 
-**How to use on production (after deploy):**
+**Files changed:**
+
+| File | What changed |
+|------|----------------|
+| `client/src/pages/LecturerDirectory.tsx` | Admin Add / Edit / Remove UI |
+| `server/src/controllers/adminUserController.ts` | `deleteUser`, cache invalidation |
+| `server/prisma/migrations/20260621120000_lecturer_admin_last_modified/` | `adminLastModifiedAt`, `adminLastModifiedById` |
+
+**How to use on production:**
 
 1. Log in as admin.
 2. Open **Lecturer Directory**.
 3. For duplicates: keep the correct entry, click **Remove** on the duplicate card(s).
 4. To add a missing lecturer: click **Add Lecturer** and fill in details.
 
-**Local test before push:**
+**Deploy commands used (production):**
 
-```powershell
-cd d:\Reasearch\lecstu
-npm run dev:server
-npm run dev:client
+```bash
+cd /var/www/lecstu && git pull
+cd server && npm install && npx prisma migrate deploy && npx prisma generate && npm run build
+cd ../client && npm install && npm run build
+pm2 restart lecstu-api
+sudo systemctl reload nginx
 ```
 
-Log in as admin → Lecturer Directory → verify Add / Edit / Remove.
+**UI fixes during development:** compact modal (`entity-form-compact`), two-column field rows, aligned Phone/Department labels.
 
-**UI fix:** Add/Edit modal first and last name fields use `form-row-2` so both inputs align side-by-side. Modal uses compact layout (`entity-form-compact`), pairs fields in two columns (phone/department, designation/code), and sizes to content instead of filling the viewport.
+**Bug fix — “Email verification code must be 6 digits” on Add Lecturer:** Admin create-user validation incorrectly required the public registration 6-digit email code. Removed that requirement for `POST /api/admin/users`.
 
-**Bug fix — “Email verification code must be 6 digits” on Add Lecturer:** Admin create-user validation incorrectly required the public registration 6-digit email code. Removed that requirement for `POST /api/admin/users` — admins can add lecturers without email verification.
+**Admin last-modified display:** Lecturers added or edited by admin show **“Updated by [admin name] · [date]”** on their card (amber border), sorted to the top.
 
-**Admin last-modified display:** Lecturers added or edited by admin show **“Updated by [admin name] · [date]”** on their card, highlighted with an amber border, and are sorted to the **top** (most recent first). Requires DB migration `20260621120000_lecturer_admin_last_modified`.
+---
+
+### Fix 2 — `git pull` blocked by local edits on the server
+
+**Status:** Resolved
+
+**Problem:** First production deploy of Fix 1 failed at `git pull`:
+
+```text
+error: Your local changes to the following files would be overwritten by merge:
+        server/prisma/fct-faculty-config.js
+        shared/constants/mapMarkerTypes.js
+Please commit your changes or stash them before you merge.
+Aborting
+```
+
+**Cause:** Old build artifacts or manual edits on the server conflicted with files now tracked in GitHub.
+
+**Solution:**
+
+```bash
+cd /var/www/lecstu
+git checkout -- server/prisma/fct-faculty-config.js
+git checkout -- server/prisma/fct-faculty-config.js.map
+git checkout -- server/prisma/fct-faculty-config.d.ts.map
+rm -f shared/constants/mapMarkerTypes.d.ts shared/constants/mapMarkerTypes.js
+# ... remove other untracked build artifacts listed by git status
+git pull
+```
+
+**Lesson:** Never edit project files on production. Always change locally → push → pull.
+
+---
+
+### Fix 3 — Server `npm run build` failed after schema migration
+
+**Status:** Resolved
+
+**Problem:** After `git pull` and `npx prisma migrate deploy`, `npm run build` failed with TypeScript errors like `Property 'adminLastModifiedAt' does not exist on type ...`.
+
+**Cause:** Migration applied to the database but **Prisma Client was not regenerated** before `tsc`.
+
+**Solution:**
+
+```bash
+cd /var/www/lecstu/server
+npx prisma generate   # ← required after every schema/migration change
+npm run build
+pm2 restart lecstu-api
+```
+
+**Proof:** `npm run build` completed with no errors after `prisma generate`; `pm2 list` showed `lecstu-api` **online**.
 
 ---
 
@@ -618,39 +683,90 @@ Log in as admin → Lecturer Directory → verify Add / Edit / Remove.
 
 ### 8.2 — Rasa chatbot (production only — do not train on Windows)
 
-**Status:** In progress — model retrain required for latest rules/NLU
+**Status:** Resolved (21 June 2026) — chatbot live, timetable matches UI, messy grammar + confirm flow works, duplicate-on-yes fixed.
+
+**Production model:** `models/20260621-110953-balanced-message.tar.gz`
 
 #### Important: local vs production
 
 | Task | Where | Notes |
 |------|--------|--------|
-| Edit chatbot code (`actions.py`, `nlu.yml`, `rules.yml`, etc.) | **Local (Windows)** | Develop, test optionally, `git commit`, `git push` |
+| Edit chatbot code (`actions.py`, `nlu.yml`, `rules.yml`, etc.) | **Local (Windows)** | Develop, `git commit`, `git push` |
 | `git pull` | **Production (PuTTY)** | Get latest code on the server |
 | `rasa train` | **Production only** | **Never** copy a model from your Windows PC to the server |
-| `pm2 restart lecstu-rasa` / `lecstu-rasa-actions` | **Production** | After train or `actions.py`-only changes |
+| `pm2 restart lecstu-rasa` | **Production** | After `rasa train` (loads new `.tar.gz` model) |
+| `pm2 restart lecstu-rasa-actions` | **Production** | After `actions.py` changes (no retrain needed) |
+| `npm run build --workspace=client` | **Production** | After `ChatWidget.tsx` changes |
 | Test chatbot | **Production browser** | `http://149.118.54.64` (logged in as student) |
 
 **Why train must run on production**
 
 - Oracle VM is **ARM (aarch64)** with **TensorFlow CPU AWS** in the Python venv.
 - A model trained on **Windows (x86)** will **not** work on the server.
-- Rasa stores **rules and NLU inside the `.tar.gz` model**. Updating `rules.yml` on disk and restarting PM2 is **not enough** — you must run **`rasa train` on the server** so the new rules (e.g. timetable recovery + confirm) are baked into the model.
+- Rasa stores **rules and NLU inside the `.tar.gz` model**. Updating `rules.yml` on disk and restarting PM2 is **not enough** — you must run **`rasa train` on the server**.
 
-**Workflow (local → production)**
+**Standard workflow (local → production)**
 
-1. **Local:** change files → `git push`
-2. **Production (PuTTY):** `cd /var/www/lecstu && git pull`
-3. **Production:** `rasa train` (inside chatbot venv, with `LD_PRELOAD` — see below)
-4. **Production:** `pm2 restart lecstu-rasa && pm2 restart lecstu-rasa-actions`
-5. **Production:** test in browser
+```bash
+# Local (Windows)
+git add ... && git commit -m "..." && git push
 
-If you only changed `actions.py` (no `rules.yml` / `nlu.yml` / `stories.yml`), restarting **`lecstu-rasa-actions`** may be enough. If you changed **rules or NLU**, **`rasa train` is required**.
+# Production (PuTTY)
+cd /var/www/lecstu && git pull
+
+# If rules.yml / nlu.yml / stories.yml / domain.yml changed:
+cd ai-services/chatbot && source .venv/bin/activate
+export LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
+rasa train
+pm2 restart lecstu-rasa && pm2 restart lecstu-rasa-actions && pm2 save
+
+# If only actions.py changed:
+pm2 restart lecstu-rasa-actions
+```
 
 ---
 
-#### Problems faced — Phase 8.2 chatbot setup
+#### Chronology — what we hit during this chat (21 June 2026)
 
-##### A — Ubuntu 20.04 ARM has no Python 3.10 from apt
+| # | Symptom | Root cause | Fix |
+|---|---------|------------|-----|
+| 1 | “Chatbot is starting or unavailable…” | Only `lecstu-api` in PM2; Rasa never started (Phase 8.2 optional) | One-time venv + PM2 start for `lecstu-rasa` + `lecstu-rasa-actions` |
+| 2 | Rasa crash on start | `libgomp` static TLS on ARM | `LD_PRELOAD` for train **and** PM2 start |
+| 3 | Chatbot timetable ≠ My Timetable page | Chatbot used stale `flat`/`weekly`; UI uses FET **grid** | `_timetable_lines_from_grid()` in `actions.py` |
+| 4 | Tomorrow shows wrong classes / 1-hour slots | `rowSpan` not used for multi-row cells | Grid formatter uses `rowSpan` for end time |
+| 5 | `give the time table of the friday` → out-of-scope | NLU + **old model** still had `utter_out_of_scope` rule | `action_recover_or_fallback` + **`rasa train`** |
+| 6 | `rasa train` → `YamlValidationException` | Invalid rule condition `type: slot` (not valid in Rasa 3.6) | Replaced with **affirm/deny** intent rules |
+| 7 | `rasa train` → `InvalidRule` story conflict | Story `messy timetable confirm then show` vs affirm rule | **Removed** conflicting story from `stories.yml` |
+| 8 | `git pull` blocked | Manual `rules.yml` edit on server | `git checkout -- ai-services/chatbot/data/rules.yml` then pull |
+| 9 | Reply **yes** → timetable shown **twice** | Confirm handler + `FollowupAction` ran query twice | `_dispatch_timetable_query()` inline on affirm; guard in `ActionQueryTimetable` |
+
+---
+
+#### Problems faced — Phase 8.2 (detailed)
+
+##### A — Chatbot unavailable (Rasa not running)
+
+**Problem:** Chat widget showed *“Chatbot is starting or unavailable. Please try again in a moment.”* Main site worked fine.
+
+**Cause:** Phases 1–7 only start `lecstu-api`. Chatbot needs **two extra PM2 processes** (`lecstu-rasa`, `lecstu-rasa-actions`) and Nginx `/rasa/` proxy.
+
+**Screenshot:**
+
+![Phase 8.2 A — Chatbot unavailable in browser](./hosting-screenshots/phase8-01-chatbot-unavailable.png)
+
+**Solution:** Complete Phase 8.2 setup (Python venv, `rasa train`, PM2 start). Verify:
+
+```bash
+pm2 list    # must show lecstu-api, lecstu-rasa, lecstu-rasa-actions
+curl -s -X POST http://127.0.0.1:5005/webhooks/rest/webhook \
+  -H "Content-Type: application/json" -d '{"sender":"test","message":"hello"}'
+```
+
+**Status:** Resolved
+
+---
+
+##### B — Ubuntu 20.04 ARM has no Python 3.10 from apt
 
 **Problem:** Rasa 3.6 needs Python 3.10+. `apt` on Ubuntu 20.04 ARM only had Python 3.8; deadsnakes PPA had no ARM packages.
 
@@ -664,11 +780,15 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+**Screenshot:**
+
+![Phase 8.2 B — Rasa venv setup on server](./hosting-screenshots/phase8-09-rasa-setup-terminal.png)
+
 **Status:** Resolved
 
 ---
 
-##### B — Rasa server crash: scikit-learn `libgomp` / static TLS
+##### C — Rasa server crash: scikit-learn `libgomp` / static TLS
 
 **Problem:** `lecstu-rasa` crashed on start:
 
@@ -676,7 +796,7 @@ pip install -r requirements.txt
 ImportError: ... libgomp-d22c30c5.so.1.0.0: cannot allocate memory in static TLS block
 ```
 
-**Solution:** Start Rasa with `LD_PRELOAD` pointing to libgomp inside the venv:
+**Solution:** Use `LD_PRELOAD` for **both** `rasa train` and PM2 start:
 
 ```bash
 export LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
@@ -688,68 +808,265 @@ PM2 start (production):
 cd /var/www/lecstu/ai-services/chatbot
 LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0 \
   pm2 start ".venv/bin/rasa run --enable-api --cors \"*\"" --name lecstu-rasa --cwd /var/www/lecstu/ai-services/chatbot
-```
 
-Use the same `LD_PRELOAD` for **`rasa train`**.
+LECSTU_API_URL=http://127.0.0.1:5000/api CHATBOT_API_KEY=lecstu-chatbot-dev-key \
+  pm2 start ".venv/bin/rasa run actions" --name lecstu-rasa-actions --cwd /var/www/lecstu/ai-services/chatbot
+```
 
 **Status:** Resolved
 
 ---
 
-##### C — Chatbot timetable wrong vs My Timetable page
+##### D — Chatbot timetable wrong vs My Timetable page
 
-**Problem:** Chatbot showed different courses/times than the My Timetable grid (e.g. old 1-hour slots, wrong course codes).
+**Problem:** Student asked for **tomorrow’s** timetable; chatbot listed different courses/times than the My Timetable grid (wrong codes, 1-hour slots).
 
-**Cause:** UI uses the **FET grid snapshot** (`data.grid`); chatbot used **`flat` / `weekly`** DB rows that were out of sync after re-import.
+**Cause:** UI reads the **FET grid snapshot** (`data.grid` from `timetable_table_snapshots`). Chatbot used **`flat` / `weekly`** DB rows that were out of sync after Phase 5 data-only re-import.
 
-**Solution:** Updated `actions.py` to prefer **grid** data (same as the UI), use **rowSpan** for real 2-hour lecture blocks, and normalize day words (`tomorrows` → Monday, etc.).
+**Screenshots:**
 
-**Status:** Resolved in code — deploy via `git pull` + restart actions; full behaviour needs **`rasa train`** if rules changed.
+![Phase 8.2 D — Production mismatch (chatbot vs My Timetable)](./hosting-screenshots/phase8-02-timetable-mismatch-production.png)
+
+![Phase 8.2 D — Same bug reproduced locally](./hosting-screenshots/phase8-03-timetable-wrong-local.png)
+
+**Solution (code):** `ai-services/chatbot/actions/actions.py` — `_timetable_lines_from_grid()` reads the same grid as the UI and uses **`rowSpan`** for real 2-hour blocks:
+
+```python
+# actions.py — prefer grid, honour rowSpan for end time
+row_span = max(1, int(cell.get("rowSpan") or 1))
+end_ti = min(ti + row_span - 1, len(time_rows) - 1)
+start = cell.get("slotStart") or tr.get("start")
+end = cell.get("slotEnd") or time_rows[end_ti].get("end")
+```
+
+**Deploy:** `git pull` → `pm2 restart lecstu-rasa-actions` only.
+
+**Screenshots after fix:**
+
+![Phase 8.2 D — Tomorrow timetable correct](./hosting-screenshots/phase8-04-tomorrow-timetable-test.png)
+
+![Phase 8.2 D — 2-hour rowSpan blocks](./hosting-screenshots/phase8-05-rowspan-fix-test.png)
+
+**Status:** Resolved
 
 ---
 
-##### D — Messy grammar → generic “I'm focused on academic help…”
+##### E — Messy student grammar → generic out-of-scope message
 
-**Problem:** e.g. `give the time table of the friday` → out-of-scope message instead of timetable.
+**Problem:** e.g. `give the time table of the friday` → *“I'm focused on academic help…”* instead of a timetable.
 
-**Cause:** (1) NLU classified as `out_of_scope`. (2) **Old trained model** still had rule `out_of_scope` → `utter_out_of_scope`; updated `rules.yml` on disk was **not** loaded until **`rasa train`**.
+**Cause:**
+
+1. NLU often classifies messy phrasing as `out_of_scope`.
+2. Even after updating `rules.yml` on disk, the **old trained model** still routed `out_of_scope` → `utter_out_of_scope` until **`rasa train`** on production.
+
+**Screenshots:**
+
+![Phase 8.2 E — Messy grammar rejected](./hosting-screenshots/phase8-06-messy-grammar-out-of-scope.png)
+
+![Phase 8.2 E — Production still on old model before retrain](./hosting-screenshots/phase8-08-production-still-out-of-scope.png)
+
+**Solution (code + train):**
+
+1. **`action_recover_or_fallback`** — detect timetable phrasing in fallback/out-of-scope; ask *“Did you mean Friday? Reply yes/no.”*
+2. **`rules.yml`** — `fallback` / `out_of_scope` → `action_recover_or_fallback` (not `utter_out_of_scope`).
+3. **`ChatWidget.tsx`** — `normalizeTimetableMessage()` rewrites messy text client-side before sending to Rasa.
+4. **`rasa train` on production** — required after any `rules.yml` / `nlu.yml` / `stories.yml` change.
+
+**Key files:**
+
+| File | Role |
+|------|------|
+| `ai-services/chatbot/actions/actions.py` | `_looks_like_timetable_query`, `_maybe_prompt_timetable_confirm`, `ActionRecoverOrFallback` |
+| `ai-services/chatbot/data/rules.yml` | affirm/deny → recover; out_of_scope → recover |
+| `client/src/components/ChatWidget.tsx` | `normalizeTimetableMessage()` |
+
+**Screenshot after confirm flow works:**
+
+![Phase 8.2 E — Friday confirm prompt](./hosting-screenshots/phase8-07-confirm-friday-prompt.png)
+
+**Status:** Resolved (after `rasa train`)
+
+---
+
+##### F — `rasa train` failed: invalid `rules.yml` syntax
+
+**Problem:**
+
+```text
+YamlValidationException: Failed to validate 'data/rules.yml'
+  Key 'type' was not defined. Path: '/rules/0/condition/0'
+```
+
+**Cause:** Rule used `condition: - type: slot` — **not valid** in Rasa 3.6 rule conditions.
+
+**Screenshot:**
+
+![Phase 8.2 F — rasa train YamlValidationException](./hosting-screenshots/phase8-10-rasa-train-invalid-rules.png)
+
+**Solution:** Replace slot-condition rule with explicit **affirm** / **deny** intent rules in `ai-services/chatbot/data/rules.yml`:
+
+```yaml
+  - rule: Affirm (e.g. yes after timetable confirm)
+    steps:
+      - intent: affirm
+      - action: action_recover_or_fallback
+
+  - rule: Deny (e.g. no after timetable confirm)
+    steps:
+      - intent: deny
+      - action: action_recover_or_fallback
+```
+
+**Status:** Resolved
+
+---
+
+##### G — `rasa train` failed: story vs rule conflict
+
+**Problem:**
+
+```text
+InvalidRule: Contradicting rules or stories found
+- the prediction of the action 'action_query_timetable' in story 'messy timetable confirm then show'
+  is contradicting with rule(s) 'Affirm (e.g. yes after timetable confirm)'
+  which predicted action 'action_recover_or_fallback'.
+```
+
+**Cause:** Story said **yes** → `action_query_timetable`; rule said **yes** → `action_recover_or_fallback`. Rasa cannot train both.
+
+**Solution:** **Remove** story `messy timetable confirm then show` from `ai-services/chatbot/data/stories.yml`. The affirm rule + `action_recover_or_fallback` handles confirmation alone.
+
+```bash
+# On server if pull blocked — after git pull this story should already be gone
+grep "messy timetable" ai-services/chatbot/data/stories.yml   # expect no output
+```
+
+**Status:** Resolved
+
+---
+
+##### H — `git pull` blocked by manual `rules.yml` edit on server
+
+**Problem:**
+
+```text
+error: Your local changes to the following files would be overwritten by merge:
+        ai-services/chatbot/data/rules.yml
+Please commit your changes or stash them before you merge.
+Aborting
+```
+
+**Cause:** Earlier emergency `cat > rules.yml` on the server conflicted with the same fix already pushed to GitHub.
 
 **Solution:**
 
-1. `action_recover_or_fallback` — detect timetable phrasing, ask **“Did you mean Friday?”**, confirm with **yes** / **no**.
-2. **`rasa train` on production** — required after any `rules.yml` / `nlu.yml` / `stories.yml` change.
+```bash
+cd /var/www/lecstu
+git checkout -- ai-services/chatbot/data/rules.yml
+git pull
+```
 
-**Status:** Code deployed — **pending `rasa train` on production**
+**Lesson:** Fix rules locally → push → pull. Do not patch YAML on the server long-term.
+
+**Status:** Resolved
 
 ---
 
-##### E — PM2 services (chatbot)
+##### I — Successful `rasa train` and PM2 restart
+
+**Proof:** Training completed on ARM (~15–30 min):
+
+```text
+Your Rasa model is trained and saved at 'models/20260621-110953-balanced-message.tar.gz'.
+```
+
+After restart, logs showed new model loading:
+
+```text
+Loading model models/20260621-110953-balanced-message.tar.gz...
+Rasa server is up and running.
+```
+
+**Screenshot:**
+
+![Phase 8.2 I — PM2 after train + restart](./hosting-screenshots/phase8-11-pm2-restart-after-train.png)
+
+**Commands:**
+
+```bash
+pm2 restart lecstu-rasa && pm2 restart lecstu-rasa-actions && pm2 save
+```
+
+**Note:** `curl` may return empty while the model loads (~60 s). Wait for `Rasa server is up and running` in `pm2 logs lecstu-rasa`.
+
+**Status:** Resolved
+
+---
+
+##### J — Duplicate Friday timetable after replying “yes”
+
+**Problem:** After confirm prompt, student replied **yes** → bot posted the **same Friday timetable twice** in one turn.
+
+**Cause:** On affirm, `action_recover_or_fallback` returned `FollowupAction("action_query_timetable")`, and `action_query_timetable` **also** ran the confirm handler — two paths executed the timetable query in one turn.
+
+**Screenshot:**
+
+![Phase 8.2 J — Duplicate timetable on yes](./hosting-screenshots/phase8-12-duplicate-timetable-on-yes.png)
+
+**Solution (code):** `ai-services/chatbot/actions/actions.py`
+
+1. Extract **`_dispatch_timetable_query()`** — shared fetch + utter logic.
+2. On affirm in **`_handle_awaiting_timetable_confirm`**, call `_dispatch_timetable_query()` **directly** (no `FollowupAction`).
+3. In **`ActionQueryTimetable`**, skip `affirm` / `deny` intents (handled only by recover).
+
+```python
+# On yes — show timetable once, no followup chain
+if _is_affirmation(text):
+    resolved = _resolve_day(day) if day else None
+    _dispatch_timetable_query(dispatcher, tracker, resolved)
+    return clear_events + [SlotSet("day", resolved or "")]
+```
+
+**Deploy proof:**
+
+![Phase 8.2 J — git pull + restart lecstu-rasa-actions](./hosting-screenshots/phase8-13-deploy-actions-pull-restart.png)
+
+```bash
+cd /var/www/lecstu && git pull
+pm2 restart lecstu-rasa-actions   # actions.py only — no retrain
+```
+
+**Status:** Resolved
+
+---
+
+##### K — PM2 services and API key (reference)
 
 | PM2 name | Role | Port |
 |----------|------|------|
 | `lecstu-api` | Main API | 5000 |
-| `lecstu-rasa` | Rasa server | 5005 |
+| `lecstu-rasa` | Rasa NLU + dialogue (needs `LD_PRELOAD`) | 5005 |
 | `lecstu-rasa-actions` | Custom actions (`actions.py`) | 5055 |
 
-Actions server env (set when starting):
+Actions server env (must match `server/.env`):
 
 ```bash
-LECSTU_API_URL=http://127.0.0.1:5000/api CHATBOT_API_KEY=lecstu-chatbot-dev-key
+LECSTU_API_URL=http://127.0.0.1:5000/api
+CHATBOT_API_KEY=lecstu-chatbot-dev-key
 ```
 
-Must match `CHATBOT_API_KEY` in `/var/www/lecstu/server/.env`.
-
-**Status:** Running — retrain pending for latest dialogue rules
+**Status:** Running
 
 ---
 
-#### Production commands — chatbot retrain (copy-paste on PuTTY)
+#### Production commands — full chatbot deploy (copy-paste)
 
 ```bash
 # 1. Latest code
 cd /var/www/lecstu && git pull
 
-# 2. Train (15–30 min on ARM) — MUST run on server
+# 2. Train (only if rules/nlu/stories/domain changed)
 cd /var/www/lecstu/ai-services/chatbot
 source .venv/bin/activate
 export LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
@@ -766,7 +1083,33 @@ curl -s -X POST http://127.0.0.1:5005/webhooks/rest/webhook \
   -d '{"sender":"test","message":"hello"}'
 ```
 
-**Browser test:** Log in as student → chat → `give the time table of the friday` → confirm **yes** → Friday timetable with 2-hour slots.
+**Browser test (logged in as student):**
+
+1. `give the time table of the friday` → confirm prompt for Friday  
+2. `yes` → **one** Friday timetable with 2-hour slots (matches My Timetable)  
+3. `give me tomorrow timetable` → Monday with DSCI + CSCI blocks
+
+---
+
+#### Phase 8.2 screenshots index
+
+All saved under [`hosting-screenshots/`](./hosting-screenshots/):
+
+| File | What it shows |
+|------|----------------|
+| `phase8-01-chatbot-unavailable.png` | Widget error before Rasa was started |
+| `phase8-02-timetable-mismatch-production.png` | Chatbot vs My Timetable (production) |
+| `phase8-03-timetable-wrong-local.png` | Same mismatch on local dev |
+| `phase8-04-tomorrow-timetable-test.png` | Tomorrow → Monday after grid fix |
+| `phase8-05-rowspan-fix-test.png` | Correct 2-hour blocks |
+| `phase8-06-messy-grammar-out-of-scope.png` | Bad grammar → out-of-scope |
+| `phase8-07-confirm-friday-prompt.png` | “Did you mean Friday?” confirm |
+| `phase8-08-production-still-out-of-scope.png` | Old model before retrain |
+| `phase8-09-rasa-setup-terminal.png` | Python venv / Rasa setup |
+| `phase8-10-rasa-train-invalid-rules.png` | YamlValidationException |
+| `phase8-11-pm2-restart-after-train.png` | PM2 after successful train |
+| `phase8-12-duplicate-timetable-on-yes.png` | Duplicate timetable bug |
+| `phase8-13-deploy-actions-pull-restart.png` | Deploy duplicate fix |
 
 ---
 
@@ -787,4 +1130,8 @@ curl -s -X POST http://127.0.0.1:5005/webhooks/rest/webhook \
 - **Re-run test account removal on the server** after DB restore: `npm run db:remove-test-hosting-accounts`
 - **Do not commit** `server/.env`, passwords, or `.ppk` keys to Git.
 - If hosting on **HTTP only** (no domain/SSL yet), keep `ALLOW_HTTP_AUTH=true` (temporary). When you enable HTTPS, remove it or set it to `false`.
-- **Rasa chatbot:** edit code locally → `git push` → on **production only**: `git pull`, then **`rasa train`** (do not copy models from Windows). See **Phase 8.2** in this file.
+- **Never edit tracked files on the production server** — always local → `git push` → `git pull`. If pull fails, `git checkout -- <file>` only when GitHub has the correct version.
+- **After Prisma migration on production:** always run `npx prisma generate` before `npm run build`.
+- **Rasa chatbot:** edit locally → `git push` → production `git pull`. Train **only on ARM server** with `LD_PRELOAD`. See **Phase 8.2** and screenshot index `phase8-01` … `phase8-13`.
+- **`actions.py` only** → `pm2 restart lecstu-rasa-actions`. **Rules/NLU/stories** → `rasa train` + restart both Rasa processes.
+- **Chatbot timetable** must use FET **grid** data (same as My Timetable page), not stale `flat` rows.
