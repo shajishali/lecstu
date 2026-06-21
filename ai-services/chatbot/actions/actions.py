@@ -200,6 +200,65 @@ def _maybe_prompt_timetable_confirm(
     ]
 
 
+def _dispatch_timetable_query(
+    dispatcher: CollectingDispatcher,
+    tracker: Tracker,
+    requested_day: Optional[str],
+) -> List[Dict[Text, Any]]:
+    """Fetch and utter the student's timetable (shared by query + confirm flows)."""
+    user_id = _get_user_id(tracker)
+    if not user_id:
+        dispatcher.utter_message(
+            text="Please log in to the platform to view your timetable."
+        )
+        return []
+
+    try:
+        r = requests.get(
+            f"{PLATFORM_API_URL}/timetable/my",
+            headers=_api_headers(user_id),
+            params={"_": int(datetime.now().timestamp())},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json()
+        if not data.get("success") or not data.get("data"):
+            dispatcher.utter_message(text="I couldn't fetch your timetable. Please try the My Timetable page.")
+            return []
+
+        tt = data["data"]
+        grid = tt.get("grid")
+        weekly = tt.get("weekly", {})
+        flat = tt.get("flat", [])
+
+        lines = _timetable_lines_from_grid(grid, requested_day) if grid else []
+        if not lines:
+            lines = _timetable_lines_from_weekly(weekly, requested_day)
+
+        if not lines and not flat and not (grid and grid.get("cells")):
+            dispatcher.utter_message(text="You have no classes scheduled in your timetable.")
+            return []
+
+        if not lines:
+            qual = f" for {requested_day.title()}" if requested_day else ""
+            dispatcher.utter_message(text=f"You have no classes{qual}.")
+            return []
+
+        if requested_day:
+            msg = f"Here's your timetable for {requested_day.title()}:\n\n" + "\n".join(lines)
+        else:
+            msg = "Here's your timetable:\n\n" + "\n".join(lines[:15])
+            if len(lines) > 15:
+                msg += "\n\n... and more. Visit My Timetable for the full schedule."
+        dispatcher.utter_message(text=msg)
+    except requests.RequestException:
+        logger.exception("Timetable API error")
+        dispatcher.utter_message(
+            text="I couldn't reach the timetable service. Please try the My Timetable page."
+        )
+    return []
+
+
 def _handle_awaiting_timetable_confirm(
     tracker: Tracker,
     dispatcher: CollectingDispatcher,
@@ -216,7 +275,9 @@ def _handle_awaiting_timetable_confirm(
 
     if _is_affirmation(text):
         day = pending or _day_from_message_text(text)
-        return clear_events + [SlotSet("day", day or ""), FollowupAction("action_query_timetable")]
+        resolved = _resolve_day(day) if day else None
+        _dispatch_timetable_query(dispatcher, tracker, resolved)
+        return clear_events + [SlotSet("day", resolved or "")]
 
     if _is_denial(text):
         dispatcher.utter_message(
@@ -566,20 +627,14 @@ class ActionQueryTimetable(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        user_id = _get_user_id(tracker)
-        if not user_id:
-            dispatcher.utter_message(
-                text="Please log in to the platform to view your timetable."
-            )
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
+        intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
+
+        # yes/no after timetable confirm are handled only by action_recover_or_fallback
+        if intent in ("affirm", "deny"):
             return []
 
-        text = ((tracker.latest_message or {}).get("text") or "").strip()
-        confirm_handled = _handle_awaiting_timetable_confirm(tracker, dispatcher, text)
-        if confirm_handled is not None:
-            return confirm_handled
-
         requested_day = _requested_timetable_day(tracker)
-        intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
 
         if intent == "ask_timetable" and requested_day and _looks_messy_timetable_phrase(text):
             return _maybe_prompt_timetable_confirm(dispatcher, requested_day)
@@ -590,50 +645,7 @@ class ActionQueryTimetable(Action):
             )
             return []
 
-        try:
-            r = requests.get(
-                f"{PLATFORM_API_URL}/timetable/my",
-                headers=_api_headers(user_id),
-                params={"_": int(datetime.now().timestamp())},
-                timeout=10,
-            )
-            r.raise_for_status()
-            data = r.json()
-            if not data.get("success") or not data.get("data"):
-                dispatcher.utter_message(text="I couldn't fetch your timetable. Please try the My Timetable page.")
-                return []
-
-            tt = data["data"]
-            grid = tt.get("grid")
-            weekly = tt.get("weekly", {})
-            flat = tt.get("flat", [])
-
-            lines = _timetable_lines_from_grid(grid, requested_day) if grid else []
-            if not lines:
-                lines = _timetable_lines_from_weekly(weekly, requested_day)
-
-            if not lines and not flat and not (grid and grid.get("cells")):
-                dispatcher.utter_message(text="You have no classes scheduled in your timetable.")
-                return []
-
-            if not lines:
-                qual = f" for {requested_day.title()}" if requested_day else ""
-                dispatcher.utter_message(text=f"You have no classes{qual}.")
-                return []
-
-            if requested_day:
-                msg = f"Here's your timetable for {requested_day.title()}:\n\n" + "\n".join(lines)
-            else:
-                msg = "Here's your timetable:\n\n" + "\n".join(lines[:15])
-                if len(lines) > 15:
-                    msg += "\n\n... and more. Visit My Timetable for the full schedule."
-            dispatcher.utter_message(text=msg)
-        except requests.RequestException as e:
-            logger.exception("Timetable API error")
-            dispatcher.utter_message(
-                text="I couldn't reach the timetable service. Please try the My Timetable page."
-            )
-        return []
+        return _dispatch_timetable_query(dispatcher, tracker, requested_day)
 
 
 class ActionCheckHallAvailability(Action):
