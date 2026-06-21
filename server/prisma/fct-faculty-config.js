@@ -90,6 +90,21 @@ function buildGroupName(programCode, year, pathwayCode) {
     }
     return `${programCode}-${year}`;
 }
+/** FET / legacy typos: faculty code FT or pathway FTIA instead of ET / ETIA */
+const PATHWAY_TYPO_TO_CODE = {
+    FTIA: 'ETIA',
+    FTMP: 'ETMP',
+    FTST: 'ETST',
+};
+function normalizeProgramCode(code) {
+    return code.toUpperCase() === 'FT' ? 'ET' : code.toUpperCase();
+}
+function normalizePathwayCode(code) {
+    if (!code)
+        return undefined;
+    const u = code.toUpperCase();
+    return PATHWAY_TYPO_TO_CODE[u] ?? u;
+}
 /** Split PDF labels like "Y3 CTNT, Y3 CSEC" into separate parts */
 function splitGroupNameParts(rawName) {
     return rawName
@@ -105,9 +120,9 @@ function resolveCanonicalGroupName(rawName) {
     const trimmed = rawName.trim();
     if (!trimmed)
         return null;
-    const direct = trimmed.match(/^(CS|ET|CT|BS)-Y([1-4])(?:-([A-Z0-9]+))?$/i);
+    const direct = trimmed.match(/^(CS|ET|CT|BS|FT)-Y([1-4])(?:-([A-Z0-9]+))?$/i);
     if (direct) {
-        return buildGroupName(direct[1].toUpperCase(), `Y${direct[2]}`, direct[3]?.toUpperCase());
+        return buildGroupName(normalizeProgramCode(direct[1]), `Y${direct[2]}`, normalizePathwayCode(direct[3]));
     }
     const yProg = trimmed.match(/^Y([1-4])\s+(CS|ET|CT|BS|BST)\b/i);
     if (yProg) {
@@ -117,7 +132,7 @@ function resolveCanonicalGroupName(rawName) {
     const yPath = trimmed.match(/^Y([1-4])\s+([A-Z0-9]{2,6})\b/i);
     if (yPath) {
         const year = `Y${yPath[1]}`;
-        const pathway = yPath[2].toUpperCase();
+        const pathway = normalizePathwayCode(yPath[2].toUpperCase()) ?? yPath[2].toUpperCase();
         for (const prog of exports.PROGRAMS) {
             if (prog.pathways.some((p) => p.code === pathway)) {
                 return buildGroupName(prog.code, year, pathway);
