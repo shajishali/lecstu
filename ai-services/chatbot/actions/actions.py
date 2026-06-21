@@ -293,6 +293,73 @@ def _get_lecturer_name_from_tracker(tracker: Tracker) -> Optional[str]:
     return None
 
 
+def _timetable_lines_from_grid(grid: Dict[str, Any], requested_day: Optional[str]) -> List[str]:
+    """Build schedule lines from the FET grid snapshot (same source as My Timetable page)."""
+    day_columns = grid.get("dayColumns") or []
+    time_rows = grid.get("timeRows") or []
+    cells = grid.get("cells") or []
+    if not day_columns or not time_rows or not cells:
+        return []
+
+    default_days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
+    lines: List[str] = []
+    for di, col in enumerate(day_columns):
+        day = (col.get("day") or "").upper()
+        if requested_day and day != requested_day:
+            continue
+        if not requested_day and day not in default_days:
+            continue
+        day_label = (col.get("label") or day.title()).strip()
+        for ti, tr in enumerate(time_rows):
+            if ti >= len(cells):
+                break
+            row = cells[ti] or []
+            if di >= len(row):
+                continue
+            cell = row[di] or {}
+            if cell.get("isEmpty") or cell.get("mergeContinue") or cell.get("isBreak"):
+                continue
+            start = (cell.get("slotStart") or tr.get("start") or "").strip()
+            end = (cell.get("slotEnd") or tr.get("end") or "").strip()
+            if not start or not end:
+                continue
+            display = cell.get("displayLines") or cell.get("lines") or []
+            parts = [
+                str(p).strip()
+                for p in display
+                if p and str(p).strip() and str(p).strip() not in ("—", "-")
+            ]
+            if not parts:
+                raw = (cell.get("rawText") or "").strip()
+                if raw:
+                    parts = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+            summary = " · ".join(parts) if parts else "Class"
+            lines.append(f"• {day_label} {start}-{end}: {summary}")
+    return lines
+
+
+def _timetable_lines_from_weekly(weekly: Dict[str, Any], requested_day: Optional[str]) -> List[str]:
+    """Fallback: format master timetable slots when no FET grid is stored."""
+    default_days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
+    days_to_show = [requested_day] if requested_day else default_days
+    lines: List[str] = []
+    for day in days_to_show:
+        slots = weekly.get(day, [])
+        if not slots:
+            continue
+        day_label = day.capitalize()
+        for s in slots:
+            course = s.get("course", {})
+            hall = s.get("hall", {})
+            lec = s.get("lecturer", {})
+            lec_name = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
+            lines.append(
+                f"• {day_label} {s.get('startTime', '')}-{s.get('endTime', '')}: "
+                f"{course.get('name', '')} at {hall.get('name', '')} ({lec_name})"
+            )
+    return lines
+
+
 class ActionQueryTimetable(Action):
     """Call GET /api/timetable/my and format response. Filters by day when user asks for today/tomorrow/specific day."""
 
@@ -319,6 +386,7 @@ class ActionQueryTimetable(Action):
             r = requests.get(
                 f"{PLATFORM_API_URL}/timetable/my",
                 headers=_api_headers(user_id),
+                params={"_": int(datetime.now().timestamp())},
                 timeout=10,
             )
             r.raise_for_status()
@@ -328,28 +396,17 @@ class ActionQueryTimetable(Action):
                 return []
 
             tt = data["data"]
+            grid = tt.get("grid")
             weekly = tt.get("weekly", {})
             flat = tt.get("flat", [])
 
-            if not flat:
+            lines = _timetable_lines_from_grid(grid, requested_day) if grid else []
+            if not lines:
+                lines = _timetable_lines_from_weekly(weekly, requested_day)
+
+            if not lines and not flat and not (grid and grid.get("cells")):
                 dispatcher.utter_message(text="You have no classes scheduled in your timetable.")
                 return []
-
-            days_to_show = [requested_day] if requested_day else ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
-            lines = []
-            for day in days_to_show:
-                slots = weekly.get(day, [])
-                if slots:
-                    day_label = day.capitalize()
-                    for s in slots:
-                        course = s.get("course", {})
-                        hall = s.get("hall", {})
-                        lec = s.get("lecturer", {})
-                        lec_name = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
-                        lines.append(
-                            f"• {day_label} {s.get('startTime', '')}-{s.get('endTime', '')}: "
-                            f"{course.get('name', '')} at {hall.get('name', '')} ({lec_name})"
-                        )
 
             if not lines:
                 qual = f" for {requested_day.capitalize()}" if requested_day else ""
