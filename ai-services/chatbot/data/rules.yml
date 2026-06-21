@@ -12,6 +12,11 @@ rules:
     steps:
       - action: action_recover_or_fallback
 
+  - rule: Ask timetable
+    steps:
+      - intent: ask_timetable
+      - action: action_query_timetable
+
   - rule: Say greeting
     steps:
       - intent: greeting

@@ -616,11 +616,168 @@ Log in as admin → Lecturer Directory → verify Add / Edit / Remove.
 
 ## Phase 8 — Optional (HTTPS, AI, maintenance)
 
+### 8.2 — Rasa chatbot (production only — do not train on Windows)
+
+**Status:** In progress — model retrain required for latest rules/NLU
+
+#### Important: local vs production
+
+| Task | Where | Notes |
+|------|--------|--------|
+| Edit chatbot code (`actions.py`, `nlu.yml`, `rules.yml`, etc.) | **Local (Windows)** | Develop, test optionally, `git commit`, `git push` |
+| `git pull` | **Production (PuTTY)** | Get latest code on the server |
+| `rasa train` | **Production only** | **Never** copy a model from your Windows PC to the server |
+| `pm2 restart lecstu-rasa` / `lecstu-rasa-actions` | **Production** | After train or `actions.py`-only changes |
+| Test chatbot | **Production browser** | `http://149.118.54.64` (logged in as student) |
+
+**Why train must run on production**
+
+- Oracle VM is **ARM (aarch64)** with **TensorFlow CPU AWS** in the Python venv.
+- A model trained on **Windows (x86)** will **not** work on the server.
+- Rasa stores **rules and NLU inside the `.tar.gz` model**. Updating `rules.yml` on disk and restarting PM2 is **not enough** — you must run **`rasa train` on the server** so the new rules (e.g. timetable recovery + confirm) are baked into the model.
+
+**Workflow (local → production)**
+
+1. **Local:** change files → `git push`
+2. **Production (PuTTY):** `cd /var/www/lecstu && git pull`
+3. **Production:** `rasa train` (inside chatbot venv, with `LD_PRELOAD` — see below)
+4. **Production:** `pm2 restart lecstu-rasa && pm2 restart lecstu-rasa-actions`
+5. **Production:** test in browser
+
+If you only changed `actions.py` (no `rules.yml` / `nlu.yml` / `stories.yml`), restarting **`lecstu-rasa-actions`** may be enough. If you changed **rules or NLU**, **`rasa train` is required**.
+
+---
+
+#### Problems faced — Phase 8.2 chatbot setup
+
+##### A — Ubuntu 20.04 ARM has no Python 3.10 from apt
+
+**Problem:** Rasa 3.6 needs Python 3.10+. `apt` on Ubuntu 20.04 ARM only had Python 3.8; deadsnakes PPA had no ARM packages.
+
+**Solution:** Build Python 3.10.14 from source on the server (`make altinstall` → `/usr/local/bin/python3.10`), then:
+
+```bash
+cd /var/www/lecstu/ai-services/chatbot
+python3.10 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**Status:** Resolved
+
+---
+
+##### B — Rasa server crash: scikit-learn `libgomp` / static TLS
+
+**Problem:** `lecstu-rasa` crashed on start:
+
+```text
+ImportError: ... libgomp-d22c30c5.so.1.0.0: cannot allocate memory in static TLS block
+```
+
+**Solution:** Start Rasa with `LD_PRELOAD` pointing to libgomp inside the venv:
+
+```bash
+export LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
+```
+
+PM2 start (production):
+
+```bash
+cd /var/www/lecstu/ai-services/chatbot
+LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0 \
+  pm2 start ".venv/bin/rasa run --enable-api --cors \"*\"" --name lecstu-rasa --cwd /var/www/lecstu/ai-services/chatbot
+```
+
+Use the same `LD_PRELOAD` for **`rasa train`**.
+
+**Status:** Resolved
+
+---
+
+##### C — Chatbot timetable wrong vs My Timetable page
+
+**Problem:** Chatbot showed different courses/times than the My Timetable grid (e.g. old 1-hour slots, wrong course codes).
+
+**Cause:** UI uses the **FET grid snapshot** (`data.grid`); chatbot used **`flat` / `weekly`** DB rows that were out of sync after re-import.
+
+**Solution:** Updated `actions.py` to prefer **grid** data (same as the UI), use **rowSpan** for real 2-hour lecture blocks, and normalize day words (`tomorrows` → Monday, etc.).
+
+**Status:** Resolved in code — deploy via `git pull` + restart actions; full behaviour needs **`rasa train`** if rules changed.
+
+---
+
+##### D — Messy grammar → generic “I'm focused on academic help…”
+
+**Problem:** e.g. `give the time table of the friday` → out-of-scope message instead of timetable.
+
+**Cause:** (1) NLU classified as `out_of_scope`. (2) **Old trained model** still had rule `out_of_scope` → `utter_out_of_scope`; updated `rules.yml` on disk was **not** loaded until **`rasa train`**.
+
+**Solution:**
+
+1. `action_recover_or_fallback` — detect timetable phrasing, ask **“Did you mean Friday?”**, confirm with **yes** / **no**.
+2. **`rasa train` on production** — required after any `rules.yml` / `nlu.yml` / `stories.yml` change.
+
+**Status:** Code deployed — **pending `rasa train` on production**
+
+---
+
+##### E — PM2 services (chatbot)
+
+| PM2 name | Role | Port |
+|----------|------|------|
+| `lecstu-api` | Main API | 5000 |
+| `lecstu-rasa` | Rasa server | 5005 |
+| `lecstu-rasa-actions` | Custom actions (`actions.py`) | 5055 |
+
+Actions server env (set when starting):
+
+```bash
+LECSTU_API_URL=http://127.0.0.1:5000/api CHATBOT_API_KEY=lecstu-chatbot-dev-key
+```
+
+Must match `CHATBOT_API_KEY` in `/var/www/lecstu/server/.env`.
+
+**Status:** Running — retrain pending for latest dialogue rules
+
+---
+
+#### Production commands — chatbot retrain (copy-paste on PuTTY)
+
+```bash
+# 1. Latest code
+cd /var/www/lecstu && git pull
+
+# 2. Train (15–30 min on ARM) — MUST run on server
+cd /var/www/lecstu/ai-services/chatbot
+source .venv/bin/activate
+export LD_PRELOAD=/var/www/lecstu/ai-services/chatbot/.venv/lib/python3.10/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
+rasa train
+
+# 3. Restart
+pm2 restart lecstu-rasa
+pm2 restart lecstu-rasa-actions
+pm2 save
+
+# 4. Quick test
+curl -s -X POST http://127.0.0.1:5005/webhooks/rest/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"sender":"test","message":"hello"}'
+```
+
+**Browser test:** Log in as student → chat → `give the time table of the friday` → confirm **yes** → Friday timetable with 2-hour slots.
+
+---
+
+### 8.1 / 8.3 / other optional phases
+
 **Status:** Not started
 
 | Subphase | Problem | Solution |
 |----------|---------|----------|
-| — | — | — |
+| 8.1 HTTPS | — | — |
+| 8.3 Floor plan vision | — | — |
 
 ---
 
@@ -630,3 +787,4 @@ Log in as admin → Lecturer Directory → verify Add / Edit / Remove.
 - **Re-run test account removal on the server** after DB restore: `npm run db:remove-test-hosting-accounts`
 - **Do not commit** `server/.env`, passwords, or `.ppk` keys to Git.
 - If hosting on **HTTP only** (no domain/SSL yet), keep `ALLOW_HTTP_AUTH=true` (temporary). When you enable HTTPS, remove it or set it to `false`.
+- **Rasa chatbot:** edit code locally → `git push` → on **production only**: `git pull`, then **`rasa train`** (do not copy models from Windows). See **Phase 8.2** in this file.

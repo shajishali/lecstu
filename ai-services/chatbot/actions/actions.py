@@ -146,6 +146,10 @@ def _looks_like_timetable_query(text: str) -> bool:
     if TIMETABLE_QUERY_RE.search(text):
         return True
     t = text.lower()
+    if re.search(rf"\bof\s+(?:the\s+)?(?:{_WEEKDAY_NAMES}|tomorrow|today)\b", t):
+        return True
+    if re.search(r"\btable\b", t) and _day_from_message_text(text):
+        return True
     return "class" in t and bool(_day_from_message_text(text))
 
 

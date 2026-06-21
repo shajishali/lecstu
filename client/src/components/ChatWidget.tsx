@@ -17,6 +17,28 @@ const RASA_WEBHOOK =
 
 const MIN_RECORDING_MS = 500; // Avoid sending empty/short clips
 
+/** Rewrite messy timetable phrasing so NLU matches trained examples (works before model retrain). */
+function normalizeTimetableMessage(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  const lower = trimmed.toLowerCase();
+  const isTimetableAsk =
+    /\b(time\s*table|timetable|schedule)\b/i.test(trimmed) ||
+    (/\btable\b/i.test(trimmed) && /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)\b/i.test(trimmed));
+  if (!isTimetableAsk) return trimmed;
+
+  const dayMatch = lower.match(
+    /\b(?:the\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today|tomorrows)\b/
+  );
+  if (dayMatch) {
+    let day = dayMatch[1];
+    if (day.startsWith('tomorrow')) day = 'tomorrow';
+    if (day.startsWith('today')) day = 'today';
+    return `What is my timetable for ${day}`;
+  }
+  return trimmed;
+}
+
 type ChatLanguage = UiLanguage;
 
 const CHAT_LANG_LABELS: Record<ChatLanguage, string> = {
@@ -107,9 +129,9 @@ export default function ChatWidget() {
 
     try {
       // Tamil/Sinhala: translate user input to English so Rasa can understand
-      let messageToSend = text;
+      let messageToSend = normalizeTimetableMessage(text);
       if (chatLanguage !== 'en') {
-        messageToSend = await translate(text, 'en', chatLanguage);
+        messageToSend = await translate(messageToSend, 'en', chatLanguage);
       }
 
       const res = await fetch(RASA_WEBHOOK, {
