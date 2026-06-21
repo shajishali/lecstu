@@ -31,10 +31,10 @@ export default function Modal({ open, onClose, title, children, width = '500px' 
       }}
     >
       <div
-        className="w-full max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl"
+        className="flex w-full max-h-[90vh] flex-col overflow-hidden rounded-lg bg-white shadow-xl"
         style={{ maxWidth: width }}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-3">
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
             type="button"
@@ -44,7 +44,7 @@ export default function Modal({ open, onClose, title, children, width = '500px' 
             <X size={18} />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="overflow-y-auto p-4">{children}</div>
       </div>
     </div>
   );

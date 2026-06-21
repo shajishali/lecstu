@@ -8,6 +8,8 @@ import {
   validateStudentEnrollmentInput,
 } from '../services/studentEnrollmentService';
 import { deriveTimetableCodeFromName } from '../services/lecturerInitialsMatch';
+import { invalidateLecturerDisplayIndex } from '../services/lecturerDisplayService';
+import { logActionForRequest } from '../services/auditLogger';
 import type { StudyYear } from '../config/fct-faculty-config';
 
 function normalizeEmail(email: string): string {
@@ -130,6 +132,7 @@ export async function createUser(req: Request, res: Response, next: NextFunction
     }
 
     const hashedPassword = await hashPassword(password);
+    const actorId = req.user!.userId;
     let resolvedTimetableCode: string | null = null;
     if (role === 'LECTURER') {
       resolvedTimetableCode =
@@ -148,6 +151,9 @@ export async function createUser(req: Request, res: Response, next: NextFunction
         departmentId: role === 'STUDENT' ? null : departmentId || null,
         designation: role === 'LECTURER' ? designation?.trim() || null : null,
         timetableCode: resolvedTimetableCode,
+        ...(role === 'LECTURER'
+          ? { adminLastModifiedAt: new Date(), adminLastModifiedById: actorId }
+          : {}),
       },
       select: userDetailSelect,
     });
@@ -164,6 +170,14 @@ export async function createUser(req: Request, res: Response, next: NextFunction
         enrollment.studyYear as StudyYear,
         enrollment.pathwayCode,
       );
+    }
+
+    if (role === 'LECTURER') {
+      invalidateLecturerDisplayIndex();
+      await logActionForRequest(req, 'CREATE', 'User', user.id, {
+        role,
+        email: normalizedEmail,
+      });
     }
 
     const full = await prisma.user.findUnique({
@@ -263,9 +277,19 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
               String(data.lastName ?? existing.lastName),
             );
       }
+      data.adminLastModifiedAt = new Date();
+      data.adminLastModifiedById = actorId;
     }
 
     await prisma.user.update({ where: { id }, data });
+
+    if (existing.role === 'LECTURER') {
+      invalidateLecturerDisplayIndex();
+      await logActionForRequest(req, 'UPDATE', 'User', id, {
+        role: existing.role,
+        email: existing.email,
+      });
+    }
 
     if (
       existing.role === 'STUDENT' &&
@@ -291,6 +315,39 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     });
 
     res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = paramId(req);
+    const existing = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        role: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        timetableCode: true,
+      },
+    });
+    if (!existing) throw new AppError('User not found', 404);
+    if (existing.role !== 'LECTURER') {
+      throw new AppError('Only lecturer accounts can be removed from the directory', 400);
+    }
+
+    await prisma.user.delete({ where: { id } });
+    invalidateLecturerDisplayIndex();
+    await logActionForRequest(req, 'DELETE', 'User', id, {
+      email: existing.email,
+      name: `${existing.firstName} ${existing.lastName}`,
+      timetableCode: existing.timetableCode,
+    });
+
+    res.json({ success: true, message: 'Lecturer removed' });
   } catch (err) {
     next(err);
   }

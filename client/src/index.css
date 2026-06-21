@@ -883,7 +883,19 @@
 }
 .entity-form-field > label,
 .entity-form > label:not(.checkbox-label) {
-  @apply text-sm font-semibold text-slate-700;
+  @apply flex flex-col gap-1.5 text-sm font-semibold text-slate-700;
+}
+.entity-form-compact {
+  @apply gap-2.5;
+}
+.entity-form-compact > label:not(.checkbox-label) input,
+.entity-form-compact > label:not(.checkbox-label) select,
+.entity-form-compact .form-row-2 input,
+.entity-form-compact .form-row-2 select {
+  @apply py-2;
+}
+.entity-form-compact .tt-form-actions {
+  @apply mt-2 pt-1;
 }
 .entity-form-field input,
 .entity-form-field select,
@@ -923,7 +935,10 @@
   @apply grid gap-3 sm:grid-cols-2;
 }
 .form-row-2 label {
-  @apply flex flex-col gap-1.5 text-sm font-semibold text-slate-700;
+  @apply flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-slate-700;
+}
+.form-row-2 .form-field-label {
+  @apply block min-h-5 shrink-0 leading-5;
 }
 .form-row-2 input,
 .form-row-2 select,
@@ -976,7 +991,7 @@
 @layer components {
   .ha-header,
   .lecdir-header {
-    @apply mb-5;
+    @apply mb-5 flex flex-wrap items-start justify-between gap-3;
   }
   .ha-header h1,
   .lecdir-header h1 {
@@ -1157,6 +1172,30 @@
   }
   .lecdir-card-action .lecdir-card-action-arrow {
     @apply inline-block transition-transform duration-200 group-hover:translate-x-0.5;
+  }
+  .lecdir-add-btn {
+    @apply shrink-0;
+  }
+  .lecdir-admin-hint {
+    @apply rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900;
+  }
+  .lecdir-admin-actions {
+    @apply mb-2 flex justify-end gap-2 border-b border-slate-100 pb-2;
+  }
+  .lecdir-admin-btn {
+    @apply inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors;
+  }
+  .lecdir-admin-btn.edit {
+    @apply bg-sky-50 text-sky-700 hover:bg-sky-100;
+  }
+  .lecdir-admin-btn.delete {
+    @apply bg-rose-50 text-rose-700 hover:bg-rose-100;
+  }
+  .lecdir-card-admin-updated {
+    @apply border-amber-200 bg-amber-50/50;
+  }
+  .lecdir-admin-updated {
+    @apply mt-2 flex items-start gap-1.5 text-xs font-medium leading-snug text-amber-900;
   }
 
   /* Lecturer profile page */

@@ -273,7 +273,8 @@ const passwordRules = [
 ];
 
 export const adminCreateUserRules = [
-  ...registerRules.slice(0, -1),
+  registerRules[0], // email
+  ...registerRules.slice(2, -1), // skip public registration verificationCode
   body('programCode')
     .if(body('role').equals('STUDENT'))
     .trim()

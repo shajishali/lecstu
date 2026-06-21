@@ -23,6 +23,11 @@ export interface DirectoryTeachingHall {
   building: string;
 }
 
+export interface AdminLastModifiedInfo {
+  at: string;
+  by: { firstName: string; lastName: string } | null;
+}
+
 export interface LecturerDirectoryItem {
   id: string;
   firstName: string;
@@ -39,6 +44,7 @@ export interface LecturerDirectoryItem {
   lecturerOffice: { id: string; roomNumber: string; building: string; floor: number } | null;
   scheduleSlotCount: number;
   teachingHalls: DirectoryTeachingHall[];
+  adminLastModified: AdminLastModifiedInfo | null;
 }
 
 type LecturerUserRow = {
@@ -70,6 +76,17 @@ function userMatchesSearch(u: LecturerUserRow, searchQ: string): boolean {
   return false;
 }
 
+function sortDirectoryItems(items: LecturerDirectoryItem[]): LecturerDirectoryItem[] {
+  return [...items].sort((a, b) => {
+    const aAt = a.adminLastModified?.at ? new Date(a.adminLastModified.at).getTime() : 0;
+    const bAt = b.adminLastModified?.at ? new Date(b.adminLastModified.at).getTime() : 0;
+    if (aAt !== bAt) return bAt - aAt;
+    const nameA = `${a.firstName} ${a.lastName}`;
+    const nameB = `${b.firstName} ${b.lastName}`;
+    return nameA.localeCompare(nameB);
+  });
+}
+
 export async function listDirectoryLecturers(filters?: {
   search?: string;
   departmentId?: string;
@@ -90,6 +107,8 @@ export async function listDirectoryLecturers(filters?: {
       phone: true,
       profileImage: true,
       timetableCode: true,
+      adminLastModifiedAt: true,
+      adminLastModifiedBy: { select: { firstName: true, lastName: true } },
       department: { select: { id: true, name: true, code: true } },
       lecturerOffice: {
         select: { id: true, roomNumber: true, building: true, floor: true },
@@ -164,10 +183,21 @@ export async function listDirectoryLecturers(filters?: {
       lecturerOffice: u.lecturerOffice,
       scheduleSlotCount: u._count.scheduleSlots,
       teachingHalls,
+      adminLastModified: u.adminLastModifiedAt
+        ? {
+            at: u.adminLastModifiedAt.toISOString(),
+            by: u.adminLastModifiedBy
+              ? {
+                  firstName: u.adminLastModifiedBy.firstName,
+                  lastName: u.adminLastModifiedBy.lastName,
+                }
+              : null,
+          }
+        : null,
     });
   }
 
-  return items;
+  return sortDirectoryItems(items);
 }
 
 export async function getDirectoryLecturerProfile(id: string) {

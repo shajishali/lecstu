@@ -8,6 +8,7 @@ import {
 } from '../middleware/validate';
 import {
   createUser,
+  deleteUser,
   getUser,
   listUsers,
   resetUserPassword,
@@ -23,6 +24,7 @@ router.get('/', listUsers);
 router.get('/:id', getUser);
 router.post('/', ...adminCreateUserRules, validateStudentRegistration, createUser);
 router.patch('/:id', ...adminUpdateUserRules, updateUser);
+router.delete('/:id', deleteUser);
 router.patch('/:id/password', ...adminResetPasswordRules, resetUserPassword);
 
 export default router;

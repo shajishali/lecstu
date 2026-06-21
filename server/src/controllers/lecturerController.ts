@@ -47,6 +47,7 @@ export async function listLecturers(req: Request, res: Response, next: NextFunct
         lecturerOffice: l.lecturerOffice,
         teachingHalls: l.teachingHalls,
         _count: { scheduleSlots: l.scheduleSlotCount },
+        adminLastModified: l.adminLastModified,
       })),
     });
   } catch (err) {
