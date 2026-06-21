@@ -367,8 +367,11 @@ def _timetable_lines_from_grid(grid: Dict[str, Any], requested_day: Optional[str
             cell = row[di] or {}
             if cell.get("isEmpty") or cell.get("mergeContinue") or cell.get("isBreak"):
                 continue
+            row_span = max(1, int(cell.get("rowSpan") or 1))
+            end_ti = min(ti + row_span - 1, len(time_rows) - 1)
+            end_tr = time_rows[end_ti] or {}
             start = (cell.get("slotStart") or tr.get("start") or "").strip()
-            end = (cell.get("slotEnd") or tr.get("end") or "").strip()
+            end = (cell.get("slotEnd") or end_tr.get("end") or tr.get("end") or "").strip()
             if not start or not end:
                 continue
             display = cell.get("displayLines") or cell.get("lines") or []
