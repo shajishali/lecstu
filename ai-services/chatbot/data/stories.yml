@@ -137,13 +137,6 @@ stories:
       - intent: ask_timetable
       - action: action_query_timetable
 
-  - story: messy timetable confirm then show
-    steps:
-      - intent: ask_timetable
-      - action: action_query_timetable
-      - intent: affirm
-      - action: action_query_timetable
-
   - story: out of scope recover timetable
     steps:
       - intent: out_of_scope
