@@ -47,6 +47,10 @@ nlu:
       - What is my timetable [tomorrow](day)?
       - [Tomorrow](day) timetable please
       - My timetable [tomorrow](day)
+      - give the tomorrows time table
+      - give me tomorrow's timetable
+      - tomorrows timetable please
+      - what is my timetable for tomorrows
 
   - intent: ask_hall_availability
     examples: |

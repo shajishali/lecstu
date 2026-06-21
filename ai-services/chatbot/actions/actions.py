@@ -41,6 +41,10 @@ DAY_ALIASES = {
     "sun": "SUNDAY",
 }
 
+_VALID_WEEKDAYS = frozenset(
+    {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"}
+)
+
 TIME_PATTERNS = [
     (r"(\d{1,2})\s*:\s*(\d{2})\s*(am|pm)?", lambda m: _parse_hm(m)),
     (r"(\d{1,2})\s*(am|pm)", lambda m: _parse_h_ampm(m)),
@@ -73,15 +77,54 @@ def _parse_h_ampm(m) -> Optional[str]:
         return None
 
 
+def _normalize_day_input(day_raw: str) -> str:
+    """Collapse typos/plurals like tomorrows, tomorrow's, todays."""
+    d = day_raw.strip().lower().replace("'", "").replace("\u2019", "")
+    if d.startswith("tomorrow"):
+        return "tomorrow"
+    if d.startswith("today"):
+        return "today"
+    return d
+
+
 def _resolve_day(day_raw: Optional[str]) -> Optional[str]:
     if not day_raw:
         return None
-    d = day_raw.strip().lower()
+    d = _normalize_day_input(day_raw)
     if d in ("today", "now"):
         return datetime.now().strftime("%A").upper()
     if d == "tomorrow":
         return (datetime.now() + timedelta(days=1)).strftime("%A").upper()
-    return DAY_ALIASES.get(d, d.upper() if len(d) > 2 else None)
+    alias = DAY_ALIASES.get(d)
+    if alias:
+        return alias
+    if d.endswith("s"):
+        alias = DAY_ALIASES.get(d[:-1])
+        if alias:
+            return alias
+    upper = d.upper()
+    if upper in _VALID_WEEKDAYS:
+        return upper
+    return None
+
+
+def _requested_timetable_day(tracker: Tracker) -> Optional[str]:
+    """Resolve weekday from NLU day slot or message text (handles tomorrows, etc.)."""
+    day_slot = tracker.get_slot("day")
+    if day_slot:
+        resolved = _resolve_day(day_slot)
+        if resolved:
+            return resolved
+
+    text = ((tracker.latest_message or {}).get("text") or "").lower()
+    if re.search(r"\btomorrow", text):
+        return (datetime.now() + timedelta(days=1)).strftime("%A").upper()
+    if re.search(r"\btoday", text):
+        return datetime.now().strftime("%A").upper()
+    for token, alias in DAY_ALIASES.items():
+        if alias and len(token) >= 3 and re.search(rf"\b{re.escape(token)}\b", text):
+            return alias
+    return None
 
 
 def _resolve_time(time_raw: Optional[str]) -> Optional[str]:
@@ -194,11 +237,16 @@ def _find_lecturer_by_name(lecturers: List[Dict], name: str) -> Optional[Dict]:
 
 def _resolve_day_from_tracker(tracker: Tracker, day_slot: Optional[str]) -> Optional[str]:
     if day_slot:
-        return day_slot
+        normalized = _normalize_day_input(day_slot)
+        if normalized in ("today", "tomorrow"):
+            return normalized
+        resolved = _resolve_day(day_slot)
+        if resolved:
+            return resolved
     text = ((tracker.latest_message or {}).get("text") or "").lower()
-    if "today" in text:
+    if re.search(r"\btoday", text):
         return "today"
-    if "tomorrow" in text:
+    if re.search(r"\btomorrow", text):
         return "tomorrow"
     return None
 
@@ -380,7 +428,7 @@ class ActionQueryTimetable(Action):
             return []
 
         day_slot = tracker.get_slot("day")
-        requested_day = _resolve_day(day_slot) if day_slot else None
+        requested_day = _requested_timetable_day(tracker)
 
         try:
             r = requests.get(
@@ -409,12 +457,12 @@ class ActionQueryTimetable(Action):
                 return []
 
             if not lines:
-                qual = f" for {requested_day.capitalize()}" if requested_day else ""
+                qual = f" for {requested_day.title()}" if requested_day else ""
                 dispatcher.utter_message(text=f"You have no classes{qual}.")
                 return []
 
             if requested_day:
-                msg = f"Here's your timetable for {requested_day.capitalize()}:\n\n" + "\n".join(lines)
+                msg = f"Here's your timetable for {requested_day.title()}:\n\n" + "\n".join(lines)
             else:
                 msg = "Here's your timetable:\n\n" + "\n".join(lines[:15])
                 if len(lines) > 15:
