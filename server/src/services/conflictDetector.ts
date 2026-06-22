@@ -26,6 +26,8 @@ interface SlotParams {
   /** When set, hall/lecturer placeholder clashes are ignored (bulk FET import). */
   hallName?: string;
   unassignedLecturerId?: string;
+  /** Admin grid: allow this slot to share a hall with another batch at the same time. */
+  hallIsShared?: boolean;
 }
 
 function timesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
@@ -42,6 +44,12 @@ export function isCommonHall(name: string | undefined): boolean {
   const n = (name || '').trim().toUpperCase();
   if (!n || isPlaceholderHall(n)) return false;
   return /\bCOMMON\b/.test(n);
+}
+
+/** Strip admin COMMON marker from hall text shown to students. */
+export function cleanHallDisplayName(name: string): string {
+  const cleaned = (name || '').replace(/\s+COMMON\b/gi, '').trim();
+  return cleaned || PLACEHOLDER_HALL_NAME;
 }
 
 function isPlaceholderLecturer(
@@ -71,10 +79,12 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     excludeId,
     hallName,
     unassignedLecturerId,
+    hallIsShared,
   } = params;
   const conflicts: ConflictInfo[] = [];
 
-  const skipHallCheck = isPlaceholderHall(hallName);
+  const skipHallCheck =
+    isPlaceholderHall(hallName) || isCommonHall(hallName) || hallIsShared === true;
   const skipLecturerCheck = isPlaceholderLecturer(lecturerId, unassignedLecturerId);
 
   const where: Record<string, unknown> = {
@@ -103,7 +113,6 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
 
     if (
       !skipHallCheck &&
-      !isCommonHall(hallName) &&
       !isCommonHall(entry.hall.name) &&
       entry.hallId === hallId &&
       !isPlaceholderHall(entry.hall.name)

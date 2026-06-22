@@ -1059,6 +1059,9 @@ export function normalizeGridSnapshot(table: TimetableGridSnapshot): TimetableGr
           isOnline: cell?.isOnline ?? /\bonline\b/i.test(cell?.rawText ?? ''),
           rowSpan: cell?.rowSpan ?? 1,
           mergeContinue: cell?.mergeContinue ?? false,
+          slotStart: cell?.slotStart,
+          slotEnd: cell?.slotEnd,
+          sharedHall: cell?.sharedHall === true,
         };
       }),
     ),
@@ -1101,6 +1104,7 @@ export function gridSnapshotsToParsedRows(tables: TimetableGridSnapshot[]): Pars
           hallName: extractHallFromLines(lines) || 'TBD',
           groupName,
           semester: table.semester ?? 1,
+          sharedHall: cell.sharedHall === true,
         });
       }
     }

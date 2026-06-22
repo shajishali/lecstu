@@ -10,6 +10,8 @@ export interface TimetableGridCell {
   /** Per-class start/end (HH:MM) — does not change the global time row for other days */
   slotStart?: string;
   slotEnd?: string;
+  /** Admin-only: allow same hall/time as another batch (not shown on student timetable). */
+  sharedHall?: boolean;
 }
 
 export interface TimetableGridSnapshot {

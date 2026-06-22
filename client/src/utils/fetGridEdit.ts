@@ -11,6 +11,15 @@ export interface EditableCellData {
   startTime: string;
   endTime: string;
   isOnline: boolean;
+  sharedHall: boolean;
+}
+
+function stripCommonMarker(text: string): string {
+  return text.replace(/\s+COMMON\b/gi, '').trim();
+}
+
+function lineHasCommonMarker(text: string): boolean {
+  return /\bCOMMON\b/i.test(text);
 }
 
 export function cloneGrid(grid: TimetableGridSnapshot): TimetableGridSnapshot {
@@ -47,7 +56,7 @@ export function parseCellToEditable(
     }
     const hm = trimmed.match(HALL_RE);
     if (hm) {
-      hallName = hm[1];
+      hallName = stripCommonMarker(hm[1]);
       continue;
     }
     if (/^tbd$/i.test(trimmed)) {
@@ -59,14 +68,18 @@ export function parseCellToEditable(
     }
   }
 
+  const sharedHall =
+    cell.sharedHall === true || lines.some((l) => lineHasCommonMarker(l));
+
   return {
     courseCode,
     subjectName,
     lecturerName,
-    hallName,
+    hallName: stripCommonMarker(hallName),
     startTime,
     endTime,
     isOnline: cell.isOnline ?? false,
+    sharedHall,
   };
 }
 
@@ -75,7 +88,7 @@ export function buildCellFromEditable(data: EditableCellData): TimetableGridCell
   const courseLine = (data.subjectName || data.courseCode).trim();
   if (courseLine) lines.push(courseLine);
   if (data.lecturerName.trim()) lines.push(data.lecturerName.trim());
-  const hall = data.hallName.trim() || 'TBD';
+  const hall = stripCommonMarker(data.hallName.trim() || 'TBD');
   lines.push(/^tbd$/i.test(hall) ? 'TBD' : hall);
 
   const rawText = lines.join('\n');
@@ -90,6 +103,7 @@ export function buildCellFromEditable(data: EditableCellData): TimetableGridCell
     mergeContinue: false,
     slotStart: data.startTime,
     slotEnd: data.endTime,
+    sharedHall: data.sharedHall === true,
   };
 }
 

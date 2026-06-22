@@ -16,8 +16,12 @@ function blockColor(index: number): string {
 
 const HALL_LINE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
 
+function stripCommonMarker(text: string): string {
+  return text.replace(/\s+COMMON\b/gi, '').trim();
+}
+
 function formatLine(line: string, index: number, allLines: string[]): string {
-  const t = line.trim();
+  const t = stripCommonMarker(line.trim());
   if (t === '—' || t === '-' || t.toLowerCase() === 'unassigned') {
     return 'Lecturer: —';
   }

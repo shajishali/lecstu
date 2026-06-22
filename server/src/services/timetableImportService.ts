@@ -6,7 +6,7 @@
 import type { DayOfWeek } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
-import { detectConflicts, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import { detectConflicts, cleanHallDisplayName, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
   parseLectureHall,
   studyYearToOrdinal,
@@ -185,6 +185,7 @@ export async function resolveAndImport(
     hallId: string;
     groupId: string;
     _hallName: string;
+    _hallIsShared: boolean;
     _rowNum: number;
     _lecturerAssigned: boolean;
   }> = [];
@@ -193,7 +194,9 @@ export async function resolveAndImport(
     const r = rows[i];
     const rowNum = i + 2;
     const courseCode = (r.courseCode || 'UNKNOWN').trim().toUpperCase();
-    const hallName = (r.hallName || 'TBD').trim();
+    const rawHallName = (r.hallName || 'TBD').trim();
+    const hallIsShared = r.sharedHall === true || isCommonHall(rawHallName);
+    const hallName = cleanHallDisplayName(rawHallName);
     const groupName = (r.groupName || '').trim();
     if (!groupName) continue;
 
@@ -294,6 +297,7 @@ export async function resolveAndImport(
       hallId,
       groupId,
       _hallName: hallName.toUpperCase() === PLACEHOLDER_HALL_NAME ? PLACEHOLDER_HALL_NAME : hallName,
+      _hallIsShared: hallIsShared,
       _rowNum: rowNum,
       _lecturerAssigned: lecturerAssigned,
     });
@@ -324,6 +328,7 @@ export async function resolveAndImport(
       lecturerId: entry.lecturerId,
       groupId: entry.groupId,
       hallName: entry._hallName,
+      hallIsShared: entry._hallIsShared,
       unassignedLecturerId,
     });
     if (conflicts.length > 0) {
@@ -353,6 +358,8 @@ export async function resolveAndImport(
           entry._hallName !== PLACEHOLDER_HALL_NAME && prev._hallName !== PLACEHOLDER_HALL_NAME;
         if (
           hallIsReal &&
+          !entry._hallIsShared &&
+          !prev._hallIsShared &&
           !isCommonHall(entry._hallName) &&
           !isCommonHall(prev._hallName) &&
           prev.hallId === entry.hallId

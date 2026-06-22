@@ -220,6 +220,8 @@ export interface ParsedTimetableRow {
   hallName: string;
   groupName: string;
   semester?: number;
+  /** Admin-only: skip hall double-booking across batches */
+  sharedHall?: boolean;
 }
 
 export interface ParseResult {

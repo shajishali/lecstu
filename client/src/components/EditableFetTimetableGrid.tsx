@@ -34,8 +34,12 @@ function buildCourseColorLookup(grid: TimetableGridSnapshot): Map<string, string
 
 const HALL_LINE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
 
+function stripCommonMarker(text: string): string {
+  return text.replace(/\s+COMMON\b/gi, '').trim();
+}
+
 function formatLine(line: string, index: number, allLines: string[]): string {
-  const t = line.trim();
+  const t = stripCommonMarker(line.trim());
   if (t === '—' || t === '-' || t.toLowerCase() === 'unassigned') return 'Lecturer: —';
   if (t.toUpperCase() === 'TBD' && !allLines.some((l) => HALL_LINE_RE.test(l))) return 'Room: TBD';
   if (HALL_LINE_RE.test(t)) return t.startsWith('Room:') ? t : `Room: ${t}`;
@@ -70,6 +74,7 @@ const emptyForm = (start: string, end: string): EditableCellData => ({
   startTime: start,
   endTime: end,
   isOnline: false,
+  sharedHall: false,
 });
 
 export default function EditableFetTimetableGrid({ grid, onChange, className = '' }: Props) {
@@ -314,8 +319,22 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   value={form.hallName}
                   onChange={(e) => setForm((f) => ({ ...f, hallName: e.target.value }))}
-                  placeholder="e.g. LB-CMP-01-1, TBD, or AB-LCH-09-1 COMMON"
+                  placeholder="e.g. AB-LCH-09-1 or TBD"
                 />
+              </label>
+              <label className="flex items-start gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={form.sharedHall}
+                  onChange={(e) => setForm((f) => ({ ...f, sharedHall: e.target.checked }))}
+                />
+                <span>
+                  Shared room (admin only)
+                  <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                    Allows this class at the same time as another batch in the same hall. Not shown to students.
+                  </span>
+                </span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block text-sm font-medium text-slate-700">
