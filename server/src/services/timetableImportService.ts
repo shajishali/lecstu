@@ -389,7 +389,7 @@ export async function resolveAndImport(
     return { created: 0, conflicts: allConflicts, stats, groupIds: [] };
   }
 
-  const toCreate = validEntries.map(({ _rowNum, _lecturerAssigned, _hallName, ...e }) => ({
+  const toCreate = validEntries.map(({ _rowNum, _lecturerAssigned, _hallName, _hallIsShared, ...e }) => ({
     ...e,
     dayOfWeek: e.dayOfWeek as DayOfWeek,
   }));
