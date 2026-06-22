@@ -16,6 +16,9 @@ import {
   listTimetableTables,
   getTimetableTable,
   updateTimetableTable,
+  createTimetableTable,
+  updateTimetableTableMeta,
+  deleteTimetableTable,
   assignLecturer,
   reresolveLecturers,
 } from '../controllers/timetableController';
@@ -30,8 +33,11 @@ router.get('/', listTimetable);
 router.get('/dropdowns', getDropdownData);
 router.get('/bulk-import/template', bulkImportTemplate);
 router.get('/tables', listTimetableTables);
+router.post('/tables', createTimetableTable);
 router.get('/tables/:id', getTimetableTable);
+router.patch('/tables/:id/meta', updateTimetableTableMeta);
 router.patch('/tables/:id', updateTimetableTable);
+router.delete('/tables/:id', deleteTimetableTable);
 router.get('/:id', getTimetableEntry);
 
 router.post('/', timetableCreateRules, createTimetableEntry);

@@ -18,6 +18,9 @@ import {
   getTableSnapshotById,
   updateSnapshotSlotCount,
   updateTableSnapshotGrid,
+  createTableSnapshot,
+  updateTableSnapshotMeta,
+  deleteTableSnapshot,
 } from '../services/timetableTableService';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import { gridSnapshotsToParsedRows, normalizeGridSnapshot } from '../services/timetableGridBuilder';
@@ -555,6 +558,74 @@ export async function updateTimetableTable(req: Request, res: Response, next: Ne
       data: result.grid,
       imported: result.imported,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createTimetableTable(req: Request, res: Response, next: NextFunction) {
+  try {
+    const body = req.body as {
+      tableTitle?: string;
+      groupName?: string;
+      year?: number;
+      month?: number;
+      week?: number;
+      semester?: number;
+      departmentId?: string;
+    };
+    const groupName = body.groupName?.trim();
+    if (!groupName) throw new AppError('groupName is required', 400);
+    const year = body.year ?? 2026;
+    const month = body.month ?? 1;
+    const week = body.week ?? 1;
+    const result = await createTableSnapshot({
+      tableTitle: body.tableTitle?.trim() || groupName,
+      groupName,
+      year,
+      month,
+      week,
+      semester: body.semester,
+      departmentId: body.departmentId,
+    });
+    res.status(201).json({
+      success: true,
+      message: 'Batch table created',
+      data: result.meta,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateTimetableTableMeta(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    const body = req.body as {
+      tableTitle?: string;
+      groupName?: string;
+      year?: number;
+      month?: number;
+      week?: number;
+      semester?: number;
+      departmentId?: string;
+    };
+    const result = await updateTableSnapshotMeta(id, body);
+    res.json({
+      success: true,
+      message: 'Batch table updated',
+      data: result.meta,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteTimetableTable(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    await deleteTableSnapshot(id);
+    res.json({ success: true, message: 'Batch table deleted' });
   } catch (err) {
     next(err);
   }

@@ -1,0 +1,66 @@
+[Body Text] CSCI 43018 – Research Project
+[Title] Full Title of Your Thesis
+[PhD Name of Candidate] [Put your full name here]
+[PhD Name of Candidate] [Student Number]
+[PhD Normal] Prepared under the Supervision of
+[PhD Normal] [Supervisor’s name]
+[PhD Normal] Submitted in [partial] fulfilment of the requirements for the 
+Bachelor of Science Honours in Computer Science Degree
+[PhD Normal] Faculty of Computing and Technology
+University of Kelaniya
+[2023/2024]
+[PhD Preliminary Heading] Declaration
+[Normal] I, [Full Name], hereby declare that the thesis entitled “[Your Research Title]”, submitted to the Faculty of Computing and Technology, University of Kelaniya, in fulfilment of the requirements for the award of the degree of Bachelor of Science Honours in Computer Science, is the result of my own independent work carried out under the guidance and supervision of [Supervisor’s Name]. This work has not been submitted, in whole or in part, to any conference, journal, book, university, or other institution for the purpose of obtaining any degree, diploma, or other academic qualification. I confirm that all sources of information and ideas from other works have been properly acknowledged in accordance with accepted academic conventions.
+[Normal] Name of the Student: ___________________________
+Student Number: _______________________________
+Signature of the Student: _______________________
+Date: __________________________________________
+[Normal] Name of the Supervisor: _________________________
+[Normal] Department: _____________________________________
+Signature of the Supervisor: ______________________
+Date: ____________________________________________
+[PhD Preliminary Heading] Abstract
+[PhD Normal] Put your abstract here, maximum one page (The abstract should be completed after the thesis has been finalized.).
+[PhD Preliminary Heading] Acknowledgement
+[PhD Normal] Acknowledge any funding agencies/persons, laboratories, industries, other universities, supervisors and academics and family members and friends who assisted you in any way to make this project a success.
+[PhD Preliminary Heading] Table of Contents
+[PhD Preliminary Heading] List of Tables
+[PhD Preliminary Heading] List of Figures
+[PhD Preliminary Heading] List of Acronyms/Abbreviations
+[Normal] If appropriate, list any abbreviations used in the thesis.
+[Heading 1] Introduction
+[PhD Normal] The introduction chapter needs to state the objectives of the program of research, include definitions of the key concepts and variables and give a brief outline of the background and research approach. The aim of the introduction is to contextualise the proposed research.
+[Heading 2] Topic 1
+[PhD Normal] Present and discuss your first topic.
+[Heading 2] Topic 2
+[PhD Normal] Present and discuss your second topic.
+[Heading 1] Literature Review
+[PhD Normal] This chapter presents a review of the existing literature relevant to the research topic. It examines the key concepts, theories, methodologies, and previous studies that form the foundation of the present research. The review aims to identify current knowledge, highlight research gaps, and establish the theoretical and empirical basis for the study.
+[Heading 2] Topic 1
+[PhD Normal] Present and discuss your first topic.
+[Heading 2] Topic 2
+[PhD Normal] Present and discuss your second topic.
+[Heading 1] Methodology
+[PhD Normal] This chapter describes the methodology adopted to achieve the objectives of the study. It outlines the research design, data collection procedures, tools and techniques used, and the methods employed for data analysis. The chapter also explains the rationale for selecting these methods and provides sufficient detail to ensure the validity, reliability, and reproducibility of the research.
+[Heading 2] Topic 1
+[PhD Normal] Present and discuss your first topic.
+[Heading 2] Topic 2
+[PhD Normal] Present and discuss your second topic.
+[Heading 1] Results and Analysis
+[PhD Normal] This chapter presents the experimental results and analyzes the performance of the proposed methodology. The findings are evaluated using appropriate metrics and compared with relevant benchmarks or existing approaches where applicable. The analysis highlights key observations, interprets the results, and assesses how effectively the proposed solution meets the objectives of the study.
+[Heading 2] Topic 1
+[PhD Normal] Present and discuss your first topic.
+[Heading 2] Topic 2
+[PhD Normal] Present and discuss your second topic.
+[Heading 1] Discussion
+[PhD Normal] This chapter discusses the findings presented in the previous chapter in relation to the research objectives, research questions, and existing literature. The results are interpreted to identify their significance, implications, and contributions to the field. The chapter also highlights key insights, discusses possible explanations for the findings, and addresses any limitations that may have influenced the outcomes of the study.
+[Heading 2] Topic 1
+[PhD Normal] Present and discuss your first topic.
+[Heading 2] Topic 2
+[PhD Normal] Present and discuss your second topic.
+[Heading 1] Conclusions
+[PhD Normal] This chapter concludes the study by summarizing the key findings and contributions of the research. It revisits the research objectives and discusses the extent to which they have been achieved. The chapter also outlines the limitations of the study and provides recommendations for future research and potential improvements to the proposed work.
+[PhD Appendices & Bibliography] References
+[PhD Normal] The bibliography and all in-text citations must conform to IEEE style.
+[PhD Appendices & Bibliography] Appendices
+[PhD Appendix Sub-heading] Title

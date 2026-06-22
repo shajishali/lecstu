@@ -1107,3 +1107,58 @@ export function gridSnapshotsToParsedRows(tables: TimetableGridSnapshot[]): Pars
   }
   return rows;
 }
+
+const DEFAULT_DAY_COLUMNS: { day: string; label: string }[] = [
+  { day: 'MONDAY', label: 'Monday' },
+  { day: 'TUESDAY', label: 'Tuesday' },
+  { day: 'WEDNESDAY', label: 'Wednesday' },
+  { day: 'THURSDAY', label: 'Thursday' },
+  { day: 'FRIDAY', label: 'Friday' },
+  { day: 'SATURDAY', label: 'Saturday' },
+  { day: 'SUNDAY', label: 'Sunday' },
+];
+
+const DEFAULT_TIME_ROWS: { label: string; start: string; end: string }[] = [
+  { label: '08:00 - 08:55', start: '08:00', end: '08:55' },
+  { label: '09:00 - 09:55', start: '09:00', end: '09:55' },
+  { label: '10:00 - 10:55', start: '10:00', end: '10:55' },
+  { label: '11:00 - 11:55', start: '11:00', end: '11:55' },
+  { label: '12:00 - 12:55', start: '12:00', end: '12:55' },
+  { label: '13:00 - 13:55', start: '13:00', end: '13:55' },
+  { label: '14:00 - 14:55', start: '14:00', end: '14:55' },
+  { label: '15:00 - 15:55', start: '15:00', end: '15:55' },
+  { label: '16:00 - 16:55', start: '16:00', end: '16:55' },
+  { label: '17:00 - 17:55', start: '17:00', end: '17:55' },
+];
+
+/** Build an empty FET-style grid for a new batch table. */
+export function createEmptyBatchGrid(params: {
+  tableTitle: string;
+  groupName: string;
+  year: number;
+  month: number;
+  week: number;
+  semester?: number;
+  dayColumns?: { day: string; label: string }[];
+  timeRows?: { label: string; start: string; end: string }[];
+}): TimetableGridSnapshot {
+  const enrollment = parseEnrollmentFromGroupName(params.groupName);
+  const dayColumns = params.dayColumns ?? DEFAULT_DAY_COLUMNS;
+  const timeRows = params.timeRows ?? DEFAULT_TIME_ROWS;
+  const empty = cellFromRaw('');
+  const cells = timeRows.map(() => dayColumns.map(() => ({ ...empty })));
+  return normalizeGridSnapshot({
+    tableTitle: params.tableTitle.trim(),
+    groupName: params.groupName.trim(),
+    programCode: enrollment.programCode,
+    studyYear: enrollment.studyYear,
+    pathwayCode: enrollment.pathwayCode,
+    year: params.year,
+    month: params.month,
+    week: params.week,
+    semester: params.semester ?? 1,
+    dayColumns,
+    timeRows,
+    cells,
+  });
+}

@@ -181,3 +181,52 @@ cd d:\Reasearch\lecstu\ai-services\chatbot
 ```
 
 Then start Terminal 3 again with `.\run_rasa.ps1`.
+
+---
+
+## Deploy batch-table CRUD update (local → production)
+
+No new database migration — API + client changes only.
+
+### Local — test after pulling / editing code
+
+Restart the API and web app (Terminals 1 and 2):
+
+```powershell
+cd d:\Reasearch\lecstu
+npm run dev:server
+```
+
+```powershell
+cd d:\Reasearch\lecstu
+npm run dev:client
+```
+
+Open **Admin → Timetable → Batch tables**. Use **New batch table** to create, pencil icon to edit title/group code/period, trash to delete.
+
+Optional one-shot build check:
+
+```powershell
+cd d:\Reasearch\lecstu\server
+npm run build
+
+cd d:\Reasearch\lecstu\client
+npm run build
+```
+
+### Production — Oracle server (PuTTY)
+
+Commit and push from your PC first, then on the server:
+
+```bash
+cd /var/www/lecstu
+git pull
+cd server && npm install && npm run build
+cd ../client && npm install && npm run build
+pm2 restart lecstu-api
+sudo systemctl reload nginx
+```
+
+Verify: **Admin → Timetable → Batch tables** — create / edit / delete should work. No `prisma migrate deploy` needed for this update.
+
+Full hosting guide: `hostingSteps.md` (Appendix — **Deploy code updates**).
