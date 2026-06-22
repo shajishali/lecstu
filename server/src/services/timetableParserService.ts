@@ -303,6 +303,7 @@ function mergeSlotMetadata(current: ParsedTimetableRow, row: ParsedTimetableRow)
     hallName: hall,
     lecturerName,
     lecturerEmail: current.lecturerEmail || row.lecturerEmail,
+    sharedHall: current.sharedHall === true || row.sharedHall === true,
   };
 }
 

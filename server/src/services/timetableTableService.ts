@@ -208,32 +208,35 @@ export async function updateTableSnapshotGrid(
     semester: rawGrid.semester ?? row.semester,
   });
 
-  await prisma.timetableTableSnapshot.update({
-    where: { id },
-    data: {
-      gridData: grid as object,
-      tableTitle: grid.tableTitle,
-      updatedAt: new Date(),
-    },
-  });
-
   const group = await prisma.studentGroup.findFirst({
     where: { name: { equals: row.groupName, mode: 'insensitive' } },
     select: { id: true },
   });
-  if (group) {
-    await prisma.masterTimetable.deleteMany({
-      where: {
-        groupId: group.id,
-        year: row.year,
-        month: row.month,
-        week: row.week,
-      },
-    });
+  if (!group) {
+    throw new AppError(
+      `No student group "${row.groupName}" found. Create the group first or fix the batch group code.`,
+      400,
+    );
   }
 
+  await prisma.masterTimetable.deleteMany({
+    where: {
+      groupId: group.id,
+      year: row.year,
+      month: row.month,
+      week: row.week,
+    },
+  });
+
   const rows = finalizeParsedRows(gridSnapshotsToParsedRows([grid]));
-  const importResult = await resolveAndImport(rows, undefined, false);
+  let importResult;
+  try {
+    importResult = await resolveAndImport(rows, undefined, false, group.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to sync timetable slots';
+    throw new AppError(message, 400);
+  }
+
   if (importResult.conflicts.length > 0) {
     throw new AppError(
       importResult.conflicts[0]?.conflicts?.[0]
@@ -243,11 +246,24 @@ export async function updateTableSnapshotGrid(
     );
   }
 
+  await prisma.timetableTableSnapshot.update({
+    where: { id },
+    data: {
+      gridData: grid as object,
+      tableTitle: grid.tableTitle,
+      updatedAt: new Date(),
+    },
+  });
+
   await updateSnapshotSlotCount(row.groupName, row.year, row.month, row.week, rows.length);
   invalidateTimetableCache();
 
   if (importResult.groupIds?.length) {
-    await notifyTimetableChange(importResult.groupIds);
+    try {
+      await notifyTimetableChange(importResult.groupIds);
+    } catch (err) {
+      console.error('Timetable saved but notification failed:', err);
+    }
   }
 
   const enriched = await enrichSnapshotGrid(grid, row.groupName);

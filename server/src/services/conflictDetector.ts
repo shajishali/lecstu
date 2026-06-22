@@ -28,6 +28,8 @@ interface SlotParams {
   unassignedLecturerId?: string;
   /** Admin grid: allow this slot to share a hall with another batch at the same time. */
   hallIsShared?: boolean;
+  /** Admin grid replace: skip GROUP clashes for this group (slots were cleared). */
+  replacingGroupId?: string;
 }
 
 function timesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
@@ -80,6 +82,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     hallName,
     unassignedLecturerId,
     hallIsShared,
+    replacingGroupId,
   } = params;
   const conflicts: ConflictInfo[] = [];
 
@@ -150,6 +153,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     }
 
     if (entry.groupId === groupId) {
+      if (replacingGroupId && groupId === replacingGroupId) continue;
       conflicts.push({
         type: 'GROUP',
         message: `Group "${entry.group.name}" already has ${entry.course.code} on ${dayOfWeek} ${timeStr}`,

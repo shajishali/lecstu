@@ -4,6 +4,7 @@
  * Resolves entities from parsed rows and creates timetable entries.
  */
 import type { DayOfWeek } from '../generated/prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
 import { detectConflicts, cleanHallDisplayName, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
@@ -27,6 +28,63 @@ const FCT_PROGRAM_CODES = ['CS', 'ET', 'CT', 'BS', 'BST'] as const;
 
 function timesOverlapImport(s1: string, e1: string, s2: string, e2: string): boolean {
   return s1 < e2 && s2 < e1;
+}
+
+function normalizeDayOfWeek(day: string): DayOfWeek {
+  const key = day.trim().toUpperCase();
+  const allowed: DayOfWeek[] = [
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
+    'FRIDAY',
+    'SATURDAY',
+    'SUNDAY',
+  ];
+  if (allowed.includes(key as DayOfWeek)) return key as DayOfWeek;
+  throw new Error(`Invalid day of week: ${day}`);
+}
+
+async function findOrCreateHallId(
+  hallName: string,
+  hallMap: Map<string, string>,
+  stats: ImportStats,
+): Promise<string> {
+  const lookupKey = hallName.toUpperCase();
+  let hallId = hallMap.get(lookupKey);
+  if (hallId) return hallId;
+
+  const hallParsed = parseLectureHall(hallName);
+  let createdNew = false;
+  try {
+    const created = await prisma.lectureHall.create({
+      data: {
+        name: hallParsed.name,
+        building: hallParsed.building,
+        floor: hallParsed.floor,
+        capacity: hallParsed.capacity,
+        equipment: hallParsed.equipment,
+      },
+    });
+    hallId = created.id;
+    createdNew = true;
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const existing = await prisma.lectureHall.findFirst({
+        where: { name: { equals: hallParsed.name, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      if (!existing) throw err;
+      hallId = existing.id;
+    } else {
+      throw err;
+    }
+  }
+
+  hallMap.set(lookupKey, hallId);
+  hallMap.set(hallParsed.name.toUpperCase(), hallId);
+  if (createdNew) stats.created.halls++;
+  return hallId;
 }
 
 /** Parse group names like CS-Y3-AINT, CT-Y1, or "Y1 CT Group" from PDFs */
@@ -124,7 +182,8 @@ export async function getOrCreateUnassignedLecturer(departmentId: string): Promi
 export async function resolveAndImport(
   rows: ParsedTimetableRow[],
   defaultDepartmentId?: string,
-  replacePeriod?: boolean
+  replacePeriod?: boolean,
+  replacingGroupId?: string,
 ): Promise<{ created: number; conflicts: { row: number; conflicts: unknown[] }[]; stats: ImportStats; groupIds?: string[] }> {
   rows = finalizeParsedRows(rows);
 
@@ -239,22 +298,7 @@ export async function resolveAndImport(
     const lecturerAssigned = lecturerId !== unassignedLecturerId;
     if (!lecturerInitials && !lecturerAssigned) stats.unassignedCount++;
 
-    let hallId = hallMap.get(hallName.toUpperCase());
-    if (!hallId) {
-      const hallParsed = parseLectureHall(hallName);
-      const created = await prisma.lectureHall.create({
-        data: {
-          name: hallParsed.name,
-          building: hallParsed.building,
-          floor: hallParsed.floor,
-          capacity: hallParsed.capacity,
-          equipment: hallParsed.equipment,
-        },
-      });
-      hallId = created.id;
-      hallMap.set(hallName.toUpperCase(), hallId);
-      stats.created.halls++;
-    }
+    let hallId = await findOrCreateHallId(hallName, hallMap, stats);
 
     const groupDeptId = inferDeptForGroup(groupName);
     const canonicalName = resolveCanonicalGroupName(groupName);
@@ -329,6 +373,7 @@ export async function resolveAndImport(
       groupId: entry.groupId,
       hallName: entry._hallName,
       hallIsShared: entry._hallIsShared,
+      replacingGroupId,
       unassignedLecturerId,
     });
     if (conflicts.length > 0) {
@@ -389,14 +434,35 @@ export async function resolveAndImport(
     return { created: 0, conflicts: allConflicts, stats, groupIds: [] };
   }
 
-  const toCreate = validEntries.map(({ _rowNum, _lecturerAssigned, _hallName, _hallIsShared, ...e }) => ({
-    ...e,
-    dayOfWeek: e.dayOfWeek as DayOfWeek,
+  let imported = 0;
+  const toCreate = validEntries.map((entry) => ({
+    year: entry.year,
+    month: entry.month,
+    week: entry.week,
+    dayOfWeek: normalizeDayOfWeek(entry.dayOfWeek),
+    startTime: entry.startTime,
+    endTime: entry.endTime,
+    semester: entry.semester,
+    courseId: entry.courseId,
+    lecturerId: entry.lecturerId,
+    lecturerInitials: entry.lecturerInitials,
+    hallId: entry.hallId,
+    groupId: entry.groupId,
   }));
-  const result = await prisma.masterTimetable.createMany({ data: toCreate });
-  stats.imported = result.count;
+
+  if (toCreate.length > 0) {
+    try {
+      const result = await prisma.masterTimetable.createMany({ data: toCreate });
+      stats.imported = result.count;
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new Error(`Failed to save timetable slots: ${err.message}`);
+      }
+      throw err;
+    }
+  }
 
   const groupIds = [...new Set(validEntries.map((e) => e.groupId))];
   invalidateLecturerDisplayIndex();
-  return { created: result.count, conflicts: [], stats, groupIds };
+  return { created: stats.imported, conflicts: [], stats, groupIds };
 }
