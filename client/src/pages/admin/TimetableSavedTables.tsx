@@ -227,6 +227,8 @@ export default function TimetableSavedTables() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-sm text-slate-600 max-w-3xl">
           Manage batch tables here: create a new batch, rename or fix a mixed group code, or delete a wrong table.
+          For a room already used by another batch at the same time, add <strong>COMMON</strong> after the room code
+          (e.g. <code className="text-xs">AB-LCH-09-1 COMMON</code>). Regular rooms still block double-booking.
           Drag time row borders to adjust slot times, or use the edit button on each cell. Click Save changes when done.
         </p>
         <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={openCreate}>

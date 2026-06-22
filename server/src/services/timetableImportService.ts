@@ -6,7 +6,7 @@
 import type { DayOfWeek } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
-import { detectConflicts, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import { detectConflicts, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
   parseLectureHall,
   studyYearToOrdinal,
@@ -351,7 +351,12 @@ export async function resolveAndImport(
 
         const hallIsReal =
           entry._hallName !== PLACEHOLDER_HALL_NAME && prev._hallName !== PLACEHOLDER_HALL_NAME;
-        if (hallIsReal && prev.hallId === entry.hallId) {
+        if (
+          hallIsReal &&
+          !isCommonHall(entry._hallName) &&
+          !isCommonHall(prev._hallName) &&
+          prev.hallId === entry.hallId
+        ) {
           batchConflicts.push({
             type: 'HALL',
             message: `Hall "${entry._hallName}" is double-booked for this group on ${entry.dayOfWeek} ${entry.startTime}–${entry.endTime}`,

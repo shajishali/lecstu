@@ -314,7 +314,7 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   value={form.hallName}
                   onChange={(e) => setForm((f) => ({ ...f, hallName: e.target.value }))}
-                  placeholder="e.g. LB-CMP-01-1 or TBD"
+                  placeholder="e.g. LB-CMP-01-1, TBD, or AB-LCH-09-1 COMMON"
                 />
               </label>
               <div className="grid grid-cols-2 gap-3">

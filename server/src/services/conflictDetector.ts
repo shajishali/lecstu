@@ -37,6 +37,13 @@ function isPlaceholderHall(name: string | undefined): boolean {
   return !n || n === PLACEHOLDER_HALL_NAME || n === 'ONLINE' || n === '---';
 }
 
+/** Shared venue — append "COMMON" to the room (e.g. AB-LCH-09-1 COMMON) to allow another class at the same time. */
+export function isCommonHall(name: string | undefined): boolean {
+  const n = (name || '').trim().toUpperCase();
+  if (!n || isPlaceholderHall(n)) return false;
+  return /\bCOMMON\b/.test(n);
+}
+
 function isPlaceholderLecturer(
   lecturerId: string,
   unassignedLecturerId: string | undefined,
@@ -96,6 +103,8 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
 
     if (
       !skipHallCheck &&
+      !isCommonHall(hallName) &&
+      !isCommonHall(entry.hall.name) &&
       entry.hallId === hallId &&
       !isPlaceholderHall(entry.hall.name)
     ) {
@@ -111,6 +120,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
 
     if (
       !skipLecturerCheck &&
+      entry.groupId === groupId &&
       entry.lecturerId === lecturerId &&
       !isPlaceholderLecturer(
         entry.lecturerId,
