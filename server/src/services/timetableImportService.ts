@@ -15,6 +15,7 @@ import {
   type StudyYear,
 } from '../config/fct-faculty-config';
 import { findCanonicalGroupId } from './studentGroupResolver';
+import { filterStaleCrossBatchHallConflicts } from './timetableSlotVisibility';
 import { finalizeParsedRows, formatShortCourseDisplay } from './timetableParserService';
 import {
   buildLecturerInitialsIndex,
@@ -406,7 +407,7 @@ export async function resolveAndImport(
   const allConflicts: { row: number; conflicts: unknown[] }[] = [];
   for (let i = 0; i < validEntries.length; i++) {
     const entry = validEntries[i];
-    const conflicts = await detectConflicts({
+    const rawConflicts = await detectConflicts({
       year: entry.year,
       month: entry.month,
       week: entry.week,
@@ -422,6 +423,14 @@ export async function resolveAndImport(
       replacingGroupName: options?.replacingGroupName,
       unassignedLecturerId,
     });
+    const conflicts =
+      options?.replacingGroupName
+        ? await filterStaleCrossBatchHallConflicts(
+            rawConflicts,
+            { year: entry.year, month: entry.month, week: entry.week },
+            options.replacingGroupName,
+          )
+        : rawConflicts;
     if (conflicts.length > 0) {
       allConflicts.push({ row: entry._rowNum, conflicts: prioritizeSlotConflicts(conflicts) });
       continue;

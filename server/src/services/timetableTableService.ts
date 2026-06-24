@@ -15,6 +15,7 @@ import { detectConflicts, type ConflictInfo, PLACEHOLDER_HALL_NAME, UNASSIGNED_L
 import { getOrCreateUnassignedLecturer } from './timetableImportService';
 import { finalizeParsedRows } from './timetableParserService';
 import { resolveAndImport, formatTimetableConflictSummary } from './timetableImportService';
+import { filterStaleCrossBatchHallConflicts } from './timetableSlotVisibility';
 import { AppError } from '../middleware/errorHandler';
 import { notifyTimetableChange } from './notificationService';
 
@@ -335,7 +336,12 @@ export async function validateTableSlot(
     unassignedLecturerId,
   });
 
-  return conflicts.filter((c) => c.type === 'HALL');
+  const hallConflicts = conflicts.filter((c) => c.type === 'HALL');
+  return filterStaleCrossBatchHallConflicts(
+    hallConflicts,
+    { year: row.year, month: row.month, week: row.week },
+    row.groupName,
+  );
 }
 
 function studyYearToBatchYear(studyYear: string): number {
