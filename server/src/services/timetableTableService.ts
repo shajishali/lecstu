@@ -11,9 +11,10 @@ import {
 import { parseEnrollmentFromGroupName } from './studentGroupResolver';
 import { backfillSlotRefsForGroup } from './timetableRepairService';
 import { getLecturerDisplayIndex } from './lecturerDisplayService';
-import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import { detectConflicts, type ConflictInfo, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import { getOrCreateUnassignedLecturer } from './timetableImportService';
 import { finalizeParsedRows } from './timetableParserService';
-import { resolveAndImport } from './timetableImportService';
+import { resolveAndImport, formatTimetableConflictSummary } from './timetableImportService';
 import { AppError } from '../middleware/errorHandler';
 import { notifyTimetableChange } from './notificationService';
 
@@ -144,6 +145,7 @@ async function enrichSnapshotGrid(
         courseName: s.course.name,
         hallName: s.hall.name,
         lecturerName,
+        hallIsShared: s.hallIsShared === true,
       };
     }),
   );
@@ -219,6 +221,19 @@ export async function updateTableSnapshotGrid(
     );
   }
 
+  const rows = finalizeParsedRows(gridSnapshotsToParsedRows([grid]));
+
+  const importOpts = { forcedGroupId: group.id };
+
+  const validation = await resolveAndImport(rows, undefined, false, group.id, {
+    validateOnly: true,
+    ...importOpts,
+  });
+  if (validation.conflicts.length > 0) {
+    const { summary, flat } = formatTimetableConflictSummary(validation.conflicts);
+    throw new AppError(summary, 409, [{ row: 0, conflicts: flat }]);
+  }
+
   await prisma.masterTimetable.deleteMany({
     where: {
       groupId: group.id,
@@ -228,22 +243,17 @@ export async function updateTableSnapshotGrid(
     },
   });
 
-  const rows = finalizeParsedRows(gridSnapshotsToParsedRows([grid]));
   let importResult;
   try {
-    importResult = await resolveAndImport(rows, undefined, false, group.id);
+    importResult = await resolveAndImport(rows, undefined, false, group.id, importOpts);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to sync timetable slots';
     throw new AppError(message, 400);
   }
 
   if (importResult.conflicts.length > 0) {
-    throw new AppError(
-      importResult.conflicts[0]?.conflicts?.[0]
-        ? String((importResult.conflicts[0].conflicts[0] as { message?: string }).message)
-        : 'Schedule conflicts detected while saving timetable',
-      400,
-    );
+    const { summary, flat } = formatTimetableConflictSummary(importResult.conflicts);
+    throw new AppError(summary, 409, [{ row: 0, conflicts: flat }]);
   }
 
   await prisma.timetableTableSnapshot.update({
@@ -255,7 +265,7 @@ export async function updateTableSnapshotGrid(
     },
   });
 
-  await updateSnapshotSlotCount(row.groupName, row.year, row.month, row.week, rows.length);
+  await updateSnapshotSlotCount(row.groupName, row.year, row.month, row.week, importResult.created);
   invalidateTimetableCache();
 
   if (importResult.groupIds?.length) {
@@ -266,8 +276,63 @@ export async function updateTableSnapshotGrid(
     }
   }
 
-  const enriched = await enrichSnapshotGrid(grid, row.groupName);
-  return { grid: enriched, imported: importResult.created };
+  // Return the stored grid as-is for the editor (enrich on read can shift slot times).
+  return { grid, imported: importResult.created };
+}
+
+export async function validateTableSlot(
+  tableId: string,
+  slot: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    hallName: string;
+    sharedHall?: boolean;
+  },
+): Promise<ConflictInfo[]> {
+  const row = await prisma.timetableTableSnapshot.findUnique({ where: { id: tableId } });
+  if (!row) throw new AppError('Timetable table not found', 404);
+
+  const group = await prisma.studentGroup.findFirst({
+    where: { name: { equals: row.groupName, mode: 'insensitive' } },
+    select: { id: true, departmentId: true },
+  });
+  if (!group) {
+    throw new AppError(`No student group "${row.groupName}" found`, 400);
+  }
+
+  const rawHall = (slot.hallName || 'TBD').trim();
+  const hallIsShared = slot.sharedHall === true;
+  if (hallIsShared || !rawHall || rawHall.toUpperCase() === PLACEHOLDER_HALL_NAME) {
+    return [];
+  }
+
+  const hall = await prisma.lectureHall.findFirst({
+    where: { name: { equals: rawHall, mode: 'insensitive' }, isActive: true },
+    select: { id: true, name: true },
+  });
+  if (!hall) {
+    throw new AppError(`Hall "${rawHall}" not found. Check the room code or add it under Halls.`, 400);
+  }
+
+  const unassignedLecturerId = await getOrCreateUnassignedLecturer(group.departmentId);
+  const conflicts = await detectConflicts({
+    year: row.year,
+    month: row.month,
+    week: row.week,
+    dayOfWeek: slot.dayOfWeek,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    hallId: hall.id,
+    lecturerId: unassignedLecturerId,
+    groupId: group.id,
+    hallName: hall.name,
+    hallIsShared: hallIsShared,
+    replacingGroupId: group.id,
+    unassignedLecturerId,
+  });
+
+  return conflicts.filter((c) => c.type === 'HALL');
 }
 
 function studyYearToBatchYear(studyYear: string): number {

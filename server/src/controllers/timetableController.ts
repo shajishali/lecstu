@@ -21,6 +21,7 @@ import {
   createTableSnapshot,
   updateTableSnapshotMeta,
   deleteTableSnapshot,
+  validateTableSlot,
 } from '../services/timetableTableService';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import { gridSnapshotsToParsedRows, normalizeGridSnapshot } from '../services/timetableGridBuilder';
@@ -539,6 +540,39 @@ export async function getTimetableTable(req: Request, res: Response, next: NextF
     const grid = await getTableSnapshotById(id);
     if (!grid) throw new AppError('Timetable table not found', 404);
     res.json({ success: true, data: grid });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function validateTimetableSlot(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    const body = req.body as {
+      dayOfWeek?: string;
+      startTime?: string;
+      endTime?: string;
+      hallName?: string;
+      sharedHall?: boolean;
+    };
+    const dayOfWeek = body.dayOfWeek?.trim();
+    const startTime = body.startTime?.trim();
+    const endTime = body.endTime?.trim();
+    if (!dayOfWeek || !startTime || !endTime) {
+      throw new AppError('dayOfWeek, startTime, and endTime are required', 400);
+    }
+    const conflicts = await validateTableSlot(id, {
+      dayOfWeek,
+      startTime,
+      endTime,
+      hallName: body.hallName?.trim() || 'TBD',
+      sharedHall: body.sharedHall === true,
+    });
+    res.json({
+      success: true,
+      ok: conflicts.length === 0,
+      conflicts,
+    });
   } catch (err) {
     next(err);
   }

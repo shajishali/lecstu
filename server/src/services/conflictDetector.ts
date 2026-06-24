@@ -28,7 +28,7 @@ interface SlotParams {
   unassignedLecturerId?: string;
   /** Admin grid: allow this slot to share a hall with another batch at the same time. */
   hallIsShared?: boolean;
-  /** Admin grid replace: skip GROUP clashes for this group (slots were cleared). */
+  /** Admin grid replace: skip clashes with this group's existing slots (they will be replaced). */
   replacingGroupId?: string;
 }
 
@@ -67,6 +67,52 @@ function isPlaceholderLecturer(
   return label.includes('unassigned');
 }
 
+function formatDayLabel(day: string): string {
+  const d = (day || '').trim().toLowerCase();
+  return d ? d.charAt(0).toUpperCase() + d.slice(1) : day;
+}
+
+function formatLecturerLabel(
+  lecturer: { firstName: string; lastName: string; email: string },
+  unassignedLecturerId?: string,
+  lecturerId?: string,
+): string {
+  if (
+    lecturerId &&
+    isPlaceholderLecturer(lecturerId, unassignedLecturerId, lecturer.email, lecturer.firstName, lecturer.lastName)
+  ) {
+    return 'Unassigned lecturer';
+  }
+  const name = `${lecturer.firstName || ''} ${lecturer.lastName || ''}`.trim();
+  return name || 'Unknown lecturer';
+}
+
+function formatHallConflictMessage(
+  entry: {
+    hall: { name: string };
+    group: { name: string };
+    course: { code: string };
+    lecturer: { firstName: string; lastName: string; email: string };
+    lecturerId: string;
+    startTime: string;
+    endTime: string;
+  },
+  dayOfWeek: string,
+  unassignedLecturerId?: string,
+): string {
+  const hall = entry.hall.name;
+  const day = formatDayLabel(dayOfWeek);
+  const timeStr = `${entry.startTime}–${entry.endTime}`;
+  const batch = entry.group.name;
+  const course = entry.course.code;
+  const lecturer = formatLecturerLabel(entry.lecturer, unassignedLecturerId, entry.lecturerId);
+  return (
+    `${hall} is already booked on ${day} ${timeStr} by batch "${batch}" ` +
+    `(${course}, ${lecturer}). ` +
+    `Tick "Shared room (admin only)" on both classes if these batches share the same lecture.`
+  );
+}
+
 export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[]> {
   const {
     year,
@@ -103,7 +149,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     where,
     include: {
       hall: { select: { name: true } },
-      lecturer: { select: { firstName: true, lastName: true, email: true } },
+      lecturer: { select: { id: true, firstName: true, lastName: true, email: true } },
       group: { select: { name: true } },
       course: { select: { name: true, code: true } },
     },
@@ -112,22 +158,29 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
   for (const entry of sameDayEntries) {
     if (!timesOverlap(startTime, endTime, entry.startTime, entry.endTime)) continue;
 
+    // Replacing a batch table: ignore clashes with that group's own existing slots.
+    if (replacingGroupId && entry.groupId === replacingGroupId) continue;
+
     const timeStr = `${entry.startTime}–${entry.endTime}`;
+    const existingHallIsShared = entry.hallIsShared === true;
+    let reportedHallForEntry = false;
 
     if (
       !skipHallCheck &&
+      !existingHallIsShared &&
       !isCommonHall(entry.hall.name) &&
       entry.hallId === hallId &&
       !isPlaceholderHall(entry.hall.name)
     ) {
       conflicts.push({
         type: 'HALL',
-        message: `Hall "${entry.hall.name}" is already booked for ${entry.course.code} on ${dayOfWeek} ${timeStr}`,
+        message: formatHallConflictMessage(entry, dayOfWeek, unassignedLecturerId),
         conflictingEntryId: entry.id,
         day: dayOfWeek,
         time: timeStr,
         entityName: entry.hall.name,
       });
+      reportedHallForEntry = true;
     }
 
     if (
@@ -152,8 +205,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
       });
     }
 
-    if (entry.groupId === groupId) {
-      if (replacingGroupId && groupId === replacingGroupId) continue;
+    if (entry.groupId === groupId && !reportedHallForEntry) {
       conflicts.push({
         type: 'GROUP',
         message: `Group "${entry.group.name}" already has ${entry.course.code} on ${dayOfWeek} ${timeStr}`,

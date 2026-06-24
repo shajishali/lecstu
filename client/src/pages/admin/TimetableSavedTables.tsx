@@ -6,7 +6,7 @@ import ConfirmDialog from '@components/ConfirmDialog';
 import EditableFetTimetableGrid from '@components/EditableFetTimetableGrid';
 import { cloneGrid, prepareGridForEditing } from '@utils/fetGridEdit';
 import type { TimetableGridSnapshot } from '../../types/timetableGrid';
-import { Plus, Save, RotateCcw, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Save, RotateCcw, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 
 interface TableMeta {
   id: string;
@@ -48,6 +48,7 @@ export default function TimetableSavedTables() {
   const [formSaving, setFormSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TableMeta | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [saveConflictSummary, setSaveConflictSummary] = useState<string | null>(null);
 
   const isDirty = grid && savedGrid && JSON.stringify(grid) !== JSON.stringify(savedGrid);
 
@@ -104,6 +105,7 @@ export default function TimetableSavedTables() {
         const prepared = loaded ? prepareGridForEditing(loaded) : null;
         setGrid(prepared);
         setSavedGrid(prepared ? cloneGrid(prepared) : null);
+        setSaveConflictSummary(null);
       })
       .catch((err) => showApiErrorToast(err, 'Failed to load table'))
       .finally(() => setGridLoading(false));
@@ -112,11 +114,13 @@ export default function TimetableSavedTables() {
   const handleSave = async () => {
     if (!selectedId || !grid) return;
     setSaving(true);
+    setSaveConflictSummary(null);
     try {
       const res = await api.patch(`/admin/timetable/tables/${selectedId}`, { grid });
       const updated = res.data?.data ? prepareGridForEditing(res.data.data) : grid;
       setGrid(updated);
       setSavedGrid(cloneGrid(updated));
+      setSaveConflictSummary(null);
       showToast('success', res.data?.message || 'Timetable saved');
       setList((prev) =>
         prev.map((t) =>
@@ -126,14 +130,27 @@ export default function TimetableSavedTables() {
         ),
       );
     } catch (err) {
-      showApiErrorToast(err, 'Failed to save timetable');
+      const ax = err as { response?: { data?: { message?: string }; status?: number } };
+      const summary = ax.response?.data?.message;
+      const isConflict = ax.response?.status === 409;
+      if (summary && isConflict) {
+        setSaveConflictSummary(summary);
+        if (savedGrid) {
+          setGrid(cloneGrid(savedGrid));
+        }
+      } else {
+        showApiErrorToast(err, 'Failed to save timetable');
+      }
     } finally {
       setSaving(false);
     }
   };
 
   const handleRevert = () => {
-    if (savedGrid) setGrid(cloneGrid(savedGrid));
+    if (savedGrid) {
+      setGrid(cloneGrid(savedGrid));
+      setSaveConflictSummary(null);
+    }
   };
 
   const openCreate = () => {
@@ -310,11 +327,31 @@ export default function TimetableSavedTables() {
         </div>
       )}
 
+      {saveConflictSummary && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-950">
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <p>
+              {saveConflictSummary} Unsaved slots were removed — open each cell, click{' '}
+              <strong>Apply</strong>, fix the room or tick <strong>Shared room</strong>, then save
+              again.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 max-h-[75vh] overflow-auto">
         {gridLoading ? (
           <p className="text-sm text-slate-500">Loading grid…</p>
         ) : grid ? (
-          <EditableFetTimetableGrid grid={grid} onChange={setGrid} />
+          <EditableFetTimetableGrid
+            grid={grid}
+            tableId={selectedId ?? undefined}
+            onChange={(next) => {
+              setGrid(next);
+              setSaveConflictSummary(null);
+            }}
+          />
         ) : list.length === 0 ? null : (
           <p className="text-sm text-slate-500">Select a batch table above.</p>
         )}

@@ -15,6 +15,7 @@ import {
   bulkImportTemplate,
   listTimetableTables,
   getTimetableTable,
+  validateTimetableSlot,
   updateTimetableTable,
   createTimetableTable,
   updateTimetableTableMeta,
@@ -35,6 +36,7 @@ router.get('/bulk-import/template', bulkImportTemplate);
 router.get('/tables', listTimetableTables);
 router.post('/tables', createTimetableTable);
 router.get('/tables/:id', getTimetableTable);
+router.post('/tables/:id/validate-slot', validateTimetableSlot);
 router.patch('/tables/:id/meta', updateTimetableTableMeta);
 router.patch('/tables/:id', updateTimetableTable);
 router.delete('/tables/:id', deleteTimetableTable);

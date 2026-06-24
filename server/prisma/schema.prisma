@@ -418,6 +418,7 @@ model MasterTimetable {
   semester  Int       @default(1)
   isActive  Boolean   @default(true)
   lecturerInitials String? // FET sheet code (ND, MB, VL_HS) — shown as-is; not course P/T suffix
+  hallIsShared     Boolean @default(false) // Admin: same hall/time allowed for another batch
   notes            String? // Optional lecturer notes shown to students
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

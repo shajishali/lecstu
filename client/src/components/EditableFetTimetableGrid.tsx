@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Pencil, Plus, Trash2, GripHorizontal } from 'lucide-react';
+import api from '@services/api';
 import type { TimetableGridSnapshot, TimetableGridCell } from '../types/timetableGrid';
 import {
   parseCellToEditable,
@@ -8,6 +9,7 @@ import {
   snapBoundaryFromPointer,
   normalizeTimeInput,
   extractCourseKey,
+  checkLocalHallOverlap,
   type EditableCellData,
 } from '../utils/fetGridEdit';
 import { showToast } from '@components/Toast';
@@ -56,6 +58,7 @@ function formatLine(line: string, index: number, allLines: string[]): string {
 interface Props {
   grid: TimetableGridSnapshot;
   onChange: (grid: TimetableGridSnapshot) => void;
+  tableId?: string;
   className?: string;
 }
 
@@ -77,7 +80,7 @@ const emptyForm = (start: string, end: string): EditableCellData => ({
   sharedHall: false,
 });
 
-export default function EditableFetTimetableGrid({ grid, onChange, className = '' }: Props) {
+export default function EditableFetTimetableGrid({ grid, onChange, tableId, className = '' }: Props) {
   const courseColorMap = useMemo(() => buildCourseColorLookup(grid), [grid]);
   const cellColors = (cell: TimetableGridCell): { bg: string; border: string } | undefined => {
     if (cell.isEmpty || cell.isBreak) return undefined;
@@ -89,6 +92,8 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
 
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [form, setForm] = useState<EditableCellData>(emptyForm('08:00', '08:55'));
+  const [slotError, setSlotError] = useState('');
+  const [checkingSlot, setCheckingSlot] = useState(false);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
   const dragRef = useRef<{ rowIndex: number; startY: number } | null>(null);
 
@@ -101,11 +106,20 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
       isNew,
     });
     setForm(isNew ? emptyForm(startTime, endTime) : parseCellToEditable(cell, startTime, endTime));
+    setSlotError('');
   };
 
-  const closeEdit = () => setEditTarget(null);
+  const updateForm = (patch: Partial<EditableCellData> | ((f: EditableCellData) => EditableCellData)) => {
+    setSlotError('');
+    setForm((f) => (typeof patch === 'function' ? patch(f) : { ...f, ...patch }));
+  };
 
-  const saveEdit = () => {
+  const closeEdit = () => {
+    setSlotError('');
+    setEditTarget(null);
+  };
+
+  const saveEdit = async () => {
     if (!editTarget) return;
     const start = normalizeTimeInput(form.startTime);
     const end = normalizeTimeInput(form.endTime);
@@ -117,6 +131,50 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
       showToast('error', 'End time must be after start time');
       return;
     }
+    if (!form.courseCode.trim() && !form.subjectName.trim()) {
+      showToast('error', 'Course code or subject name is required');
+      return;
+    }
+
+    const localConflict = checkLocalHallOverlap(
+      grid,
+      editTarget.di,
+      start,
+      end,
+      form.hallName,
+      form.sharedHall,
+      editTarget.ti,
+    );
+    if (localConflict) {
+      setSlotError(localConflict);
+      return;
+    }
+
+    const dayOfWeek = grid.dayColumns[editTarget.di]?.day;
+    if (tableId && dayOfWeek) {
+      setCheckingSlot(true);
+      try {
+        const res = await api.post(`/admin/timetable/tables/${tableId}/validate-slot`, {
+          dayOfWeek,
+          startTime: start,
+          endTime: end,
+          hallName: form.hallName.trim() || 'TBD',
+          sharedHall: form.sharedHall,
+        });
+        const conflicts = (res.data?.conflicts ?? []) as { message: string }[];
+        if (conflicts.length > 0) {
+          setSlotError(conflicts[0].message);
+          return;
+        }
+      } catch (err) {
+        const ax = err as { response?: { data?: { message?: string } } };
+        setSlotError(ax.response?.data?.message || 'Could not check room availability');
+        return;
+      } finally {
+        setCheckingSlot(false);
+      }
+    }
+
     const payload = { ...form, startTime: start, endTime: end };
     const result = updateCellInGrid(grid, editTarget.ti, editTarget.di, payload);
     if (!result.ok) {
@@ -279,72 +337,72 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
       {editTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEdit}>
           <div
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            className="flex max-h-[min(88vh,640px)] w-full max-w-md flex-col rounded-xl bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-slate-800">
+            <h3 className="shrink-0 border-b border-slate-100 px-4 py-3 text-base font-semibold text-slate-800">
               {editTarget.isNew ? 'Add class' : 'Edit class'} — {editTarget.dayLabel}
             </h3>
-            <div className="mt-4 space-y-3">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
               <label className="block text-sm font-medium text-slate-700">
                 Course code
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                   value={form.courseCode}
-                  onChange={(e) => setForm((f) => ({ ...f, courseCode: e.target.value }))}
+                  onChange={(e) => updateForm({ courseCode: e.target.value })}
                   placeholder="e.g. BTEC 12062"
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Subject / title
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                   value={form.subjectName}
-                  onChange={(e) => setForm((f) => ({ ...f, subjectName: e.target.value }))}
+                  onChange={(e) => updateForm({ subjectName: e.target.value })}
                   placeholder="Full subject line as shown in table"
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Lecturer
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                   value={form.lecturerName}
-                  onChange={(e) => setForm((f) => ({ ...f, lecturerName: e.target.value }))}
+                  onChange={(e) => updateForm({ lecturerName: e.target.value })}
                   placeholder="Lecturer name or code"
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Room / hall
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                   value={form.hallName}
-                  onChange={(e) => setForm((f) => ({ ...f, hallName: e.target.value }))}
+                  onChange={(e) => updateForm({ hallName: e.target.value })}
                   placeholder="e.g. AB-LCH-09-1 or TBD"
                 />
               </label>
               <label className="flex items-start gap-2 text-sm text-slate-700">
                 <input
                   type="checkbox"
-                  className="mt-1"
+                  className="mt-0.5"
                   checked={form.sharedHall}
-                  onChange={(e) => setForm((f) => ({ ...f, sharedHall: e.target.checked }))}
+                  onChange={(e) => updateForm({ sharedHall: e.target.checked })}
                 />
                 <span>
                   Shared room (admin only)
-                  <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                    Allows this class at the same time as another batch in the same hall. Not shown to students.
+                  <span className="block text-xs font-normal text-slate-500">
+                    Same hall &amp; time as another batch (not shown to students).
                   </span>
                 </span>
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <label className="block text-sm font-medium text-slate-700">
                   Start time
                   <input
                     type="text"
                     list="fet-start-times"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                     value={form.startTime}
-                    onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+                    onChange={(e) => updateForm({ startTime: e.target.value })}
                     placeholder="08:00"
                   />
                 </label>
@@ -353,9 +411,9 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
                   <input
                     type="text"
                     list="fet-end-times"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
                     value={form.endTime}
-                    onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+                    onChange={(e) => updateForm({ endTime: e.target.value })}
                     placeholder="09:55"
                   />
                 </label>
@@ -370,17 +428,21 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
                   <option key={`e-${t}`} value={t} />
                 ))}
               </datalist>
-              <p className="text-xs text-slate-500">Type any time as HH:MM or pick from suggestions.</p>
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={form.isOnline}
-                  onChange={(e) => setForm((f) => ({ ...f, isOnline: e.target.checked }))}
+                  onChange={(e) => updateForm({ isOnline: e.target.checked })}
                 />
                 Online class
               </label>
+              {slotError && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs leading-snug text-amber-950">
+                  {slotError}
+                </div>
+              )}
             </div>
-            <div className="mt-6 flex flex-wrap justify-between gap-2">
+            <div className="flex shrink-0 flex-wrap justify-between gap-2 border-t border-slate-100 px-4 py-3">
               {!editTarget.isNew && (
                 <button
                   type="button"
@@ -400,10 +462,11 @@ export default function EditableFetTimetableGrid({ grid, onChange, className = '
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-white [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
-                  onClick={saveEdit}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
+                  onClick={() => void saveEdit()}
+                  disabled={checkingSlot}
                 >
-                  Apply
+                  {checkingSlot ? 'Checking…' : 'Apply'}
                 </button>
               </div>
             </div>

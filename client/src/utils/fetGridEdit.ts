@@ -1,6 +1,6 @@
 import type { TimetableGridCell, TimetableGridSnapshot } from '../types/timetableGrid';
 
-const COURSE_RE = /\b([A-Z]{2,6})\s*(\d{4,5}[A-Za-z0-9_]*)\b/i;
+const COURSE_RE = /\b([A-Z]{2,6})[-\s]+(\d{4,5}[A-Za-z0-9_]*)\b/i;
 const HALL_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
 
 export interface EditableCellData {
@@ -35,37 +35,54 @@ function cellLines(cell: TimetableGridCell): string[] {
   return cell.lines ?? [];
 }
 
+function parseHallFromLine(line: string): string | null {
+  const trimmed = stripCommonMarker(line.trim().replace(/^room:\s*/i, '').trim());
+  if (!trimmed || /^tbd$/i.test(trimmed)) return 'TBD';
+  const hm = trimmed.match(HALL_RE);
+  if (hm?.[1]) return stripCommonMarker(hm[1]);
+  return null;
+}
+
+function courseCodeFromLine(line: string): string {
+  const trimmed = line.trim();
+  const cm = trimmed.match(COURSE_RE);
+  if (cm) return `${cm[1]} ${cm[2]}`.trim();
+  if (/^[A-Z]{2,6}-\d{4,5}/i.test(trimmed)) return trimmed;
+  return trimmed;
+}
+
 export function parseCellToEditable(
   cell: TimetableGridCell,
   startTime: string,
   endTime: string,
 ): EditableCellData {
-  const lines = cellLines(cell);
+  const lines = cellLines(cell).map((l) => l.trim()).filter(Boolean);
+
+  let hallName = 'TBD';
+  const contentLines: string[] = [];
+
+  for (const line of lines) {
+    const hall = parseHallFromLine(line);
+    if (hall) {
+      hallName = hall;
+      continue;
+    }
+    const text = line.replace(/^lecturer:\s*/i, '').trim();
+    if (text && text !== '—' && text !== '-') {
+      contentLines.push(text);
+    }
+  }
+
   let courseCode = '';
   let subjectName = '';
   let lecturerName = '';
-  let hallName = 'TBD';
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    const cm = trimmed.match(COURSE_RE);
-    if (cm && !courseCode) {
-      courseCode = `${cm[1]} ${cm[2]}`.trim();
-      subjectName = trimmed;
-      continue;
-    }
-    const hm = trimmed.match(HALL_RE);
-    if (hm) {
-      hallName = stripCommonMarker(hm[1]);
-      continue;
-    }
-    if (/^tbd$/i.test(trimmed)) {
-      hallName = 'TBD';
-      continue;
-    }
-    if (trimmed && trimmed !== '—' && !COURSE_RE.test(trimmed) && !HALL_RE.test(trimmed)) {
-      lecturerName = trimmed.replace(/^lecturer:\s*/i, '').trim();
-    }
+  if (contentLines[0]) {
+    subjectName = contentLines[0];
+    courseCode = courseCodeFromLine(contentLines[0]);
+  }
+  if (contentLines[1]) {
+    lecturerName = contentLines[1];
   }
 
   const sharedHall =
@@ -362,6 +379,49 @@ export function getCellSpanTimes(grid: TimetableGridSnapshot, ti: number, cell: 
     startTime: grid.timeRows[ti]?.start ?? '08:00',
     endTime: grid.timeRows[endTi]?.end ?? grid.timeRows[ti]?.end ?? '08:55',
   };
+}
+
+function hallFromCellLines(cell: TimetableGridCell): string {
+  const lines = cell.displayLines?.length ? cell.displayLines : cell.lines ?? [];
+  for (const line of lines) {
+    const m = line.match(HALL_RE);
+    if (m?.[1]) return stripCommonMarker(m[1]).toUpperCase();
+  }
+  return '';
+}
+
+function slotTimesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
+  return s1 < e2 && s2 < e1;
+}
+
+/** Block double-booking the same hall twice in one batch grid before save. */
+export function checkLocalHallOverlap(
+  grid: TimetableGridSnapshot,
+  di: number,
+  startTime: string,
+  endTime: string,
+  hallName: string,
+  sharedHall: boolean,
+  excludeAnchorTi: number,
+): string | null {
+  const hall = stripCommonMarker(hallName.trim()).toUpperCase();
+  if (sharedHall || !hall || hall === 'TBD') return null;
+
+  for (let ti = 0; ti < grid.cells.length; ti++) {
+    const cell = grid.cells[ti]?.[di];
+    if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
+    if (ti === excludeAnchorTi) continue;
+
+    const otherHall = hallFromCellLines(cell);
+    if (!otherHall || otherHall === 'TBD' || otherHall !== hall) continue;
+    if (cell.sharedHall === true) continue;
+
+    const { startTime: oStart, endTime: oEnd } = getCellSpanTimes(grid, ti, cell);
+    if (!slotTimesOverlap(startTime, endTime, oStart, oEnd)) continue;
+
+    return `This batch already uses ${hall} on ${grid.dayColumns[di]?.label ?? 'that day'} ${oStart}–${oEnd}. Change the time or room.`;
+  }
+  return null;
 }
 
 export type GridUpdateResult =

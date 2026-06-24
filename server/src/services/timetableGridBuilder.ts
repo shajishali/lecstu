@@ -14,7 +14,7 @@ type Matrix = unknown[][];
 
 /** Non-global patterns for .test() / .match() capture groups */
 const HALL_CODE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
-const COURSE_CODE_RE = /\b([A-Z]{2,6})\s*(\d{4,5}[A-Za-z0-9_]*)\b/i;
+const COURSE_CODE_RE = /\b([A-Z]{2,6})[-\s]+(\d{4,5}[A-Za-z0-9_]*)\b/i;
 const HALL_GLOBAL_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/gi;
 
 function excelCellToString(value: unknown): string {
@@ -334,6 +334,30 @@ function timeRowSpanForSlot(
   return { startTi, endTi };
 }
 
+/** Resolve slot times and row indices from cell metadata (admin editor uses slotStart/slotEnd). */
+function slotBoundsFromCell(
+  cell: TimetableGridCell,
+  timeRows: { start: string; end: string }[],
+  ti: number,
+): { startTime: string; endTime: string; startTi: number; endTi: number } {
+  const slotStart = cell.slotStart?.trim();
+  const slotEnd = cell.slotEnd?.trim();
+  if (slotStart && slotEnd) {
+    const span = timeRowSpanForSlot(timeRows, slotStart, slotEnd);
+    if (span) {
+      return { startTime: slotStart, endTime: slotEnd, ...span };
+    }
+  }
+  const span = Math.max(1, cell.rowSpan ?? 1);
+  const endTi = Math.min(ti + span - 1, timeRows.length - 1);
+  return {
+    startTime: slotStart ?? timeRows[ti]?.start ?? '08:00',
+    endTime: slotEnd ?? timeRows[endTi]?.end ?? '08:55',
+    startTi: ti,
+    endTi,
+  };
+}
+
 function dedupeTimeRows(
   timeRowIndices: { row: number; label: string; start: string; end: string }[],
 ): { row: number; label: string; start: string; end: string }[] {
@@ -447,7 +471,15 @@ function extractCourseFromLines(lines: string[]): { code: string; name: string }
     const m = line.match(COURSE_CODE_RE);
     if (m) {
       const code = `${m[1]} ${m[2]}`.trim();
-      return { code: code.replace(/\s+/g, '-').toUpperCase(), name: code };
+      return { code: code.replace(/\s+/g, '-').toUpperCase(), name: line.trim() || code };
+    }
+  }
+  // Manual admin entry: first non-hall, non-lecturer line (e.g. legacy codes)
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || lineHasHall(t) || lineHasLecturer(t) || isOrphanMetaLine(t)) continue;
+    if (/^[A-Z]{2,6}-\d{4,5}/i.test(t)) {
+      return { code: t.replace(/\s+/g, '-').toUpperCase(), name: t };
     }
   }
   return null;
@@ -506,6 +538,7 @@ export type GridSlotRef = {
   courseName: string;
   hallName?: string;
   lecturerName?: string;
+  hallIsShared?: boolean;
 };
 
 function lineHasHall(line: string): boolean {
@@ -563,6 +596,14 @@ export function mergeFetDisplayLines(
   if (!bestCourse) {
     for (const line of existing) {
       if (COURSE_CODE_RE.test(line) && line.length > bestCourse.length) bestCourse = line;
+    }
+  }
+  if (!bestCourse) {
+    for (const line of existing) {
+      const t = line.trim();
+      if (!t || lineHasHall(t) || lineHasLecturer(t) || isOrphanMetaLine(t)) continue;
+      bestCourse = t;
+      break;
     }
   }
   if (bestCourse) add(bestCourse);
@@ -670,6 +711,16 @@ export function parseCellLinesToSlotRef(
       if (candidate.length > courseName.length) courseName = candidate;
     }
   }
+  if (!courseName) {
+    for (const line of normalized) {
+      const t = line.trim();
+      if (!t || lineHasHall(t) || lineHasLecturer(t) || isOrphanMetaLine(t)) continue;
+      if (/^[A-Z]{2,6}-\d{4,5}/i.test(t)) {
+        courseName = t;
+        break;
+      }
+    }
+  }
   if (!courseName) return null;
 
   const fromCourse = extractLecturerFromCourseLine(
@@ -702,10 +753,7 @@ export function extractSlotRefsFromGridSnapshot(grid: TimetableGridSnapshot): Gr
       const cell = grid.cells?.[ti]?.[di];
       if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
 
-      const span = Math.max(1, cell.rowSpan ?? 1);
-      const endTi = Math.min(ti + span - 1, timeRows.length - 1);
-      const startTime = timeRows[ti]?.start;
-      const endTime = timeRows[endTi]?.end;
+      const { startTime, endTime } = slotBoundsFromCell(cell, timeRows, ti);
       if (!startTime || !endTime) continue;
 
       const lineSources = [
@@ -714,7 +762,12 @@ export function extractSlotRefsFromGridSnapshot(grid: TimetableGridSnapshot): Gr
         ...(cell.rawText?.trim() ? normalizeCellLines(cell.rawText) : []),
       ];
       const parsed = parseCellLinesToSlotRef(lineSources, day, startTime, endTime);
-      if (parsed) refs.push(parsed);
+      if (parsed) {
+        refs.push({
+          ...parsed,
+          hallIsShared: cell.sharedHall === true || parsed.hallIsShared === true,
+        });
+      }
     }
   }
 
@@ -747,6 +800,7 @@ export function mergeSlotRefSources(gridRefs: GridSlotRef[], dbRefs: GridSlotRef
           ? g.hallName
           : prev.hallName || g.hallName,
       lecturerName: prev.lecturerName || g.lecturerName,
+      hallIsShared: g.hallIsShared === true || prev.hallIsShared === true,
     });
   }
 
@@ -780,10 +834,7 @@ export function enrichGridFromSlots(
       const cell = cells[ti]?.[di];
       if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
 
-      const span = Math.max(1, cell.rowSpan ?? 1);
-      const endTi = Math.min(ti + span - 1, timeRows.length - 1);
-      const startTime = timeRows[ti]?.start;
-      const endTime = timeRows[endTi]?.end;
+      const { startTime, endTime, startTi, endTi } = slotBoundsFromCell(cell, timeRows, ti);
       if (!startTime || !endTime) continue;
 
       const key = `${day}|${startTime}|${endTime}`;
@@ -801,6 +852,7 @@ export function enrichGridFromSlots(
             courseName: slot.courseName || fromCell?.courseName || '',
             hallName: slot.hallName && slot.hallName !== 'TBD' ? slot.hallName : fromCell?.hallName || slot.hallName,
             lecturerName: slot.lecturerName || fromCell?.lecturerName,
+            hallIsShared: slot.hallIsShared === true || fromCell?.hallIsShared === true,
           }
         : fromCell || {
             dayOfWeek: day,
@@ -818,9 +870,14 @@ export function enrichGridFromSlots(
       if (merged.length === 0) continue;
 
       const updated = cellFromRaw(merged.join('\n'));
-      updated.rowSpan = endTi - ti + 1;
-      cells[ti][di] = updated;
-      for (let k = ti + 1; k <= endTi; k++) {
+      updated.rowSpan = endTi - startTi + 1;
+      updated.slotStart = cell.slotStart ?? startTime;
+      updated.slotEnd = cell.slotEnd ?? endTime;
+      updated.sharedHall =
+        cell.sharedHall === true || ref.hallIsShared === true || slot?.hallIsShared === true;
+      updated.isEmpty = false;
+      cells[startTi][di] = updated;
+      for (let k = startTi + 1; k <= endTi; k++) {
         cells[k][di] = {
           ...cellFromRaw(''),
           mergeContinue: true,
@@ -915,6 +972,9 @@ export function rewriteGridCellsFromSlotRefs(
       const updated = cellFromRaw(lines.join('\n'));
       updated.rowSpan = span;
       updated.isOnline = cell.isOnline;
+      updated.slotStart = cell.slotStart;
+      updated.slotEnd = cell.slotEnd;
+      updated.sharedHall = cell.sharedHall === true || slot.hallIsShared === true;
       cells[ti][di] = updated;
     }
   }
@@ -947,6 +1007,9 @@ export function rewriteGridCellsFromSlotRefs(
           const updated = cellFromRaw(lines.join('\n'));
           updated.rowSpan = cell.rowSpan;
           updated.isOnline = cell.isOnline;
+          updated.slotStart = cell.slotStart;
+          updated.slotEnd = cell.slotEnd;
+          updated.sharedHall = cell.sharedHall === true || slot.hallIsShared === true;
           cells[ti][di] = updated;
         } else {
           cells[ti][di] = {
@@ -1086,9 +1149,7 @@ export function gridSnapshotsToParsedRows(tables: TimetableGridSnapshot[]): Pars
         const lines = cellLines(cell);
         const course = extractCourseFromLines(lines);
         if (!course?.code) continue;
-        const endTi = Math.min(ti + Math.max(1, cell.rowSpan) - 1, table.timeRows.length - 1);
-        const startTime = cell.slotStart ?? table.timeRows[ti]?.start;
-        const endTime = cell.slotEnd ?? table.timeRows[endTi]?.end;
+        const { startTime, endTime } = slotBoundsFromCell(cell, table.timeRows, ti);
         if (!startTime || !endTime) continue;
         rows.push({
           year: table.year,

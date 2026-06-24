@@ -7,7 +7,7 @@ import type { DayOfWeek } from '../generated/prisma/client';
 import { Prisma } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
-import { detectConflicts, cleanHallDisplayName, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import { detectConflicts, type ConflictInfo, cleanHallDisplayName, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
   parseLectureHall,
   studyYearToOrdinal,
@@ -28,6 +28,44 @@ const FCT_PROGRAM_CODES = ['CS', 'ET', 'CT', 'BS', 'BST'] as const;
 
 function timesOverlapImport(s1: string, e1: string, s2: string, e2: string): boolean {
   return s1 < e2 && s2 < e1;
+}
+
+/** Keep the most useful single message per slot (room clash beats duplicate-group noise). */
+function prioritizeSlotConflicts(conflicts: ConflictInfo[]): ConflictInfo[] {
+  const halls = conflicts.filter((c) => c.type === 'HALL');
+  if (halls.length > 0) return halls;
+  return conflicts;
+}
+
+export function formatTimetableConflictSummary(
+  conflictRows: { row: number; conflicts: unknown[] }[],
+): { summary: string; flat: ConflictInfo[] } {
+  const flat = conflictRows.flatMap((c) => c.conflicts as ConflictInfo[]);
+  const halls = flat.filter((c) => c.type === 'HALL');
+  const seen = new Set<string>();
+  const unique = halls.filter((c) => {
+    if (seen.has(c.message)) return false;
+    seen.add(c.message);
+    return true;
+  });
+  if (unique.length === 1) {
+    return { summary: unique[0].message, flat: unique };
+  }
+  if (unique.length > 1) {
+    return {
+      summary: `${unique.length} room booking conflicts with other batches. See the list below.`,
+      flat: unique,
+    };
+  }
+  const fallback = flat.filter((c) => {
+    if (seen.has(c.message)) return false;
+    seen.add(c.message);
+    return true;
+  });
+  return {
+    summary: fallback[0]?.message || 'Schedule conflicts detected while saving timetable',
+    flat: fallback,
+  };
 }
 
 function normalizeDayOfWeek(day: string): DayOfWeek {
@@ -184,6 +222,7 @@ export async function resolveAndImport(
   defaultDepartmentId?: string,
   replacePeriod?: boolean,
   replacingGroupId?: string,
+  options?: { validateOnly?: boolean; forcedGroupId?: string },
 ): Promise<{ created: number; conflicts: { row: number; conflicts: unknown[] }[]; stats: ImportStats; groupIds?: string[] }> {
   rows = finalizeParsedRows(rows);
 
@@ -300,31 +339,37 @@ export async function resolveAndImport(
 
     let hallId = await findOrCreateHallId(hallName, hallMap, stats);
 
-    const groupDeptId = inferDeptForGroup(groupName);
-    const canonicalName = resolveCanonicalGroupName(groupName);
-    const resolvedName = canonicalName ?? groupName;
-    const groupKey = `${resolvedName.toUpperCase()}_${groupDeptId}`;
-    let groupId = groupMap.get(groupKey);
-    if (!groupId && canonicalName) {
-      groupId = (await findCanonicalGroupId(canonicalName)) ?? undefined;
-      if (groupId) groupMap.set(groupKey, groupId);
-    }
-    if (!groupId) {
-      const meta = parseGroupMeta(groupName);
-      const created = await prisma.studentGroup.create({
-        data: {
-          name: resolvedName,
-          batchYear: meta.batchYear ?? studyYearToOrdinal.Y1,
-          batchLabel: meta.batchLabel ?? null,
-          departmentId: groupDeptId,
-        },
-      });
-      groupId = created.id;
-      groupMap.set(groupKey, groupId);
-      if (resolvedName !== groupName) {
-        groupMap.set(`${groupName.toUpperCase()}_${groupDeptId}`, groupId);
+    let groupId: string;
+    if (options?.forcedGroupId) {
+      groupId = options.forcedGroupId;
+    } else {
+      const groupDeptId = inferDeptForGroup(groupName);
+      const canonicalName = resolveCanonicalGroupName(groupName);
+      const resolvedName = canonicalName ?? groupName;
+      const groupKey = `${resolvedName.toUpperCase()}_${groupDeptId}`;
+      let resolvedGroupId = groupMap.get(groupKey);
+      if (!resolvedGroupId && canonicalName) {
+        resolvedGroupId = (await findCanonicalGroupId(canonicalName)) ?? undefined;
+        if (resolvedGroupId) groupMap.set(groupKey, resolvedGroupId);
       }
-      stats.created.groups++;
+      if (!resolvedGroupId) {
+        const meta = parseGroupMeta(groupName);
+        const created = await prisma.studentGroup.create({
+          data: {
+            name: resolvedName,
+            batchYear: meta.batchYear ?? studyYearToOrdinal.Y1,
+            batchLabel: meta.batchLabel ?? null,
+            departmentId: groupDeptId,
+          },
+        });
+        resolvedGroupId = created.id;
+        groupMap.set(groupKey, resolvedGroupId);
+        if (resolvedName !== groupName) {
+          groupMap.set(`${groupName.toUpperCase()}_${groupDeptId}`, resolvedGroupId);
+        }
+        stats.created.groups++;
+      }
+      groupId = resolvedGroupId;
     }
 
     validEntries.push({
@@ -377,7 +422,7 @@ export async function resolveAndImport(
       unassignedLecturerId,
     });
     if (conflicts.length > 0) {
-      allConflicts.push({ row: entry._rowNum, conflicts });
+      allConflicts.push({ row: entry._rowNum, conflicts: prioritizeSlotConflicts(conflicts) });
       continue;
     }
 
@@ -434,6 +479,15 @@ export async function resolveAndImport(
     return { created: 0, conflicts: allConflicts, stats, groupIds: [] };
   }
 
+  if (options?.validateOnly) {
+    return {
+      created: validEntries.length,
+      conflicts: [],
+      stats,
+      groupIds: [...new Set(validEntries.map((e) => e.groupId))],
+    };
+  }
+
   let imported = 0;
   const toCreate = validEntries.map((entry) => ({
     year: entry.year,
@@ -448,6 +502,7 @@ export async function resolveAndImport(
     lecturerInitials: entry.lecturerInitials,
     hallId: entry.hallId,
     groupId: entry.groupId,
+    hallIsShared: entry._hallIsShared,
   }));
 
   if (toCreate.length > 0) {
