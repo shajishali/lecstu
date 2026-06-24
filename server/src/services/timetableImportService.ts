@@ -222,7 +222,7 @@ export async function resolveAndImport(
   defaultDepartmentId?: string,
   replacePeriod?: boolean,
   replacingGroupId?: string,
-  options?: { validateOnly?: boolean; forcedGroupId?: string },
+  options?: { validateOnly?: boolean; forcedGroupId?: string; replacingGroupName?: string },
 ): Promise<{ created: number; conflicts: { row: number; conflicts: unknown[] }[]; stats: ImportStats; groupIds?: string[] }> {
   rows = finalizeParsedRows(rows);
 
@@ -419,6 +419,7 @@ export async function resolveAndImport(
       hallName: entry._hallName,
       hallIsShared: entry._hallIsShared,
       replacingGroupId,
+      replacingGroupName: options?.replacingGroupName,
       unassignedLecturerId,
     });
     if (conflicts.length > 0) {

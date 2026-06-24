@@ -30,6 +30,23 @@ interface SlotParams {
   hallIsShared?: boolean;
   /** Admin grid replace: skip clashes with this group's existing slots (they will be replaced). */
   replacingGroupId?: string;
+  /** Same as replacingGroupId but matches by group name (handles duplicate StudentGroup rows). */
+  replacingGroupName?: string;
+}
+
+function groupNamesEqual(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+function isReplacingGroupEntry(
+  entry: { groupId: string; group: { name: string } },
+  replacingGroupId?: string,
+  replacingGroupName?: string,
+): boolean {
+  if (replacingGroupId && entry.groupId === replacingGroupId) return true;
+  if (replacingGroupName && groupNamesEqual(entry.group.name, replacingGroupName)) return true;
+  return false;
 }
 
 function timesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
@@ -129,6 +146,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     unassignedLecturerId,
     hallIsShared,
     replacingGroupId,
+    replacingGroupName,
   } = params;
   const conflicts: ConflictInfo[] = [];
 
@@ -159,7 +177,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     if (!timesOverlap(startTime, endTime, entry.startTime, entry.endTime)) continue;
 
     // Replacing a batch table: ignore clashes with that group's own existing slots.
-    if (replacingGroupId && entry.groupId === replacingGroupId) continue;
+    if (isReplacingGroupEntry(entry, replacingGroupId, replacingGroupName)) continue;
 
     const timeStr = `${entry.startTime}–${entry.endTime}`;
     const existingHallIsShared = entry.hallIsShared === true;

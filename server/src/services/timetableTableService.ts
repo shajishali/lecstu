@@ -210,20 +210,22 @@ export async function updateTableSnapshotGrid(
     semester: rawGrid.semester ?? row.semester,
   });
 
-  const group = await prisma.studentGroup.findFirst({
+  const groups = await prisma.studentGroup.findMany({
     where: { name: { equals: row.groupName, mode: 'insensitive' } },
     select: { id: true },
   });
-  if (!group) {
+  if (groups.length === 0) {
     throw new AppError(
       `No student group "${row.groupName}" found. Create the group first or fix the batch group code.`,
       400,
     );
   }
+  const group = groups[0];
+  const groupIds = groups.map((g) => g.id);
 
   const rows = finalizeParsedRows(gridSnapshotsToParsedRows([grid]));
 
-  const importOpts = { forcedGroupId: group.id };
+  const importOpts = { forcedGroupId: group.id, replacingGroupName: row.groupName };
 
   const validation = await resolveAndImport(rows, undefined, false, group.id, {
     validateOnly: true,
@@ -236,7 +238,7 @@ export async function updateTableSnapshotGrid(
 
   await prisma.masterTimetable.deleteMany({
     where: {
-      groupId: group.id,
+      groupId: { in: groupIds },
       year: row.year,
       month: row.month,
       week: row.week,
@@ -329,6 +331,7 @@ export async function validateTableSlot(
     hallName: hall.name,
     hallIsShared: hallIsShared,
     replacingGroupId: group.id,
+    replacingGroupName: row.groupName,
     unassignedLecturerId,
   });
 
