@@ -1,7 +1,9 @@
 import prisma from '../config/database';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
+import { resolveCanonicalGroupName } from '../config/fct-faculty-config';
 import type { ConflictInfo } from './conflictDetector';
 import { gridSnapshotsToParsedRows, normalizeGridSnapshot } from './timetableGridBuilder';
+import { invalidateAll as invalidateTimetableCache } from './timetableCache';
 
 function timesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
   return s1 < e2 && s2 < e1;
@@ -19,34 +21,68 @@ function groupNamesEqual(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
-/** True when the batch's saved grid still shows this hall/time (not a stale master_timetable row). */
-export async function batchSnapshotShowsHallSlot(
+function canonicalGroupKey(name: string): string {
+  const canonical = resolveCanonicalGroupName(name);
+  return (canonical || name).trim().toUpperCase();
+}
+
+function snapshotMatchesGroup(snapGroupName: string, targetGroupName: string): boolean {
+  if (groupNamesEqual(snapGroupName, targetGroupName)) return true;
+  return canonicalGroupKey(snapGroupName) === canonicalGroupKey(targetGroupName);
+}
+
+async function findBatchSnapshot(
   groupName: string,
   period: { year: number; month: number; week: number },
-  slot: { dayOfWeek: string; startTime: string; endTime: string; hallName: string },
-): Promise<boolean> {
-  const snap = await prisma.timetableTableSnapshot.findFirst({
+): Promise<{ gridData: unknown; groupName: string } | null> {
+  const direct = await prisma.timetableTableSnapshot.findFirst({
     where: {
       groupName: { equals: groupName, mode: 'insensitive' },
       year: period.year,
       month: period.month,
       week: period.week,
     },
-    select: { gridData: true },
+    select: { gridData: true, groupName: true },
   });
-  if (!snap) return true;
+  if (direct) return direct;
+
+  const candidates = await prisma.timetableTableSnapshot.findMany({
+    where: {
+      year: period.year,
+      month: period.month,
+      week: period.week,
+    },
+    select: { gridData: true, groupName: true },
+  });
+  return candidates.find((s) => snapshotMatchesGroup(s.groupName, groupName)) ?? null;
+}
+
+/** True when the batch's saved grid still shows this hall/time (not a stale master_timetable row). */
+export async function batchSnapshotShowsHallSlot(
+  groupName: string,
+  period: { year: number; month: number; week: number },
+  slot: { dayOfWeek: string; startTime: string; endTime: string; hallName: string },
+): Promise<boolean> {
+  const snap = await findBatchSnapshot(groupName, period);
+  if (!snap) return false;
 
   const grid = normalizeGridSnapshot(snap.gridData as unknown as TimetableGridSnapshot);
   const rows = gridSnapshotsToParsedRows([grid]);
   const targetHall = normalizeHallName(slot.hallName);
   if (!targetHall || targetHall === 'tbd') return false;
 
+  const day = slot.dayOfWeek.trim().toLowerCase();
   return rows.some((r) => {
-    if (r.dayOfWeek.toLowerCase() !== slot.dayOfWeek.toLowerCase()) return false;
+    if (r.dayOfWeek.trim().toLowerCase() !== day) return false;
     if (!timesOverlap(slot.startTime, slot.endTime, r.startTime, r.endTime)) return false;
     const hall = normalizeHallName(r.hallName || 'TBD');
     return hall !== 'tbd' && hall === targetHall;
   });
+}
+
+async function removeStaleMasterSlot(entryId: string): Promise<void> {
+  await prisma.masterTimetable.delete({ where: { id: entryId } }).catch(() => undefined);
+  invalidateTimetableCache();
 }
 
 /** Drop hall conflicts when the other batch's grid no longer shows that slot (orphan DB row). */
@@ -79,7 +115,11 @@ export async function filterStaleCrossBatchHallConflicts(
       endTime: entry.endTime,
       hallName: entry.hall.name,
     });
-    if (visible) kept.push(c);
+    if (visible) {
+      kept.push(c);
+    } else {
+      await removeStaleMasterSlot(entry.id);
+    }
   }
 
   return kept;
