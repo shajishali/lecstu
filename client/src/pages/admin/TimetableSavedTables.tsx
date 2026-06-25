@@ -27,6 +27,11 @@ interface BatchForm {
   departmentId: string;
 }
 
+interface CourseOptionResponse {
+  code?: string;
+  name?: string;
+}
+
 interface LecturerOptionResponse {
   firstName?: string;
   lastName?: string;
@@ -62,6 +67,7 @@ export default function TimetableSavedTables() {
   const [deleteTarget, setDeleteTarget] = useState<TableMeta | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [saveConflictSummary, setSaveConflictSummary] = useState<string | null>(null);
+  const [courseOptions, setCourseOptions] = useState<AutocompleteOption[]>([]);
   const [lecturerOptions, setLecturerOptions] = useState<AutocompleteOption[]>([]);
   const [hallOptions, setHallOptions] = useState<AutocompleteOption[]>([]);
 
@@ -109,39 +115,55 @@ export default function TimetableSavedTables() {
   useEffect(() => {
     (async () => {
       try {
-        const [lecturerRes, hallRes] = await Promise.all([
+        const [dropdownRes, lecturerRes, hallRes] = await Promise.all([
+          api.get('/admin/timetable/dropdowns'),
           api.get('/lecturers'),
           api.get('/admin/halls', { params: { activeOnly: 'true' } }),
         ]);
 
+        const courses = (dropdownRes.data?.data?.courses ?? []) as CourseOptionResponse[];
+        setCourseOptions(
+          courses
+            .flatMap((course): AutocompleteOption[] => {
+              const code = course.code?.trim();
+              if (!code) return [];
+              const name = course.name?.trim();
+              return [{
+                value: code,
+                label: name ? `${code} - ${name}` : code,
+                searchText: `${code} ${name ?? ''}`,
+              }];
+            }),
+        );
+
         const lecturers = (lecturerRes.data?.data ?? []) as LecturerOptionResponse[];
         setLecturerOptions(
           lecturers
-            .map((lecturer) => {
+            .flatMap((lecturer): AutocompleteOption[] => {
               const name = `${lecturer.firstName ?? ''} ${lecturer.lastName ?? ''}`.trim();
               const code = lecturer.timetableCode?.trim();
-              if (!name && !code) return null;
-              return {
+              if (!name && !code) return [];
+              return [{
                 value: code || name,
-                label: code && name ? `${code} - ${name}` : name || code || '',
-              };
-            })
-            .filter((option): option is AutocompleteOption => !!option),
+                label: name || code || '',
+                searchText: `${code ?? ''} ${name}`,
+              }];
+            }),
         );
 
         const halls = (hallRes.data?.data ?? []) as HallOptionResponse[];
         setHallOptions([
           { value: 'TBD', label: 'TBD' },
           ...halls
-            .map((hall) => {
+            .flatMap((hall): AutocompleteOption[] => {
               const name = hall.name?.trim();
-              if (!name) return null;
-              return {
+              if (!name) return [];
+              return [{
                 value: name,
                 label: hall.building ? `${name} - ${hall.building}` : name,
-              };
-            })
-            .filter((option): option is AutocompleteOption => !!option),
+                searchText: `${name} ${hall.building ?? ''}`,
+              }];
+            }),
         ]);
       } catch {
         /* Dropdown suggestions are optional; manual typing still works. */
@@ -405,6 +427,7 @@ export default function TimetableSavedTables() {
           <EditableFetTimetableGrid
             grid={grid}
             tableId={selectedId ?? undefined}
+            courseOptions={courseOptions}
             lecturerOptions={lecturerOptions}
             hallOptions={hallOptions}
             onChange={(next) => {

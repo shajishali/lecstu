@@ -60,6 +60,7 @@ interface Props {
   onChange: (grid: TimetableGridSnapshot) => void;
   tableId?: string;
   className?: string;
+  courseOptions?: AutocompleteOption[];
   lecturerOptions?: AutocompleteOption[];
   hallOptions?: AutocompleteOption[];
 }
@@ -85,12 +86,44 @@ const emptyForm = (start: string, end: string): EditableCellData => ({
 export interface AutocompleteOption {
   value: string;
   label: string;
+  searchText?: string;
 }
 
-function filterAutocompleteOptions(options: AutocompleteOption[], query: string): AutocompleteOption[] {
+function activeAutocompleteQuery(value: string, multiple = false): string {
+  if (!multiple) return value;
+  const parts = value.split(',');
+  return parts[parts.length - 1] ?? '';
+}
+
+function replaceActiveAutocompleteQuery(value: string, next: string, multiple = false): string {
+  if (!multiple) return next;
+  const commaIndex = value.lastIndexOf(',');
+  if (commaIndex === -1) return next;
+  return `${value.slice(0, commaIndex + 1)} ${next}`.replace(/\s+/g, ' ').trimStart();
+}
+
+function filterAutocompleteOptions(
+  options: AutocompleteOption[],
+  query: string,
+  multiple = false,
+): AutocompleteOption[] {
+  const activeQuery = activeAutocompleteQuery(query, multiple);
   const needle = query.trim().toLowerCase();
+  const activeNeedle = activeQuery.trim().toLowerCase();
+  const selectedValues = multiple
+    ? new Set(
+        query
+          .split(',')
+          .slice(0, -1)
+          .map((part) => part.trim().toLowerCase())
+          .filter(Boolean),
+      )
+    : new Set<string>();
   const matches = needle
-    ? options.filter((option) => `${option.label} ${option.value}`.toLowerCase().includes(needle))
+    ? options.filter((option) => {
+        if (selectedValues.has(option.value.toLowerCase())) return false;
+        return `${option.label} ${option.value} ${option.searchText ?? ''}`.toLowerCase().includes(activeNeedle);
+      })
     : options;
   return matches.slice(0, 80);
 }
@@ -100,21 +133,26 @@ function AutocompleteInput({
   onChange,
   options,
   placeholder,
+  multiple = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   options: AutocompleteOption[];
   placeholder: string;
+  multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const filteredOptions = useMemo(() => filterAutocompleteOptions(options, value), [options, value]);
+  const filteredOptions = useMemo(() => filterAutocompleteOptions(options, value, multiple), [multiple, options, value]);
 
   return (
     <div className="relative mt-0.5">
       <input
         className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
         onFocus={() => setOpen(true)}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         placeholder={placeholder}
@@ -129,7 +167,7 @@ function AutocompleteInput({
               className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-100"
               onMouseDown={(e) => {
                 e.preventDefault();
-                onChange(option.value);
+                onChange(replaceActiveAutocompleteQuery(value, option.value, multiple));
                 setOpen(false);
               }}
             >
@@ -147,6 +185,7 @@ export default function EditableFetTimetableGrid({
   onChange,
   tableId,
   className = '',
+  courseOptions = [],
   lecturerOptions = [],
   hallOptions = [],
 }: Props) {
@@ -415,10 +454,10 @@ export default function EditableFetTimetableGrid({
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
               <label className="block text-sm font-medium text-slate-700">
                 Course code
-                <input
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+                <AutocompleteInput
                   value={form.courseCode}
-                  onChange={(e) => updateForm({ courseCode: e.target.value })}
+                  onChange={(courseCode) => updateForm({ courseCode })}
+                  options={courseOptions}
                   placeholder="e.g. BTEC 12062"
                 />
               </label>
@@ -447,6 +486,7 @@ export default function EditableFetTimetableGrid({
                   onChange={(hallName) => updateForm({ hallName })}
                   options={hallOptions}
                   placeholder="e.g. AB-LCH-09-1 or TBD"
+                  multiple
                 />
               </label>
               <label className="flex items-start gap-2 text-sm text-slate-700">
