@@ -60,6 +60,8 @@ interface Props {
   onChange: (grid: TimetableGridSnapshot) => void;
   tableId?: string;
   className?: string;
+  lecturerOptions?: AutocompleteOption[];
+  hallOptions?: AutocompleteOption[];
 }
 
 interface EditTarget {
@@ -80,7 +82,74 @@ const emptyForm = (start: string, end: string): EditableCellData => ({
   sharedHall: false,
 });
 
-export default function EditableFetTimetableGrid({ grid, onChange, tableId, className = '' }: Props) {
+export interface AutocompleteOption {
+  value: string;
+  label: string;
+}
+
+function filterAutocompleteOptions(options: AutocompleteOption[], query: string): AutocompleteOption[] {
+  const needle = query.trim().toLowerCase();
+  const matches = needle
+    ? options.filter((option) => `${option.label} ${option.value}`.toLowerCase().includes(needle))
+    : options;
+  return matches.slice(0, 80);
+}
+
+function AutocompleteInput({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: AutocompleteOption[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const filteredOptions = useMemo(() => filterAutocompleteOptions(options, value), [options, value]);
+
+  return (
+    <div className="relative mt-0.5">
+      <input
+        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {open && filteredOptions.length > 0 && (
+        <div className="absolute left-0 right-0 top-full z-[70] mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+          {filteredOptions.map((option) => (
+            <button
+              key={`${option.value}-${option.label}`}
+              type="button"
+              className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-100"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function EditableFetTimetableGrid({
+  grid,
+  onChange,
+  tableId,
+  className = '',
+  lecturerOptions = [],
+  hallOptions = [],
+}: Props) {
   const courseColorMap = useMemo(() => buildCourseColorLookup(grid), [grid]);
   const cellColors = (cell: TimetableGridCell): { bg: string; border: string } | undefined => {
     if (cell.isEmpty || cell.isBreak) return undefined;
@@ -364,19 +433,19 @@ export default function EditableFetTimetableGrid({ grid, onChange, tableId, clas
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Lecturer
-                <input
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+                <AutocompleteInput
                   value={form.lecturerName}
-                  onChange={(e) => updateForm({ lecturerName: e.target.value })}
+                  onChange={(lecturerName) => updateForm({ lecturerName })}
+                  options={lecturerOptions}
                   placeholder="Lecturer name or code"
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Room / hall
-                <input
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+                <AutocompleteInput
                   value={form.hallName}
-                  onChange={(e) => updateForm({ hallName: e.target.value })}
+                  onChange={(hallName) => updateForm({ hallName })}
+                  options={hallOptions}
                   placeholder="e.g. AB-LCH-09-1 or TBD"
                 />
               </label>

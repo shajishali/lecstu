@@ -4,6 +4,7 @@ import { showToast } from '@components/Toast';
 import Modal from '@components/Modal';
 import ConfirmDialog from '@components/ConfirmDialog';
 import EditableFetTimetableGrid from '@components/EditableFetTimetableGrid';
+import type { AutocompleteOption } from '@components/EditableFetTimetableGrid';
 import { cloneGrid, prepareGridForEditing } from '@utils/fetGridEdit';
 import type { TimetableGridSnapshot } from '../../types/timetableGrid';
 import { Plus, Save, RotateCcw, Edit2, Trash2, AlertTriangle } from 'lucide-react';
@@ -24,6 +25,18 @@ interface BatchForm {
   tableTitle: string;
   groupName: string;
   departmentId: string;
+}
+
+interface LecturerOptionResponse {
+  firstName?: string;
+  lastName?: string;
+  timetableCode?: string | null;
+  email?: string;
+}
+
+interface HallOptionResponse {
+  name?: string;
+  building?: string;
 }
 
 const defaultForm = (): BatchForm => ({
@@ -49,6 +62,8 @@ export default function TimetableSavedTables() {
   const [deleteTarget, setDeleteTarget] = useState<TableMeta | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [saveConflictSummary, setSaveConflictSummary] = useState<string | null>(null);
+  const [lecturerOptions, setLecturerOptions] = useState<AutocompleteOption[]>([]);
+  const [hallOptions, setHallOptions] = useState<AutocompleteOption[]>([]);
 
   const isDirty = grid && savedGrid && JSON.stringify(grid) !== JSON.stringify(savedGrid);
 
@@ -87,6 +102,49 @@ export default function TimetableSavedTables() {
         }
       } catch {
         /* optional */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [lecturerRes, hallRes] = await Promise.all([
+          api.get('/lecturers'),
+          api.get('/admin/halls', { params: { activeOnly: 'true' } }),
+        ]);
+
+        const lecturers = (lecturerRes.data?.data ?? []) as LecturerOptionResponse[];
+        setLecturerOptions(
+          lecturers
+            .map((lecturer) => {
+              const name = `${lecturer.firstName ?? ''} ${lecturer.lastName ?? ''}`.trim();
+              const code = lecturer.timetableCode?.trim();
+              if (!name && !code) return null;
+              return {
+                value: code || name,
+                label: code && name ? `${code} - ${name}` : name || code || '',
+              };
+            })
+            .filter((option): option is AutocompleteOption => !!option),
+        );
+
+        const halls = (hallRes.data?.data ?? []) as HallOptionResponse[];
+        setHallOptions([
+          { value: 'TBD', label: 'TBD' },
+          ...halls
+            .map((hall) => {
+              const name = hall.name?.trim();
+              if (!name) return null;
+              return {
+                value: name,
+                label: hall.building ? `${name} - ${hall.building}` : name,
+              };
+            })
+            .filter((option): option is AutocompleteOption => !!option),
+        ]);
+      } catch {
+        /* Dropdown suggestions are optional; manual typing still works. */
       }
     })();
   }, []);
@@ -347,6 +405,8 @@ export default function TimetableSavedTables() {
           <EditableFetTimetableGrid
             grid={grid}
             tableId={selectedId ?? undefined}
+            lecturerOptions={lecturerOptions}
+            hallOptions={hallOptions}
             onChange={(next) => {
               setGrid(next);
               setSaveConflictSummary(null);
