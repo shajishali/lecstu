@@ -477,6 +477,7 @@ export default function EditableFetTimetableGrid({
                   onChange={(lecturerName) => updateForm({ lecturerName })}
                   options={lecturerOptions}
                   placeholder="Lecturer name or code"
+                  multiple
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700">
