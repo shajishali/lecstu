@@ -1,7 +1,7 @@
 import type { TimetableGridCell, TimetableGridSnapshot } from '../types/timetableGrid';
 
 const COURSE_RE = /\b([A-Z]{2,6})[-\s]+(\d{4,5}[A-Za-z0-9_]*)\b/i;
-const HALL_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
+const HALL_GLOBAL_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/gi;
 
 export interface EditableCellData {
   courseCode: string;
@@ -38,8 +38,10 @@ function cellLines(cell: TimetableGridCell): string[] {
 function parseHallFromLine(line: string): string | null {
   const trimmed = stripCommonMarker(line.trim().replace(/^room:\s*/i, '').trim());
   if (!trimmed || /^tbd$/i.test(trimmed)) return 'TBD';
-  const hm = trimmed.match(HALL_RE);
-  if (hm?.[1]) return stripCommonMarker(hm[1]);
+  const halls = [...trimmed.matchAll(HALL_GLOBAL_RE)]
+    .map((m) => m[1]?.trim())
+    .filter((hall): hall is string => !!hall);
+  if (halls.length > 0) return halls.join(', ');
   return null;
 }
 
@@ -381,13 +383,21 @@ export function getCellSpanTimes(grid: TimetableGridSnapshot, ti: number, cell: 
   };
 }
 
-function hallFromCellLines(cell: TimetableGridCell): string {
+function hallsFromText(text: string): string[] {
+  return [...stripCommonMarker(text).matchAll(HALL_GLOBAL_RE)]
+    .map((m) => m[1]?.trim().toUpperCase())
+    .filter((hall): hall is string => !!hall);
+}
+
+function hallsFromCellLines(cell: TimetableGridCell): string[] {
   const lines = cell.displayLines?.length ? cell.displayLines : cell.lines ?? [];
+  const halls: string[] = [];
   for (const line of lines) {
-    const m = line.match(HALL_RE);
-    if (m?.[1]) return stripCommonMarker(m[1]).toUpperCase();
+    for (const hall of hallsFromText(line)) {
+      if (!halls.includes(hall)) halls.push(hall);
+    }
   }
-  return '';
+  return halls;
 }
 
 function slotTimesOverlap(s1: string, e1: string, s2: string, e2: string): boolean {
@@ -404,22 +414,23 @@ export function checkLocalHallOverlap(
   sharedHall: boolean,
   excludeAnchorTi: number,
 ): string | null {
-  const hall = stripCommonMarker(hallName.trim()).toUpperCase();
-  if (sharedHall || !hall || hall === 'TBD') return null;
+  const halls = hallsFromText(hallName);
+  if (sharedHall || halls.length === 0) return null;
 
   for (let ti = 0; ti < grid.cells.length; ti++) {
     const cell = grid.cells[ti]?.[di];
     if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
     if (ti === excludeAnchorTi) continue;
 
-    const otherHall = hallFromCellLines(cell);
-    if (!otherHall || otherHall === 'TBD' || otherHall !== hall) continue;
+    const otherHalls = hallsFromCellLines(cell);
+    const overlap = halls.find((hall) => otherHalls.includes(hall));
+    if (!overlap) continue;
     if (cell.sharedHall === true) continue;
 
     const { startTime: oStart, endTime: oEnd } = getCellSpanTimes(grid, ti, cell);
     if (!slotTimesOverlap(startTime, endTime, oStart, oEnd)) continue;
 
-    return `This batch already uses ${hall} on ${grid.dayColumns[di]?.label ?? 'that day'} ${oStart}–${oEnd}. Change the time or room.`;
+    return `This batch already uses ${overlap} on ${grid.dayColumns[di]?.label ?? 'that day'} ${oStart}–${oEnd}. Change the time or room.`;
   }
   return null;
 }
@@ -539,3 +550,4 @@ export function snapBoundaryFromPointer(
   if (Math.abs(delta) < 1) return null;
   return adjustRowBoundary(grid, rowIndex, delta);
 }
+

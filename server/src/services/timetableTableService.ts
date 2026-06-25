@@ -11,7 +11,13 @@ import {
 import { parseEnrollmentFromGroupName } from './studentGroupResolver';
 import { backfillSlotRefsForGroup } from './timetableRepairService';
 import { getLecturerDisplayIndex } from './lecturerDisplayService';
-import { detectConflicts, type ConflictInfo, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import {
+  detectConflicts,
+  type ConflictInfo,
+  PLACEHOLDER_HALL_NAME,
+  splitHallDisplayNames,
+  UNASSIGNED_LECTURER_EMAIL,
+} from './conflictDetector';
 import { getOrCreateUnassignedLecturer } from './timetableImportService';
 import { finalizeParsedRows } from './timetableParserService';
 import { resolveAndImport, formatTimetableConflictSummary } from './timetableImportService';
@@ -310,31 +316,39 @@ export async function validateTableSlot(
     return [];
   }
 
-  const hall = await prisma.lectureHall.findFirst({
-    where: { name: { equals: rawHall, mode: 'insensitive' }, isActive: true },
-    select: { id: true, name: true },
-  });
-  if (!hall) {
-    throw new AppError(`Hall "${rawHall}" not found. Check the room code or add it under Halls.`, 400);
-  }
-
   const unassignedLecturerId = await getOrCreateUnassignedLecturer(group.departmentId);
-  const conflicts = await detectConflicts({
-    year: row.year,
-    month: row.month,
-    week: row.week,
-    dayOfWeek: slot.dayOfWeek,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-    hallId: hall.id,
-    lecturerId: unassignedLecturerId,
-    groupId: group.id,
-    hallName: hall.name,
-    hallIsShared: hallIsShared,
-    replacingGroupId: group.id,
-    replacingGroupName: row.groupName,
-    unassignedLecturerId,
-  });
+  const hallNames = splitHallDisplayNames(rawHall);
+  const conflicts: ConflictInfo[] = [];
+
+  for (const hallName of hallNames) {
+    if (hallName.toUpperCase() === PLACEHOLDER_HALL_NAME) continue;
+    const hall = await prisma.lectureHall.findFirst({
+      where: { name: { equals: hallName, mode: 'insensitive' }, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (!hall) {
+      throw new AppError(`Hall "${hallName}" not found. Check the room code or add it under Halls.`, 400);
+    }
+
+    conflicts.push(
+      ...(await detectConflicts({
+        year: row.year,
+        month: row.month,
+        week: row.week,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        hallId: hall.id,
+        lecturerId: unassignedLecturerId,
+        groupId: group.id,
+        hallName: hall.name,
+        hallIsShared: hallIsShared,
+        replacingGroupId: group.id,
+        replacingGroupName: row.groupName,
+        unassignedLecturerId,
+      })),
+    );
+  }
 
   const hallConflicts = conflicts.filter((c) => c.type === 'HALL');
   return filterStaleCrossBatchHallConflicts(

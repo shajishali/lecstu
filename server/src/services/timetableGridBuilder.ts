@@ -486,11 +486,16 @@ function extractCourseFromLines(lines: string[]): { code: string; name: string }
 }
 
 function extractHallFromLines(lines: string[]): string {
+  const halls: string[] = [];
   for (const line of lines) {
-    const m = line.match(HALL_CODE_RE);
-    if (m?.[1]) return m[1];
+    for (const m of line.matchAll(HALL_GLOBAL_RE)) {
+      const hall = m[1]?.trim();
+      if (hall && !halls.some((h) => h.toUpperCase() === hall.toUpperCase())) {
+        halls.push(hall);
+      }
+    }
   }
-  return 'TBD';
+  return halls.length > 0 ? halls.join(', ') : 'TBD';
 }
 
 function extractLecturerFromLines(lines: string[]): string | undefined {

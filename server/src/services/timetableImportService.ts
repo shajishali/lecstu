@@ -7,7 +7,15 @@ import type { DayOfWeek } from '../generated/prisma/client';
 import { Prisma } from '../generated/prisma/client';
 import prisma from '../config/database';
 import { ParsedTimetableRow } from './timetableParserService';
-import { detectConflicts, type ConflictInfo, cleanHallDisplayName, isCommonHall, PLACEHOLDER_HALL_NAME, UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import {
+  detectConflicts,
+  type ConflictInfo,
+  cleanHallDisplayName,
+  isCommonHall,
+  PLACEHOLDER_HALL_NAME,
+  splitHallDisplayNames,
+  UNASSIGNED_LECTURER_EMAIL,
+} from './conflictDetector';
 import {
   parseLectureHall,
   studyYearToOrdinal,
@@ -287,6 +295,7 @@ export async function resolveAndImport(
     _hallIsShared: boolean;
     _rowNum: number;
     _lecturerAssigned: boolean;
+    _multiHallSiblingKey?: string;
   }> = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -296,6 +305,7 @@ export async function resolveAndImport(
     const rawHallName = (r.hallName || 'TBD').trim();
     const hallIsShared = r.sharedHall === true || isCommonHall(rawHallName);
     const hallName = cleanHallDisplayName(rawHallName);
+    const hallNames = splitHallDisplayNames(hallName);
     const groupName = (r.groupName || '').trim();
     if (!groupName) continue;
 
@@ -338,7 +348,7 @@ export async function resolveAndImport(
     const lecturerAssigned = lecturerId !== unassignedLecturerId;
     if (!lecturerInitials && !lecturerAssigned) stats.unassignedCount++;
 
-    let hallId = await findOrCreateHallId(hallName, hallMap, stats);
+    const hallIds = await Promise.all(hallNames.map((name) => findOrCreateHallId(name, hallMap, stats)));
 
     let groupId: string;
     if (options?.forcedGroupId) {
@@ -373,23 +383,40 @@ export async function resolveAndImport(
       groupId = resolvedGroupId;
     }
 
-    validEntries.push({
-      year: r.year ?? 2026,
-      month: r.month ?? 1,
-      week: r.week ?? 1,
-      dayOfWeek: r.dayOfWeek,
-      startTime: r.startTime,
-      endTime: r.endTime,
-      semester: r.semester ?? 1,
-      courseId,
-      lecturerId,
-      lecturerInitials,
-      hallId,
-      groupId,
-      _hallName: hallName.toUpperCase() === PLACEHOLDER_HALL_NAME ? PLACEHOLDER_HALL_NAME : hallName,
-      _hallIsShared: hallIsShared,
-      _rowNum: rowNum,
-      _lecturerAssigned: lecturerAssigned,
+    const multiHallSiblingKey =
+      hallIds.length > 1
+        ? [
+            rowNum,
+            groupId,
+            courseId,
+            lecturerId,
+            r.dayOfWeek,
+            r.startTime,
+            r.endTime,
+          ].join('|')
+        : undefined;
+
+    hallIds.forEach((hallId, hallIndex) => {
+      const singleHallName = hallNames[hallIndex] ?? PLACEHOLDER_HALL_NAME;
+      validEntries.push({
+        year: r.year ?? 2026,
+        month: r.month ?? 1,
+        week: r.week ?? 1,
+        dayOfWeek: r.dayOfWeek,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        semester: r.semester ?? 1,
+        courseId,
+        lecturerId,
+        lecturerInitials,
+        hallId,
+        groupId,
+        _hallName: singleHallName.toUpperCase() === PLACEHOLDER_HALL_NAME ? PLACEHOLDER_HALL_NAME : singleHallName,
+        _hallIsShared: hallIsShared,
+        _rowNum: rowNum,
+        _lecturerAssigned: lecturerAssigned,
+        _multiHallSiblingKey: multiHallSiblingKey,
+      });
     });
   }
 
@@ -443,6 +470,13 @@ export async function resolveAndImport(
         const prev = validEntries[j];
         if (prev.groupId !== entry.groupId) continue;
         if (prev.dayOfWeek !== entry.dayOfWeek) continue;
+        if (
+          entry._multiHallSiblingKey &&
+          prev._multiHallSiblingKey &&
+          entry._multiHallSiblingKey === prev._multiHallSiblingKey
+        ) {
+          continue;
+        }
         if (!timesOverlapImport(entry.startTime, entry.endTime, prev.startTime, prev.endTime)) {
           continue;
         }

@@ -71,6 +71,16 @@ export function cleanHallDisplayName(name: string): string {
   return cleaned || PLACEHOLDER_HALL_NAME;
 }
 
+export function splitHallDisplayNames(name: string | undefined): string[] {
+  const cleaned = cleanHallDisplayName(name || '');
+  if (isPlaceholderHall(cleaned)) return [PLACEHOLDER_HALL_NAME];
+  const parts = cleaned
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [PLACEHOLDER_HALL_NAME];
+}
+
 function isPlaceholderLecturer(
   lecturerId: string,
   unassignedLecturerId: string | undefined,
