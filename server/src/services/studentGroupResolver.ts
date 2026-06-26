@@ -75,6 +75,16 @@ export function parseEnrollmentFromGroupName(groupName: string): {
   studyYear: string;
   pathwayCode: string;
 } {
+  const yFirst = groupName.match(/^Y([1-4])[-\s]+(CS|ET|CT|BS|BST)(?:[-\s]+([A-Z0-9]+))?/i);
+  if (yFirst) {
+    const suffix = yFirst[3]?.toUpperCase() ?? '';
+    return {
+      programCode: yFirst[2].toUpperCase() === 'BST' ? 'BS' : yFirst[2].toUpperCase(),
+      studyYear: `Y${yFirst[1]}`.toUpperCase(),
+      pathwayCode: suffix.match(/^\d{2}$|^20\d{2}$/) ? '' : suffix,
+    };
+  }
+
   const parts = groupName.split('-');
   if (parts.length >= 2 && /^Y[1-4]$/i.test(parts[1])) {
     return {

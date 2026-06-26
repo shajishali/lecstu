@@ -27,6 +27,7 @@ import { filterStaleCrossBatchHallConflicts } from './timetableSlotVisibility';
 import { finalizeParsedRows, formatShortCourseDisplay } from './timetableParserService';
 import {
   buildLecturerInitialsIndex,
+  deriveTimetableCodeFromName,
   isFetLecturerCodeToken,
   matchLecturerByInitials,
 } from './lecturerInitialsMatch';
@@ -171,7 +172,7 @@ export interface ImportResolution {
 }
 
 export interface ImportStats {
-  created: { courses: number; halls: number; groups: number };
+  created: { courses: number; halls: number; groups: number; lecturers: number };
   unassignedCount: number;
   imported: number;
 }
@@ -226,6 +227,67 @@ export async function getOrCreateUnassignedLecturer(departmentId: string): Promi
   return lecturer.id;
 }
 
+function splitLecturerName(label: string): { firstName: string; lastName: string } {
+  const cleaned = label.replace(/\s+/g, ' ').trim();
+  const parts = cleaned.split(' ').filter(Boolean);
+  if (parts.length === 0) return { firstName: 'Timetable', lastName: 'Lecturer' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '(Timetable)' };
+  return { firstName: parts.slice(0, -1).join(' '), lastName: parts[parts.length - 1] };
+}
+
+function slugifyLecturerLabel(label: string): string {
+  const slug = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '');
+  return slug || 'lecturer';
+}
+
+function isAutoCreatableLecturerLabel(label: string): boolean {
+  const cleaned = label.trim();
+  if (!cleaned || cleaned === '-' || cleaned === '—') return false;
+  if (isFetLecturerCodeToken(cleaned)) return false;
+  if (/^(T|P|TD|PR|RR|DEMO|LECTURE|PRACTICAL)$/i.test(cleaned)) return false;
+  return /[A-Za-z]/.test(cleaned);
+}
+
+async function createTimetableLecturer(input: {
+  label: string;
+  email?: string;
+  departmentId: string;
+  existingTimetableCodes: Set<string>;
+  stats: ImportStats;
+}): Promise<{ id: string; email: string; timetableCode: string | null }> {
+  const bcrypt = await import('bcrypt');
+  const normalizedEmail =
+    input.email && input.email.includes('@')
+      ? input.email.trim().toLowerCase()
+      : `timetable.${slugifyLecturerLabel(input.label)}@lecstu.local`;
+  const { firstName, lastName } = splitLecturerName(input.label || normalizedEmail.split('@')[0]);
+  const autoCode = deriveTimetableCodeFromName(firstName, lastName);
+  const timetableCode =
+    autoCode && !input.existingTimetableCodes.has(autoCode.toUpperCase())
+      ? autoCode.toUpperCase()
+      : null;
+
+  const created = await prisma.user.create({
+    data: {
+      email: normalizedEmail,
+      password: await bcrypt.hash('timetable-import-no-login', 12),
+      role: 'LECTURER',
+      firstName,
+      lastName,
+      departmentId: input.departmentId,
+      ...(timetableCode ? { timetableCode } : {}),
+    },
+    select: { id: true, email: true, timetableCode: true },
+  });
+  if (created.timetableCode) input.existingTimetableCodes.add(created.timetableCode.toUpperCase());
+  input.stats.created.lecturers++;
+  return { id: created.id, email: created.email, timetableCode: created.timetableCode };
+}
+
 export async function resolveAndImport(
   rows: ParsedTimetableRow[],
   defaultDepartmentId?: string,
@@ -236,7 +298,7 @@ export async function resolveAndImport(
   rows = finalizeParsedRows(rows);
 
   const stats: ImportStats = {
-    created: { courses: 0, halls: 0, groups: 0 },
+    created: { courses: 0, halls: 0, groups: 0, lecturers: 0 },
     unassignedCount: 0,
     imported: 0,
   };
@@ -260,6 +322,11 @@ export async function resolveAndImport(
   const deptByCode = new Map(departments.map((d) => [d.code.toUpperCase(), d.id]));
   const courseMap = new Map(existingCourses.map((c) => [c.code.toUpperCase(), c.id]));
   const lecturerMap = new Map(existingLecturers.map((l) => [l.email.toLowerCase(), l.id]));
+  const timetableCodeSet = new Set(
+    existingLecturers
+      .map((l) => l.timetableCode?.trim().toUpperCase())
+      .filter((code): code is string => Boolean(code)),
+  );
   const lecturerCodeIndex = buildLecturerInitialsIndex(
     existingLecturers.filter((l) => l.email !== UNASSIGNED_LECTURER_EMAIL),
   );
@@ -343,6 +410,38 @@ export async function resolveAndImport(
     let lecturerId = r.lecturerEmail ? lecturerMap.get(r.lecturerEmail.toLowerCase()) : null;
     if (!lecturerId && lecturerInitials) {
       lecturerId = matchLecturerByInitials(lecturerInitials, lecturerCodeIndex) ?? null;
+    }
+    if (!lecturerId && (r.lecturerEmail || isAutoCreatableLecturerLabel(sheetLecturer))) {
+      const email = r.lecturerEmail?.trim().toLowerCase();
+      try {
+        const created = await createTimetableLecturer({
+          label: sheetLecturer || email || 'Timetable Lecturer',
+          email,
+          departmentId: deptId,
+          existingTimetableCodes: timetableCodeSet,
+          stats,
+        });
+        lecturerId = created.id;
+        lecturerMap.set(created.email.toLowerCase(), created.id);
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          const existing = await prisma.user.findFirst({
+            where: {
+              email: { equals: email || `timetable.${slugifyLecturerLabel(sheetLecturer)}@lecstu.local`, mode: 'insensitive' },
+              role: 'LECTURER',
+            },
+            select: { id: true, email: true },
+          });
+          if (existing) {
+            lecturerId = existing.id;
+            lecturerMap.set(existing.email.toLowerCase(), existing.id);
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
     }
     if (!lecturerId) lecturerId = unassignedLecturerId;
     const lecturerAssigned = lecturerId !== unassignedLecturerId;

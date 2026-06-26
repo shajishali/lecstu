@@ -251,7 +251,7 @@ export async function updateStudentEnrollment(req: Request, res: Response, next:
       throw new AppError('Only students can update academic enrollment.', 403);
     }
 
-    const { programCode, studyYear, pathwayCode } = req.body;
+    const { programCode, studyYear, pathwayCode, groupId } = req.body;
     const validated = validateStudentEnrollmentInput(
       String(programCode),
       String(studyYear),
@@ -263,6 +263,7 @@ export async function updateStudentEnrollment(req: Request, res: Response, next:
       validated.programCode,
       validated.studyYear,
       validated.pathwayCode,
+      groupId ? String(groupId) : undefined,
     );
 
     invalidateTimetableCacheForUser(userId);

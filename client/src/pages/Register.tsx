@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@store/authStore';
 import {
@@ -78,6 +78,8 @@ export default function Register() {
     programCode: '',
     studyYear: '',
     pathwayCode: '',
+    batchYearLabel: '',
+    groupId: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -89,12 +91,37 @@ export default function Register() {
   const [codeHint, setCodeHint] = useState('');
   const [devVerificationCode, setDevVerificationCode] = useState('');
 
-  const { yearOptions, needsPathway, pathwayOptions } = useEnrollmentFields(
+  const { yearOptions, needsPathway, pathwayOptions, batchYearOptions, groupOptions } = useEnrollmentFields(
     programs,
     form.programCode,
     form.studyYear,
     form.pathwayCode,
+    form.batchYearLabel,
   );
+
+  useEffect(() => {
+    if (form.groupId && groupOptions.some((g) => g.id === form.groupId)) return;
+    if (!form.programCode || !form.studyYear) return;
+    if (form.studyYear === 'Y1' && batchYearOptions.length > 0 && !form.batchYearLabel) return;
+    if (groupOptions.length === 1) {
+      setForm((prev) => ({ ...prev, groupId: groupOptions[0].id }));
+    }
+  }, [batchYearOptions.length, form.batchYearLabel, form.groupId, form.programCode, form.studyYear, groupOptions]);
+
+  useEffect(() => {
+    if (form.studyYear !== 'Y1') {
+      if (form.batchYearLabel) {
+        setForm((prev) => ({ ...prev, batchYearLabel: '' }));
+      }
+      return;
+    }
+    if (form.batchYearLabel && batchYearOptions.includes(form.batchYearLabel)) return;
+    setForm((prev) => ({
+      ...prev,
+      batchYearLabel: batchYearOptions.length === 1 ? batchYearOptions[0] : '',
+      groupId: '',
+    }));
+  }, [batchYearOptions, form.batchYearLabel, form.studyYear]);
 
   const resetVerification = () => {
     setStep(1);
@@ -113,13 +140,25 @@ export default function Register() {
         next.programCode = '';
         next.studyYear = '';
         next.pathwayCode = '';
+        next.batchYearLabel = '';
+        next.groupId = '';
       }
       if (field === 'programCode') {
         next.studyYear = '';
         next.pathwayCode = '';
+        next.batchYearLabel = '';
+        next.groupId = '';
       }
       if (field === 'studyYear' && !['Y3', 'Y4'].includes(value)) {
         next.pathwayCode = '';
+        next.batchYearLabel = '';
+        next.groupId = '';
+      }
+      if (field === 'batchYearLabel') {
+        next.groupId = '';
+      }
+      if (field === 'studyYear' || field === 'pathwayCode') {
+        next.groupId = '';
       }
       if (field === 'email' || field === 'recoveryEmail') {
         next.verificationCode = '';
@@ -208,6 +247,10 @@ export default function Register() {
       if (needsPathway && !form.pathwayCode) {
         return 'Please select your pathway (required for 3rd & 4th year)';
       }
+      if (form.studyYear === 'Y1' && batchYearOptions.length > 0 && !form.batchYearLabel) {
+        return 'Please select your batch year';
+      }
+      if (groupOptions.length > 0 && !form.groupId) return 'Please select your class batch';
     }
     return null;
   };
@@ -233,6 +276,7 @@ export default function Register() {
           programCode: form.programCode,
           studyYear: form.studyYear,
           pathwayCode: needsPathway ? form.pathwayCode : undefined,
+          groupId: groupOptions.length > 0 ? form.groupId : undefined,
         }),
       });
       navigate('/dashboard', { replace: true });
@@ -533,6 +577,50 @@ export default function Register() {
                     <p className={helperClass}>
                       Links you to the correct timetable group (e.g. CS-Y3-AINT).
                     </p>
+                  </div>
+                )}
+
+                {form.programCode && form.studyYear === 'Y1' && batchYearOptions.length > 0 && (
+                  <div className={fieldClass}>
+                    <label htmlFor="batchYearLabel" className={labelClass}>
+                      Batch year
+                    </label>
+                    <select
+                      id="batchYearLabel"
+                      value={form.batchYearLabel}
+                      onChange={(e) => update('batchYearLabel', e.target.value)}
+                      required
+                      className={inputClass}
+                    >
+                      <option value="">- Select batch year -</option>
+                      {batchYearOptions.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {form.programCode && form.studyYear && groupOptions.length > 0 && (
+                  <div className={fieldClass}>
+                    <label htmlFor="groupId" className={labelClass}>
+                      Class batch
+                    </label>
+                    <select
+                      id="groupId"
+                      value={form.groupId}
+                      onChange={(e) => update('groupId', e.target.value)}
+                      required
+                      className={inputClass}
+                    >
+                      <option value="">- Select batch -</option>
+                      {groupOptions.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </>

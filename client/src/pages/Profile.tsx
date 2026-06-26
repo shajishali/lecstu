@@ -96,6 +96,7 @@ export default function Profile() {
     programCode: string;
     studyYear: string;
     pathwayCode?: string;
+    groupId?: string;
   }) => {
     setEnrolling(true);
     try {
@@ -420,6 +421,7 @@ export default function Profile() {
                   initialProgram={parsedGroup.program}
                   initialYear={parsedGroup.year || primaryGroup?.batchLabel || ''}
                   initialPathway={pathwaySuffix}
+                  initialGroupId={primaryGroup?.id || ''}
                   onSubmit={handleEnrollment}
                   submitting={enrolling}
                   submitLabel="Update for new study year"

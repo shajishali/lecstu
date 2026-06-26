@@ -1338,6 +1338,11 @@ function fetCourseTitleLine(rawLine: string): string {
     const re = new RegExp(`\\s+${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i');
     t = t.replace(re, '').trim();
   }
+  while (/\s+\S+\s*$/i.test(t)) {
+    const last = t.split(/\s+/).pop() ?? '';
+    if (!isFetActivitySuffix(last)) break;
+    t = t.replace(/\s+\S+\s*$/i, '').trim();
+  }
   return t || extractFetCourse(rawLine) || rawLine.trim();
 }
 

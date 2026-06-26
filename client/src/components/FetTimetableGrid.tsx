@@ -1,3 +1,4 @@
+import { fetGridDisplayLines } from '@utils/fetGridDisplay';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
 
 const BLOCK_COLORS = [
@@ -12,33 +13,6 @@ const BLOCK_COLORS = [
 
 function blockColor(index: number): string {
   return BLOCK_COLORS[index % BLOCK_COLORS.length];
-}
-
-const HALL_LINE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
-
-function stripCommonMarker(text: string): string {
-  return text.replace(/\s+COMMON\b/gi, '').trim();
-}
-
-function formatLine(line: string, index: number, allLines: string[]): string {
-  const t = stripCommonMarker(line.trim());
-  if (t === '—' || t === '-' || t.toLowerCase() === 'unassigned') {
-    return 'Lecturer: —';
-  }
-  if (t.toUpperCase() === 'TBD' && !allLines.some((l) => HALL_LINE_RE.test(l))) {
-    return 'Room: TBD';
-  }
-  if (HALL_LINE_RE.test(t)) {
-    return t.startsWith('Room:') ? t : `Room: ${t}`;
-  }
-  if (
-    index > 0 &&
-    (/^[A-Z]{1,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) &&
-    t.length <= 24
-  ) {
-    return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
-  }
-  return line;
 }
 
 interface Props {
@@ -97,9 +71,9 @@ export default function FetTimetableGrid({ grid, className = '' }: Props) {
                       <div className="px-2 py-2 text-center text-slate-300">---</div>
                     ) : (
                       <div className="px-2 py-1.5 leading-snug text-slate-900">
-                        {(cell.displayLines?.length ? cell.displayLines : cell.lines).map((line, li) => (
+                        {fetGridDisplayLines(cell.displayLines?.length ? cell.displayLines : cell.lines).map((line, li) => (
                           <div key={li} className={li === 0 ? 'font-semibold' : ''}>
-                            {formatLine(line, li, cell.displayLines?.length ? cell.displayLines : cell.lines)}
+                            {line}
                           </div>
                         ))}
                         {cell.isOnline && (

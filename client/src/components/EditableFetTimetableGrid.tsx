@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Pencil, Plus, Trash2, GripHorizontal } from 'lucide-react';
 import api from '@services/api';
+import { fetGridDisplayLines } from '@utils/fetGridDisplay';
 import type { TimetableGridSnapshot, TimetableGridCell } from '../types/timetableGrid';
 import {
   parseCellToEditable,
@@ -40,8 +41,9 @@ function stripCommonMarker(text: string): string {
   return text.replace(/\s+COMMON\b/gi, '').trim();
 }
 
-function formatLine(line: string, index: number, allLines: string[]): string {
+export function formatLine(line: string, index: number, allLines: string[]): string | null {
   const t = stripCommonMarker(line.trim());
+  if (/^[TP]$/i.test(t)) return null;
   if (t === '—' || t === '-' || t.toLowerCase() === 'unassigned') return 'Lecturer: —';
   if (t.toUpperCase() === 'TBD' && !allLines.some((l) => HALL_LINE_RE.test(l))) return 'Room: TBD';
   if (HALL_LINE_RE.test(t)) return t.startsWith('Room:') ? t : `Room: ${t}`;
@@ -51,6 +53,9 @@ function formatLine(line: string, index: number, allLines: string[]): string {
     t.length <= 24
   ) {
     return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
+  }
+  if (/\b[A-Z]{2,6}[-\s]+\d{4,5}[A-Za-z0-9_]*\b/i.test(line)) {
+    return line.replace(/\s+[TP]\s*$/i, '').trim();
   }
   return line;
 }
@@ -413,9 +418,9 @@ export default function EditableFetTimetableGrid({
                           <div className="mb-1 text-[10px] font-semibold text-slate-500">
                             {startTime} – {endTime}
                           </div>
-                          {(cell.displayLines?.length ? cell.displayLines : cell.lines).map((line, li) => (
+                          {fetGridDisplayLines(cell.displayLines?.length ? cell.displayLines : cell.lines).map((line, li) => (
                             <div key={li} className={li === 0 ? 'font-semibold' : ''}>
-                              {formatLine(line, li, cell.displayLines?.length ? cell.displayLines : cell.lines)}
+                              {line}
                             </div>
                           ))}
                           {cell.isOnline && (

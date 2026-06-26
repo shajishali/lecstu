@@ -17,6 +17,7 @@ function applyEnrollmentValidation(req: Request): void {
   req.body.programCode = validated.programCode;
   req.body.studyYear = validated.studyYear;
   req.body.pathwayCode = validated.pathwayCode ?? null;
+  req.body.groupId = req.body.groupId ? String(req.body.groupId) : null;
 }
 
 /** Registration: required when role is STUDENT */

@@ -27,7 +27,7 @@ function normalizeEmail(email: string): string {
 }
 
 export async function getRegistrationOptions(_req: Request, res: Response) {
-  res.json({ success: true, data: getRegisterOptions() });
+  res.json({ success: true, data: await getRegisterOptions() });
 }
 
 export async function register(req: Request, res: Response, next: NextFunction) {
@@ -43,6 +43,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       programCode,
       studyYear,
       pathwayCode,
+      groupId,
       verificationCode,
       recoveryEmail,
     } = req.body;
@@ -120,6 +121,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         programCode,
         studyYear as StudyYear,
         pathwayCode || undefined,
+        groupId || undefined,
       );
       resolvedDepartmentId = enrollment.departmentId;
     }

@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import {
   PROGRAMS,
+  YEARS_WITHOUT_PATHWAYS,
   YEARS_WITH_PATHWAYS,
   buildGroupName,
   type StudyYear,
@@ -12,15 +13,104 @@ export type RegisterOptionsProgram = {
   name: string;
   years: StudyYear[];
   pathways: { code: string; name: string }[];
+  groups: {
+    id: string;
+    name: string;
+    studyYear: StudyYear;
+    pathwayCode?: string;
+    batchYearLabel?: string;
+  }[];
 };
 
-export function getRegisterOptions(): { programs: RegisterOptionsProgram[] } {
+function parseGroupEnrollment(name: string): {
+  programCode: string;
+  studyYear: StudyYear;
+  pathwayCode?: string;
+  batchYearLabel?: string;
+} | null {
+  const trimmed = name.trim();
+  const match = trimmed.match(/^(CS|ET|CT|BS)-Y([1-4])(?:-([A-Z0-9]+))?/i);
+  if (!match) return null;
+  const program = PROGRAMS.find((p) => p.code === match[1].toUpperCase());
+  const studyYear = `Y${match[2]}` as StudyYear;
+  const suffix = match[3]?.toUpperCase();
+  const pathwayCode =
+    suffix && YEARS_WITH_PATHWAYS.includes(studyYear) && program?.pathways.some((p) => p.code === suffix)
+      ? suffix
+      : undefined;
+  const batchYearLabel =
+    suffix && !pathwayCode && YEARS_WITHOUT_PATHWAYS.includes(studyYear)
+      ? normalizeBatchYearLabel(suffix)
+      : undefined;
+  return { programCode: match[1].toUpperCase(), studyYear, pathwayCode, batchYearLabel };
+}
+
+function normalizeBatchYearLabel(value: string | number | null | undefined): string | undefined {
+  const raw = String(value ?? '').trim();
+  if (!raw) return undefined;
+  const twoDigit = raw.match(/^(\d{2})$/);
+  if (twoDigit) return `20${twoDigit[1]}`;
+  const fourDigit = raw.match(/^(20\d{2})$/);
+  return fourDigit ? fourDigit[1] : undefined;
+}
+
+function parseAnyGroupEnrollment(name: string): {
+  programCode: string;
+  studyYear: StudyYear;
+  pathwayCode?: string;
+  batchYearLabel?: string;
+} | null {
+  const canonical = parseGroupEnrollment(name);
+  if (canonical) return canonical;
+
+  const yFirst = name.trim().match(/^Y([1-4])[-\s]+(CS|ET|CT|BS|BST)(?:[-\s]+([A-Z0-9]+))?/i);
+  if (!yFirst) return null;
+  const studyYear = `Y${yFirst[1]}` as StudyYear;
+  const programCode = yFirst[2].toUpperCase() === 'BST' ? 'BS' : yFirst[2].toUpperCase();
+  const program = PROGRAMS.find((p) => p.code === programCode);
+  const suffix = yFirst[3]?.toUpperCase();
+  const pathwayCode =
+    suffix && YEARS_WITH_PATHWAYS.includes(studyYear) && program?.pathways.some((p) => p.code === suffix)
+      ? suffix
+      : undefined;
+  const batchYearLabel =
+    suffix && !pathwayCode && YEARS_WITHOUT_PATHWAYS.includes(studyYear)
+      ? normalizeBatchYearLabel(suffix)
+      : undefined;
+  return { programCode, studyYear, pathwayCode, batchYearLabel };
+}
+
+export async function getRegisterOptions(): Promise<{ programs: RegisterOptionsProgram[] }> {
+  const groups = await prisma.studentGroup.findMany({
+    select: { id: true, name: true, batchLabel: true, batchYear: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const groupsByProgram = new Map<string, RegisterOptionsProgram['groups']>();
+  for (const group of groups) {
+    const parsed = parseAnyGroupEnrollment(group.name);
+    if (!parsed) continue;
+    const list = groupsByProgram.get(parsed.programCode) ?? [];
+    list.push({
+      id: group.id,
+      name: group.name,
+      studyYear: parsed.studyYear,
+      pathwayCode: parsed.pathwayCode,
+      batchYearLabel:
+        parsed.batchYearLabel ??
+        normalizeBatchYearLabel(group.batchLabel) ??
+        normalizeBatchYearLabel(group.batchYear),
+    });
+    groupsByProgram.set(parsed.programCode, list);
+  }
+
   return {
     programs: PROGRAMS.map((p) => ({
       code: p.code,
       name: p.name,
       years: [...p.years],
       pathways: p.pathways.map((pw) => ({ code: pw.code, name: pw.name })),
+      groups: groupsByProgram.get(p.code) ?? [],
     })),
   };
 }
@@ -82,11 +172,44 @@ export async function resolveStudentGroupId(
   return group.id;
 }
 
+async function resolveExactStudentGroup(
+  groupId: string,
+  programCode: string,
+  studyYear: StudyYear,
+  pathwayCode?: string,
+): Promise<{ id: string; name: string; departmentId: string }> {
+  const group = await prisma.studentGroup.findUnique({
+    where: { id: groupId },
+    select: {
+      id: true,
+      name: true,
+      departmentId: true,
+      department: { select: { code: true } },
+    },
+  });
+  if (!group) throw new AppError('Selected class batch was not found.', 404);
+
+  const parsed = parseAnyGroupEnrollment(group.name);
+  if (!parsed) throw new AppError('Selected class batch is not valid for student enrollment.', 400);
+  if (parsed.programCode !== programCode || parsed.studyYear !== studyYear) {
+    throw new AppError('Selected class batch does not match the chosen program and study year.', 400);
+  }
+  if (pathwayCode && parsed.pathwayCode && parsed.pathwayCode !== pathwayCode) {
+    throw new AppError('Selected class batch does not match the chosen pathway.', 400);
+  }
+  if (group.department.code !== programCode) {
+    throw new AppError('Selected class batch belongs to a different department.', 400);
+  }
+
+  return { id: group.id, name: group.name, departmentId: group.departmentId };
+}
+
 export async function assignStudentToGroup(
   studentId: string,
   programCode: string,
   studyYear: StudyYear,
   pathwayCode?: string,
+  groupId?: string,
 ): Promise<{ groupId: string; groupName: string; departmentId: string }> {
   const department = await prisma.department.findFirst({
     where: { code: programCode },
@@ -96,18 +219,23 @@ export async function assignStudentToGroup(
     throw new AppError(`Department for program ${programCode} not found. Run db:seed.`, 500);
   }
 
-  const groupId = await resolveStudentGroupId(programCode, studyYear, pathwayCode);
-  const groupName = buildGroupName(programCode, studyYear, pathwayCode);
+  const resolvedGroup = groupId
+    ? await resolveExactStudentGroup(groupId, programCode, studyYear, pathwayCode)
+    : {
+        id: await resolveStudentGroupId(programCode, studyYear, pathwayCode),
+        name: buildGroupName(programCode, studyYear, pathwayCode),
+        departmentId: department.id,
+      };
 
   await prisma.studentGroupMember.deleteMany({ where: { studentId } });
   await prisma.studentGroupMember.create({
-    data: { studentId, groupId },
+    data: { studentId, groupId: resolvedGroup.id },
   });
 
   await prisma.user.update({
     where: { id: studentId },
-    data: { departmentId: department.id },
+    data: { departmentId: resolvedGroup.departmentId },
   });
 
-  return { groupId, groupName, departmentId: department.id };
+  return { groupId: resolvedGroup.id, groupName: resolvedGroup.name, departmentId: resolvedGroup.departmentId };
 }

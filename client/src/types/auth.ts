@@ -38,6 +38,7 @@ export interface RegisterRequest {
   programCode?: string;
   studyYear?: string;
   pathwayCode?: string;
+  groupId?: string;
 }
 
 export interface RegisterOptionsProgram {
@@ -45,6 +46,13 @@ export interface RegisterOptionsProgram {
   name: string;
   years: string[];
   pathways: { code: string; name: string }[];
+  groups: {
+    id: string;
+    name: string;
+    studyYear: string;
+    pathwayCode?: string;
+    batchYearLabel?: string;
+  }[];
 }
 
 export interface AuthResponse {

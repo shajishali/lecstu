@@ -46,7 +46,7 @@ function parseHallFromLine(line: string): string | null {
 }
 
 function courseCodeFromLine(line: string): string {
-  const trimmed = line.trim();
+  const trimmed = line.trim().replace(/\s+[TP]\s*$/i, '').trim();
   const cm = trimmed.match(COURSE_RE);
   if (cm) return `${cm[1]} ${cm[2]}`.trim();
   if (/^[A-Z]{2,6}-\d{4,5}/i.test(trimmed)) return trimmed;
@@ -70,8 +70,9 @@ export function parseCellToEditable(
       continue;
     }
     const text = line.replace(/^lecturer:\s*/i, '').trim();
+    if (/^[TP]$/i.test(text)) continue;
     if (text && text !== '—' && text !== '-') {
-      contentLines.push(text);
+      contentLines.push(COURSE_RE.test(text) ? text.replace(/\s+[TP]\s*$/i, '').trim() : text);
     }
   }
 

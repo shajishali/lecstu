@@ -326,9 +326,7 @@ export async function validateTableSlot(
       where: { name: { equals: hallName, mode: 'insensitive' }, isActive: true },
       select: { id: true, name: true },
     });
-    if (!hall) {
-      throw new AppError(`Hall "${hallName}" not found. Check the room code or add it under Halls.`, 400);
-    }
+    if (!hall) continue;
 
     conflicts.push(
       ...(await detectConflicts({

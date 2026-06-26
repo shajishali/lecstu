@@ -9,6 +9,7 @@ import {
   resolveLecturerDisplayName,
   type LecturerDisplayIndex,
 } from './lecturerDisplayService';
+import { isFetActivitySuffix } from './lecturerInitialsMatch';
 
 type Matrix = unknown[][];
 
@@ -66,6 +67,7 @@ function isYearBatchLabel(line: string): boolean {
 function isLecturerOrMetaLine(line: string): boolean {
   const t = line.trim();
   if (!t || t.length > 24) return false;
+  if (isFetActivitySuffix(t)) return false;
   if (COURSE_CODE_RE.test(t)) return false;
   if (HALL_CODE_RE.test(t)) return false;
   if (/\bonline\b/i.test(t)) return false;
@@ -74,8 +76,22 @@ function isLecturerOrMetaLine(line: string): boolean {
     /^[A-Z]{1,4}(_[A-Za-z]+)?$/.test(t) ||
     /^VL_/i.test(t) ||
     /^[A-Z]\.[A-Z]\.?$/.test(t) ||
-    /^(T|P|SB|NC|KVS|KP|MB|ND|SL)$/i.test(t)
+    /^(SB|NC|KVS|KP|MB|ND|SL)$/i.test(t)
   );
+}
+
+function stripActivitySuffixFromCourseLine(line: string): string {
+  if (!COURSE_CODE_RE.test(line)) return line.trim();
+  return line.replace(/\s+[TP]\s*$/i, '').trim();
+}
+
+function normalizeDisplayLine(line: string): string {
+  const withoutLabel = line
+    .replace(/^lecturer:\s*/i, '')
+    .replace(/^room:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripActivitySuffixFromCourseLine(withoutLabel);
 }
 
 /** Excel repeats merged cell text on every row — keep only top-left cell value. */
@@ -121,11 +137,17 @@ function normalizeCellLines(raw: string): string[] {
         if (!halls.some((x) => x.toUpperCase() === h.toUpperCase())) halls.push(h);
         remainder = remainder.replace(m[0], ' ').trim();
       }
-      if (remainder && !isYearBatchLabel(remainder)) lines.push(remainder.replace(/\s+/g, ' ').trim());
+      if (remainder && !isYearBatchLabel(remainder)) {
+        const clean = normalizeDisplayLine(remainder);
+        if (clean && !isFetActivitySuffix(clean)) lines.push(clean);
+      }
       continue;
     }
 
-    if (!isYearBatchLabel(line)) lines.push(line);
+    if (!isYearBatchLabel(line)) {
+      const clean = normalizeDisplayLine(line);
+      if (clean && !isFetActivitySuffix(clean)) lines.push(clean);
+    }
   }
 
   const uniqueHalls = [...new Set(halls.map((h) => h.toUpperCase()))].map(
@@ -500,6 +522,7 @@ function extractHallFromLines(lines: string[]): string {
 
 function extractLecturerFromLines(lines: string[]): string | undefined {
   for (const line of lines) {
+    if (isFetActivitySuffix(line.trim())) continue;
     if (isLecturerOrMetaLine(line)) return line.trim();
   }
   return undefined;
@@ -552,6 +575,7 @@ function lineHasHall(line: string): boolean {
 
 function lineHasLecturer(line: string): boolean {
   const t = line.trim();
+  if (isFetActivitySuffix(t)) return false;
   if (t === '—' || t === '-') return true;
   if (isLecturerOrMetaLine(line) || /^VL_/i.test(t)) return true;
   if (/^[A-Za-z][A-Za-z\s.'-]{2,60}$/.test(t) && t.includes(' ')) return true;
@@ -563,8 +587,9 @@ export function dedupeFetLines(lines: string[]): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   for (const line of lines) {
-    const t = line.trim();
+    const t = normalizeDisplayLine(line);
     if (!t || isOrphanMetaLine(t)) continue;
+    if (isFetActivitySuffix(t)) continue;
     const key = t.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -684,6 +709,10 @@ function extractLecturerFromCourseLine(line: string): string | undefined {
   const codes: string[] = [];
   while (parts.length > 2) {
     const last = parts[parts.length - 1]!;
+    if (isFetActivitySuffix(last)) {
+      parts.pop();
+      continue;
+    }
     if (isLecturerOrMetaLine(last) || /^VL_/i.test(last)) {
       codes.unshift(last);
       parts.pop();
