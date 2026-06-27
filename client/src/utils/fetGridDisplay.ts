@@ -36,6 +36,43 @@ function isFetLecturerLabelLine(t: string): boolean {
   return parts.length >= 2 && parts.every((p) => /^[A-Za-z]{2,8}$/i.test(p) || /^VL_/i.test(p));
 }
 
+function isLikelyLecturerText(t: string): boolean {
+  const text = t.replace(/^lecturer:\s*/i, '').trim();
+  if (!text || text === '—' || text === '-' || /^unassigned$/i.test(text)) return false;
+  if (isFetLecturerLabelLine(text)) return true;
+  if (/^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(text)) return true;
+  if (/^[A-Za-z][A-Za-z\s.'-]{2,60}$/.test(text) && text.includes(' ')) return true;
+  return false;
+}
+
+function collectHallCodes(lines: string[]): string[] {
+  const halls: string[] = [];
+  for (const line of lines) {
+    const t = stripCommonMarker(line.trim().replace(/^room:\s*/i, ''));
+    if (!t || /^tbd$/i.test(t)) continue;
+    for (const match of t.matchAll(HALL_LINE_RE)) {
+      const hall = match[1]?.trim();
+      if (hall && !halls.some((h) => h.toUpperCase() === hall.toUpperCase())) halls.push(hall);
+    }
+  }
+  return halls;
+}
+
+function pickBestLecturerDisplay(candidates: string[]): string | null {
+  const cleaned = candidates
+    .map((c) => c.replace(/^lecturer:\s*/i, '').trim())
+    .filter((c) => c && c !== '—' && c !== '-' && !/^unassigned$/i.test(c) && c !== ',');
+  if (!cleaned.length) return null;
+
+  const codeOnly = cleaned.filter((c) => isFetLecturerLabelLine(c));
+  const withNames = cleaned.filter((c) => c.includes(' ') && !isFetLecturerLabelLine(c));
+
+  if (codeOnly.length > 0 && withNames.length > 0) {
+    return withNames.reduce((a, b) => (a.length >= b.length ? a : b));
+  }
+  return cleaned.reduce((a, b) => (a.length >= b.length ? a : b));
+}
+
 export function formatFetGridLine(line: string, index: number, allLines: string[]): string | null {
   const t = stripCommonMarker(line.trim());
   if (!t || isActivitySuffix(t)) return null;
@@ -58,12 +95,16 @@ export function formatFetGridLine(line: string, index: number, allLines: string[
 }
 
 export function fetGridDisplayLines(lines: string[]): string[] {
-  const merged = coalesceOrphanActivitySuffixes(lines);
+  const merged = coalesceOrphanActivitySuffixes(lines).filter((line) => {
+    const t = stripCommonMarker(line.trim());
+    return t && t !== ',' && !/^[,.\s]+$/.test(t);
+  });
+
   const courses: string[] = [];
-  const halls: string[] = [];
+  const lecturerCandidates: string[] = [];
   const extras: string[] = [];
-  const lecturers: string[] = [];
   let hasLecturerPlaceholder = false;
+  let needsTbdRoom = false;
 
   for (const [index, line] of merged.entries()) {
     const formatted = formatFetGridLine(line, index, merged);
@@ -74,23 +115,21 @@ export function fetGridDisplayLines(lines: string[]): string[] {
       if (!lecturer || lecturer === '—' || lecturer === '-' || /^unassigned$/i.test(lecturer)) {
         hasLecturerPlaceholder = true;
       } else if (!isActivitySuffix(lecturer)) {
-        lecturers.push(lecturer);
+        lecturerCandidates.push(lecturer);
       }
       continue;
     }
 
     if (formatted.startsWith('Room:')) {
       const roomText = formatted.replace(/^Room:\s*/i, '').trim();
-      if (roomText.includes(',')) {
-        for (const hall of roomText.split(',').map((h) => h.trim()).filter(Boolean)) {
-          halls.push(hall.startsWith('Room:') ? hall : `Room: ${hall}`);
-        }
-      } else {
-        halls.push(formatted);
-      }
-    } else if (COURSE_LINE_RE.test(formatted)) {
+      if (/^tbd$/i.test(roomText)) needsTbdRoom = true;
+      continue;
+    }
+    if (COURSE_LINE_RE.test(formatted)) {
       courses.push(formatted);
-    } else {
+    } else if (isLikelyLecturerText(formatted)) {
+      lecturerCandidates.push(formatted.replace(/^lecturer:\s*/i, '').trim());
+    } else if (!HALL_LINE_RE.test(formatted)) {
       extras.push(formatted);
     }
   }
@@ -105,17 +144,28 @@ export function fetGridDisplayLines(lines: string[]): string[] {
     });
   };
 
-  const uniqueLecturers = dedupe(lecturers);
-  const lecturerLine =
-    uniqueLecturers.length > 0
-      ? [`Lecturer: ${uniqueLecturers.reduce((a, b) => (a.length >= b.length ? a : b))}`]
-      : hasLecturerPlaceholder && lecturers.length === 0
-        ? ['Lecturer: —']
+  const hallCodes = collectHallCodes(merged);
+  const hallLine =
+    hallCodes.length > 0
+      ? [`Room: ${hallCodes.join(', ')}`]
+      : needsTbdRoom
+        ? ['Room: TBD']
         : [];
 
-  const result = [...dedupe(courses), ...lecturerLine, ...dedupe(extras), ...dedupe(halls)];
-  if (uniqueLecturers.length > 0) {
-    return result.filter((line) => !/^Lecturer:\s*[—-]\s*$/i.test(line));
-  }
-  return result;
+  const bestLecturer = pickBestLecturerDisplay(lecturerCandidates);
+  const lecturerLine = bestLecturer
+    ? [`Lecturer: ${bestLecturer}`]
+    : hasLecturerPlaceholder
+      ? ['Lecturer: —']
+      : [];
+
+  const chosenLecturerKey = bestLecturer?.toLowerCase() ?? '';
+  const filteredExtras = dedupe(extras).filter((line) => {
+    const plain = line.replace(/^lecturer:\s*/i, '').trim().toLowerCase();
+    if (!plain || plain === chosenLecturerKey) return false;
+    if (isLikelyLecturerText(line)) return false;
+    return true;
+  });
+
+  return [...dedupe(courses), ...lecturerLine, ...filteredExtras, ...hallLine];
 }

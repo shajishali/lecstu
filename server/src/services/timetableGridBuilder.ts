@@ -627,26 +627,96 @@ export function dedupeFetLines(lines: string[]): string[] {
   return out;
 }
 
+function canonicalLecturerDisplay(
+  candidates: string[],
+  lecturerDisplay?: LecturerDisplayIndex,
+): string | undefined {
+  const cleaned = candidates
+    .map((l) => l.replace(/^lecturer:\s*/i, '').trim())
+    .filter((t) => t && t !== '—' && t !== '-' && !/^unassigned$/i.test(t) && t !== ',');
+  if (!cleaned.length) return undefined;
+
+  const codeFirst = cleaned.find((c) => isFetLecturerLineLabel(c));
+  const source = codeFirst ?? cleaned[0]!;
+
+  if (lecturerDisplay) {
+    const resolved = resolveLecturerDisplayName(source, lecturerDisplay);
+    if (resolved) return resolved;
+  }
+  return source;
+}
+
+function canonicalHallDisplay(candidates: string[]): string {
+  const halls: string[] = [];
+  for (const line of candidates) {
+    const t = line.trim().replace(/^room:\s*/i, '');
+    if (!t || /^tbd$/i.test(t)) continue;
+    for (const part of splitHallDisplayNames(t)) {
+      if (/^tbd$/i.test(part)) continue;
+      if (!halls.some((h) => h.toUpperCase() === part.toUpperCase())) halls.push(part);
+    }
+    for (const match of t.matchAll(HALL_GLOBAL_RE)) {
+      const hall = match[1]?.trim();
+      if (hall && !halls.some((h) => h.toUpperCase() === hall.toUpperCase())) halls.push(hall);
+    }
+  }
+  return halls.length > 0 ? halls.join(', ') : 'TBD';
+}
+
+function consolidateFetDisplayLines(
+  lines: string[],
+  lecturerDisplay?: LecturerDisplayIndex,
+): string[] {
+  const deduped = dedupeFetLines(lines);
+  const courses = deduped.filter((l) => COURSE_CODE_RE.test(l));
+  const bestCourse =
+    courses.sort((a, b) => b.length - a.length)[0] ??
+    deduped.find((l) => {
+      const t = l.trim();
+      return t && !lineHasHall(t) && !lineHasLecturer(t) && !isOrphanMetaLine(t);
+    });
+
+  const hallCandidates = deduped.filter((l) => lineHasHall(l) || /^tbd$/i.test(l.trim()));
+  const lectCandidates = deduped.filter(
+    (l) => lineHasLecturer(l) && l !== '—' && l !== '-' && !/^unassigned$/i.test(l),
+  );
+  const extras = deduped.filter(
+    (l) =>
+      l !== bestCourse &&
+      !lineHasHall(l) &&
+      !lineHasLecturer(l) &&
+      !/^tbd$/i.test(l.trim()) &&
+      l !== '—' &&
+      l !== '-',
+  );
+
+  const out: string[] = [];
+  if (bestCourse) out.push(bestCourse);
+
+  const lecturer = canonicalLecturerDisplay(lectCandidates, lecturerDisplay);
+  if (lecturer) out.push(lecturer);
+  else if (deduped.some((l) => l === '—' || l === '-' || /^unassigned$/i.test(l))) out.push('—');
+
+  const chosenLecturer = lecturer?.toLowerCase() ?? '';
+  for (const line of extras) {
+    const plain = line.trim().toLowerCase();
+    if (plain && plain !== chosenLecturer && !lineHasLecturer(line)) out.push(line);
+  }
+
+  const hall = canonicalHallDisplay(hallCandidates);
+  out.push(hall);
+
+  return out;
+}
+
 /** Merge FET display lines: slot import data wins for course; add missing hall/lecturer. */
 export function mergeFetDisplayLines(
   existing: string[],
   fromSlot: string[],
   lecturerDisplay?: LecturerDisplayIndex,
 ): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-
-  const add = (line: string) => {
-    const t = line.trim();
-    if (!t || isOrphanMetaLine(t)) return;
-    const key = t.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    out.push(t);
-  };
-
-  existing = dedupeFetLines(existing);
-  fromSlot = dedupeFetLines(fromSlot);
+  const combined = dedupeFetLines([...existing, ...fromSlot]);
+  if (combined.length === 0) return normalizeCellLines([...existing, ...fromSlot].join('\n'));
 
   let bestCourse = '';
   for (const line of fromSlot) {
@@ -657,64 +727,19 @@ export function mergeFetDisplayLines(
       if (COURSE_CODE_RE.test(line) && line.length > bestCourse.length) bestCourse = line;
     }
   }
-  if (!bestCourse) {
-    for (const line of existing) {
-      const t = line.trim();
-      if (!t || lineHasHall(t) || lineHasLecturer(t) || isOrphanMetaLine(t)) continue;
-      bestCourse = t;
-      break;
-    }
-  }
-  if (bestCourse) add(bestCourse);
 
-  for (const line of [...existing, ...fromSlot]) {
-    if (lineHasHall(line)) add(line);
-  }
-  for (const line of [...existing, ...fromSlot]) {
-    if (lineHasLecturer(line) && !lineHasHall(line) && !COURSE_CODE_RE.test(line)) add(line);
-  }
-  for (const line of [...existing, ...fromSlot]) {
-    if (!COURSE_CODE_RE.test(line) && !lineHasHall(line) && !lineHasLecturer(line)) add(line);
-  }
+  const hasHall = combined.some((l) => lineHasHall(l) || /^tbd$/i.test(l.trim()));
+  const hasLect = combined.some((l) => lineHasLecturer(l) && l !== '—' && l !== '-');
+  const withDefaults = [...combined];
+  if (!hasHall) withDefaults.push('TBD');
+  if (!hasLect) withDefaults.push('—');
 
-  if (out.length > 0) {
-    const hasHall = out.some((l) => lineHasHall(l) || l.toUpperCase() === 'TBD');
-    const hasLect = out.some((l) => lineHasLecturer(l));
-    if (!hasHall) out.push('TBD');
-    if (!hasLect) out.push('—');
+  const consolidated = consolidateFetDisplayLines(withDefaults, lecturerDisplay);
+  if (bestCourse && consolidated[0] !== bestCourse) {
+    const rest = consolidated.filter((l) => !COURSE_CODE_RE.test(l));
+    return [bestCourse, ...rest];
   }
-
-  const lectLines = out.filter(
-    (l) => lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-',
-  );
-  if (lectLines.length > 1) {
-    const resolved = lectLines.map(
-      (l) => (lecturerDisplay ? resolveLecturerDisplayName(l, lecturerDisplay) : null) ?? l,
-    );
-    const keep = resolved.reduce((a, b) => (a.length >= b.length ? a : b));
-    for (let i = out.length - 1; i >= 0; i--) {
-      const l = out[i]!;
-      if (lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-' && l !== keep) {
-        out.splice(i, 1);
-      }
-    }
-    if (!out.includes(keep)) {
-      const courseIdx = out.findIndex((l) => COURSE_CODE_RE.test(l));
-      out.splice(courseIdx >= 0 ? courseIdx + 1 : 0, 0, keep);
-    }
-  }
-
-  const hasRealLecturer = out.some(
-    (l) => lineHasLecturer(l) && l !== '—' && l !== '-' && !/^unassigned$/i.test(l),
-  );
-  if (hasRealLecturer) {
-    for (let i = out.length - 1; i >= 0; i--) {
-      const l = out[i]!;
-      if (l === '—' || l === '-' || /^unassigned$/i.test(l)) out.splice(i, 1);
-    }
-  }
-
-  return out.length > 0 ? out : normalizeCellLines([...existing, ...fromSlot].join('\n'));
+  return consolidated.length > 0 ? consolidated : normalizeCellLines([...existing, ...fromSlot].join('\n'));
 }
 
 /** Build display lines — always includes a hall line (TBD when unknown) and lecturer when known. */
