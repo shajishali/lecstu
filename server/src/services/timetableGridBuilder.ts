@@ -10,6 +10,7 @@ import {
   type LecturerDisplayIndex,
 } from './lecturerDisplayService';
 import { isFetActivitySuffix } from './lecturerInitialsMatch';
+import { splitHallDisplayNames } from './conflictDetector';
 
 type Matrix = unknown[][];
 
@@ -523,6 +524,17 @@ function extractCourseFromLines(lines: string[]): { code: string; name: string }
   return null;
 }
 
+function mergeHallNames(...names: (string | undefined)[]): string {
+  const halls: string[] = [];
+  for (const name of names) {
+    for (const part of splitHallDisplayNames(name)) {
+      if (/^tbd$/i.test(part)) continue;
+      if (!halls.some((h) => h.toUpperCase() === part.toUpperCase())) halls.push(part);
+    }
+  }
+  return halls.length > 0 ? halls.join(', ') : 'TBD';
+}
+
 function extractHallFromLines(lines: string[]): string {
   const halls: string[] = [];
   for (const line of lines) {
@@ -833,7 +845,19 @@ export function mergeSlotRefSources(gridRefs: GridSlotRef[], dbRefs: GridSlotRef
   const byKey = new Map<string, GridSlotRef>();
 
   for (const s of dbRefs) {
-    byKey.set(slotKey(s), { ...s });
+    const key = slotKey(s);
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, { ...s });
+      continue;
+    }
+    byKey.set(key, {
+      ...prev,
+      courseName: s.courseName.length > prev.courseName.length ? s.courseName : prev.courseName,
+      hallName: mergeHallNames(prev.hallName, s.hallName),
+      lecturerName: prev.lecturerName || s.lecturerName,
+      hallIsShared: prev.hallIsShared === true || s.hallIsShared === true,
+    });
   }
   for (const g of gridRefs) {
     const key = slotKey(g);
@@ -845,10 +869,7 @@ export function mergeSlotRefSources(gridRefs: GridSlotRef[], dbRefs: GridSlotRef
     byKey.set(key, {
       ...prev,
       courseName: g.courseName.length > prev.courseName.length ? g.courseName : prev.courseName,
-      hallName:
-        (prev.hallName === 'TBD' || !prev.hallName) && g.hallName && g.hallName !== 'TBD'
-          ? g.hallName
-          : prev.hallName || g.hallName,
+      hallName: mergeHallNames(prev.hallName, g.hallName),
       lecturerName: prev.lecturerName || g.lecturerName,
       hallIsShared: g.hallIsShared === true || prev.hallIsShared === true,
     });
@@ -900,7 +921,7 @@ export function enrichGridFromSlots(
         ? {
             ...slot,
             courseName: slot.courseName || fromCell?.courseName || '',
-            hallName: slot.hallName && slot.hallName !== 'TBD' ? slot.hallName : fromCell?.hallName || slot.hallName,
+            hallName: mergeHallNames(fromCell?.hallName, slot.hallName),
             lecturerName: slot.lecturerName || fromCell?.lecturerName,
             hallIsShared: slot.hallIsShared === true || fromCell?.hallIsShared === true,
           }

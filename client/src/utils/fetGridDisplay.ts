@@ -72,7 +72,14 @@ export function fetGridDisplayLines(lines: string[]): string[] {
     }
 
     if (formatted.startsWith('Room:')) {
-      halls.push(formatted);
+      const roomText = formatted.replace(/^Room:\s*/i, '').trim();
+      if (roomText.includes(',')) {
+        for (const hall of roomText.split(',').map((h) => h.trim()).filter(Boolean)) {
+          halls.push(hall.startsWith('Room:') ? hall : `Room: ${hall}`);
+        }
+      } else {
+        halls.push(formatted);
+      }
     } else if (COURSE_LINE_RE.test(formatted)) {
       courses.push(formatted);
     } else {

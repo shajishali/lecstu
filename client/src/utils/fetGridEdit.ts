@@ -62,18 +62,24 @@ export function parseCellToEditable(
 
   let hallName = 'TBD';
   const contentLines: string[] = [];
+  const parsedHalls: string[] = [];
 
   for (const line of lines) {
     const hall = parseHallFromLine(line);
     if (hall) {
-      hallName = hall;
+      for (const part of hall.split(',').map((p) => p.trim()).filter(Boolean)) {
+        if (!parsedHalls.some((h) => h.toUpperCase() === part.toUpperCase())) parsedHalls.push(part);
+      }
       continue;
     }
     const text = line.replace(/^lecturer:\s*/i, '').trim();
     if (/^[TP]$/i.test(text)) continue;
-    if (text && text !== '—' && text !== '-') {
-      contentLines.push(text);
-    }
+    if (!text || text === ',' || text === '—' || text === '-') continue;
+    contentLines.push(text);
+  }
+
+  if (parsedHalls.length > 0) {
+    hallName = parsedHalls.join(', ');
   }
 
   let courseCode = '';
