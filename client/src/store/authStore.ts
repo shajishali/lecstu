@@ -24,8 +24,10 @@ interface AuthState {
   clearError: () => void;
 }
 
-function getPrimaryGroupId(user: User | null | undefined): string | undefined {
-  return user?.studentGroupMemberships?.[0]?.group?.id;
+function getPrimaryGroupKey(user: User | null | undefined): string | undefined {
+  const membership = user?.studentGroupMemberships?.[0];
+  if (!membership?.group?.id) return undefined;
+  return `${membership.group.id}:${membership.selectedBatchYearLabel ?? ''}`;
 }
 
 let bootstrapSessionPromise: Promise<void> | null = null;
@@ -108,8 +110,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         const res = await api.get<{ success: boolean; data: { user: User | null } }>('/auth/me');
         const user = res.data.data.user;
-        const prevGroupId = getPrimaryGroupId(get().user);
-        const nextGroupId = getPrimaryGroupId(user);
+        const prevGroupId = getPrimaryGroupKey(get().user);
+        const nextGroupId = getPrimaryGroupKey(user);
         set({
           user: user ?? null,
           isAuthenticated: !!user,
@@ -139,8 +141,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setUser: (user: User) => {
-    const prevGroupId = getPrimaryGroupId(get().user);
-    const nextGroupId = getPrimaryGroupId(user);
+    const prevGroupId = getPrimaryGroupKey(get().user);
+    const nextGroupId = getPrimaryGroupKey(user);
     set({ user, isAuthenticated: true });
     if (prevGroupId !== nextGroupId && nextGroupId) {
       window.dispatchEvent(new CustomEvent('timetable-updated'));

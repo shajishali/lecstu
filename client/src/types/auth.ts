@@ -14,7 +14,7 @@ export interface User {
   isActive: boolean;
   department: { id: string; name: string; code?: string } | null;
   lecturerOffice?: { id: string; roomNumber: string; building: string; floor: number } | null;
-  studentGroupMemberships?: { group: { id: string; name: string; batchYear: number; batchLabel?: string | null; pathway?: { id: string; name: string; code: string } | null } }[];
+  studentGroupMemberships?: { selectedBatchYearLabel?: string | null; group: { id: string; name: string; batchYear: number; batchLabel?: string | null; pathway?: { id: string; name: string; code: string } | null } }[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -39,6 +39,7 @@ export interface RegisterRequest {
   studyYear?: string;
   pathwayCode?: string;
   groupId?: string;
+  batchYearLabel?: string;
 }
 
 export interface RegisterOptionsProgram {

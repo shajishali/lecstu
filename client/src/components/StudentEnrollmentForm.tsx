@@ -14,9 +14,11 @@ type Props = {
     studyYear: string;
     pathwayCode?: string;
     groupId?: string;
+    batchYearLabel?: string;
   }) => void;
   submitting?: boolean;
   submitLabel?: string;
+  initialBatchYearLabel?: string;
 };
 
 function parseGroupName(name: string): {
@@ -62,12 +64,13 @@ export default function StudentEnrollmentForm({
   onSubmit,
   submitting = false,
   submitLabel = 'Update enrollment',
+  initialBatchYearLabel = '',
 }: Props) {
   const { programs, loading } = useStudentEnrollmentOptions();
   const [programCode, setProgramCode] = useState(initialProgram);
   const [studyYear, setStudyYear] = useState(initialYear);
   const [pathwayCode, setPathwayCode] = useState(initialPathway);
-  const [batchYearLabel, setBatchYearLabel] = useState('');
+  const [batchYearLabel, setBatchYearLabel] = useState(initialBatchYearLabel);
   const [groupId, setGroupId] = useState(initialGroupId);
 
   const { yearOptions, needsPathway, pathwayOptions, batchYearOptions, groupOptions } = useEnrollmentFields(
@@ -77,14 +80,35 @@ export default function StudentEnrollmentForm({
     pathwayCode,
     batchYearLabel,
   );
+  const groupIdIsValid = groupId && groupOptions.some((group) => group.id === groupId);
+  const resolvedGroupId = groupIdIsValid ? groupId : groupOptions.length === 1 ? groupOptions[0].id : '';
+  const resolvedGroup =
+    groupOptions.find(
+      (group) =>
+        group.id === resolvedGroupId &&
+        (!batchYearLabel || group.batchYearLabel === batchYearLabel),
+    ) ?? groupOptions.find((group) => group.id === resolvedGroupId);
+  const needsBatchYear = studyYear === 'Y1' && batchYearOptions.length > 0;
+  const displayedClassBatch =
+    studyYear === 'Y1' && programCode && batchYearLabel
+      ? `Y1-${programCode}-${batchYearLabel.slice(-2)}`
+      : resolvedGroup?.name ?? '';
+  const showClassBatch = Boolean(
+    programCode &&
+      studyYear &&
+      groupOptions.length > 0 &&
+      (!needsBatchYear || batchYearLabel),
+  );
+  const missingRequiredClassBatch = showClassBatch && !resolvedGroupId;
+  const missingRequiredBatchYear = Boolean(programCode && needsBatchYear && !batchYearLabel);
 
   useEffect(() => {
     setProgramCode(initialProgram);
     setStudyYear(initialYear);
     setPathwayCode(initialPathway);
-    setBatchYearLabel('');
+    setBatchYearLabel(initialBatchYearLabel);
     setGroupId(initialGroupId);
-  }, [initialProgram, initialYear, initialPathway, initialGroupId]);
+  }, [initialProgram, initialYear, initialPathway, initialGroupId, initialBatchYearLabel]);
 
   useEffect(() => {
     if (!initialGroupId) return;
@@ -92,12 +116,12 @@ export default function StudentEnrollmentForm({
       .flatMap((program) => program.groups)
       .find((group) => group.id === initialGroupId);
     if (selectedGroup?.batchYearLabel) {
-      if (batchYearLabel !== selectedGroup.batchYearLabel) setBatchYearLabel(selectedGroup.batchYearLabel);
+      if (!batchYearLabel) setBatchYearLabel(selectedGroup.batchYearLabel);
       return;
     }
     if (initialYear === 'Y1' && initialGroupId) {
       const parsedBatch = parseGroupName(selectedGroup?.name ?? '').batch;
-      if (parsedBatch && batchYearLabel !== parsedBatch) setBatchYearLabel(parsedBatch);
+      if (parsedBatch && !batchYearLabel) setBatchYearLabel(parsedBatch);
     }
   }, [batchYearLabel, initialGroupId, initialYear, programs]);
 
@@ -126,7 +150,8 @@ export default function StudentEnrollmentForm({
       programCode,
       studyYear,
       pathwayCode: needsPathway ? pathwayCode : undefined,
-      groupId: groupOptions.length > 0 ? groupId : undefined,
+      groupId: groupOptions.length > 0 ? resolvedGroupId : undefined,
+      batchYearLabel: batchYearLabel || undefined,
     });
   };
 
@@ -226,28 +251,21 @@ export default function StudentEnrollmentForm({
           </select>
         </label>
       )}
-      {programCode && studyYear && groupOptions.length > 0 && (
+      {showClassBatch && (
         <label className="flex flex-col gap-1">
           <span className="text-sm font-semibold text-slate-700">Class batch</span>
-          <select
+          <input
             data-testid="enroll-group"
-            value={groupId}
-            onChange={(e) => setGroupId(e.target.value)}
+            value={displayedClassBatch}
+            readOnly
             required
             className={selectClass}
-          >
-            <option value="">- Select batch -</option>
-            {groupOptions.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
       )}
       <button
         type="submit"
-        disabled={submitting || loading}
+        disabled={submitting || loading || missingRequiredBatchYear || missingRequiredClassBatch}
         className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)]"
       >
         {submitting ? 'Updating...' : submitLabel}

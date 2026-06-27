@@ -327,6 +327,7 @@ model StudentGroup {
 model StudentGroupMember {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
+  selectedBatchYearLabel String?
 
   studentId String
   student   User @relation(fields: [studentId], references: [id], onDelete: Cascade)

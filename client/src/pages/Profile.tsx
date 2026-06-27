@@ -23,6 +23,18 @@ interface Group {
   pathway?: { id: string; name: string; code: string } | null;
 }
 
+function formatStudentMembershipGroupName(
+  group: Group | undefined,
+  selectedBatchYearLabel?: string | null,
+): string {
+  if (!group) return 'Not assigned';
+  const parsed = parseGroupName(group.name);
+  if (parsed.year === 'Y1' && parsed.program && selectedBatchYearLabel) {
+    return `Y1-${parsed.program}-${selectedBatchYearLabel.slice(-2)}`;
+  }
+  return group.name;
+}
+
 export default function Profile() {
   const { user, getMe, setUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +97,12 @@ export default function Profile() {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const primaryGroup = user?.studentGroupMemberships?.[0]?.group;
+  const primaryMembership = user?.studentGroupMemberships?.[0];
+  const primaryGroup = primaryMembership?.group;
+  const primaryGroupDisplayName = formatStudentMembershipGroupName(
+    primaryGroup,
+    primaryMembership?.selectedBatchYearLabel,
+  );
   const parsedGroup = primaryGroup ? parseGroupName(primaryGroup.name) : { program: '', year: '', pathway: '' };
   const pathwaySuffix =
     parsedGroup.pathway ||
@@ -97,6 +114,7 @@ export default function Profile() {
     studyYear: string;
     pathwayCode?: string;
     groupId?: string;
+    batchYearLabel?: string;
   }) => {
     setEnrolling(true);
     try {
@@ -245,7 +263,9 @@ export default function Profile() {
           {user.role === 'STUDENT' && user.studentGroupMemberships && user.studentGroupMemberships.length > 0 && (
             <p className="mt-2 text-center text-sm font-medium [color:var(--color-primary-hover)]">
               Group: {user.studentGroupMemberships.map((m) =>
-                m.group.pathway ? `${m.group.name} (${m.group.pathway.code})` : m.group.name
+                m.group.pathway
+                  ? `${formatStudentMembershipGroupName(m.group, m.selectedBatchYearLabel)} (${m.group.pathway.code})`
+                  : formatStudentMembershipGroupName(m.group, m.selectedBatchYearLabel)
               ).join(', ')}
             </p>
           )}
@@ -410,18 +430,19 @@ export default function Profile() {
                 <input
                   type="text"
                   readOnly
-                  value={primaryGroup?.name ?? 'Not assigned'}
+                  value={primaryGroupDisplayName}
                   className={inputCls}
                 />
               </div>
               <div>
                 <h3 className="mb-2 text-sm font-semibold text-slate-800">Academic year enrollment</h3>
                 <StudentEnrollmentForm
-                  key={primaryGroup?.id ?? 'no-group'}
+                  key={`${primaryGroup?.id ?? 'no-group'}-${primaryMembership?.selectedBatchYearLabel ?? ''}`}
                   initialProgram={parsedGroup.program}
                   initialYear={parsedGroup.year || primaryGroup?.batchLabel || ''}
                   initialPathway={pathwaySuffix}
                   initialGroupId={primaryGroup?.id || ''}
+                  initialBatchYearLabel={primaryMembership?.selectedBatchYearLabel || ''}
                   onSubmit={handleEnrollment}
                   submitting={enrolling}
                   submitLabel="Update for new study year"

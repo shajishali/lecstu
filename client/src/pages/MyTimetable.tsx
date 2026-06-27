@@ -141,6 +141,19 @@ interface TimetableEnrollment {
   studyYear: string;
   pathwayCode: string;
   groupName: string;
+  selectedBatchYearLabel?: string | null;
+}
+
+function formatMembershipGroupName(
+  group: NonNullable<import('../types/auth').User['studentGroupMemberships']>[number]['group'] | undefined,
+  selectedBatchYearLabel?: string | null,
+): string {
+  if (!group) return '';
+  const parsed = parseGroupName(group.name);
+  if (parsed.year === 'Y1' && parsed.program && selectedBatchYearLabel) {
+    return `Y1-${parsed.program}-${selectedBatchYearLabel.slice(-2)}`;
+  }
+  return group.name;
 }
 
 export default function MyTimetable() {
@@ -162,9 +175,11 @@ export default function MyTimetable() {
   const lastTimetableErrorToastAt = useRef(0);
   const hasLoadedOnceRef = useRef(false);
 
-  const profileGroup = user?.studentGroupMemberships?.[0]?.group;
+  const profileMembership = user?.studentGroupMemberships?.[0];
+  const profileGroup = profileMembership?.group;
   const enrolledGroupId = profileGroup?.id ?? '';
-  const enrolledGroupName = profileGroup?.name ?? '';
+  const enrolledGroupName = formatMembershipGroupName(profileGroup, profileMembership?.selectedBatchYearLabel);
+  const enrolledGroupKey = `${enrolledGroupId}:${profileMembership?.selectedBatchYearLabel ?? ''}`;
 
   /** Prefer live profile group so UI updates before/without waiting on timetable API cache */
   const displayEnrollment = useMemo((): TimetableEnrollment | null => {
@@ -178,15 +193,16 @@ export default function MyTimetable() {
         programCode: parsed.program,
         studyYear: parsed.year || profileGroup.batchLabel || '',
         pathwayCode: pathwayFromGroup,
-        groupName: profileGroup.name,
+        groupName: formatMembershipGroupName(profileGroup, profileMembership?.selectedBatchYearLabel),
+        selectedBatchYearLabel: profileMembership?.selectedBatchYearLabel ?? null,
       };
     }
     return enrollment;
-  }, [profileGroup, enrollment]);
+  }, [profileGroup, profileMembership?.selectedBatchYearLabel, enrollment]);
 
   const fetchTimetable = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent === true && hasLoadedOnceRef.current;
-    const groupChanged = lastFetchedGroupIdRef.current !== enrolledGroupId;
+    const groupChanged = lastFetchedGroupIdRef.current !== enrolledGroupKey;
     if (groupChanged) {
       setWeekly({});
       setFlat([]);
@@ -196,7 +212,7 @@ export default function MyTimetable() {
       colorMap.current.clear();
       hasLoadedOnceRef.current = false;
     }
-    lastFetchedGroupIdRef.current = enrolledGroupId;
+    lastFetchedGroupIdRef.current = enrolledGroupKey;
 
     if (silent) setRefreshing(true);
     else setInitialLoading(true);
@@ -222,7 +238,7 @@ export default function MyTimetable() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [enrolledGroupId, enrolledGroupName]);
+  }, [enrolledGroupKey, enrolledGroupName]);
 
   useEffect(() => {
     fetchTimetable();

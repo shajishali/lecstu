@@ -277,6 +277,7 @@ export default function Register() {
           studyYear: form.studyYear,
           pathwayCode: needsPathway ? form.pathwayCode : undefined,
           groupId: groupOptions.length > 0 ? form.groupId : undefined,
+          batchYearLabel: form.batchYearLabel || undefined,
         }),
       });
       navigate('/dashboard', { replace: true });

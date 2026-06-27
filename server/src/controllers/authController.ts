@@ -122,6 +122,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         studyYear as StudyYear,
         pathwayCode || undefined,
         groupId || undefined,
+        req.body.batchYearLabel || null,
       );
       resolvedDepartmentId = enrollment.departmentId;
     }
@@ -137,6 +138,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         department: { select: { id: true, name: true, code: true } },
         studentGroupMemberships: {
           select: {
+            selectedBatchYearLabel: true,
             group: {
               select: {
                 id: true,
@@ -183,7 +185,18 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       include: {
         department: { select: { id: true, name: true, code: true } },
         studentGroupMemberships: {
-          select: { group: { select: { id: true, name: true, batchYear: true, batchLabel: true, pathway: { select: { id: true, name: true, code: true } } } } },
+          select: {
+            selectedBatchYearLabel: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+                batchYear: true,
+                batchLabel: true,
+                pathway: { select: { id: true, name: true, code: true } },
+              },
+            },
+          },
         },
       },
     });

@@ -15,6 +15,7 @@ export const userProfileSelect = {
   lecturerOffice: { select: { id: true, roomNumber: true, building: true, floor: true } },
   studentGroupMemberships: {
     select: {
+      selectedBatchYearLabel: true,
       group: {
         select: {
           id: true,

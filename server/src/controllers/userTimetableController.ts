@@ -11,10 +11,10 @@ import { AppError } from '../middleware/errorHandler';
 async function studentTimetableCacheKey(userId: string): Promise<string> {
   const membership = await prisma.studentGroupMember.findFirst({
     where: { studentId: userId },
-    select: { groupId: true },
+    select: { groupId: true, selectedBatchYearLabel: true },
     orderBy: { createdAt: 'asc' },
   });
-  return `timetable:STUDENT:${userId}:${membership?.groupId ?? 'none'}`;
+  return `timetable:STUDENT:${userId}:${membership?.groupId ?? 'none'}:${membership?.selectedBatchYearLabel ?? 'none'}`;
 }
 
 export async function getMyTodayOnCampus(req: Request, res: Response, next: NextFunction) {

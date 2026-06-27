@@ -44,11 +44,15 @@ export function useEnrollmentFields(
 
   const groupOptions = useMemo(() => {
     const groups = selectedProgram?.groups ?? [];
+    const hasY1BatchYearChoices =
+      studyYear === 'Y1' &&
+      groups.some((group) => group.studyYear === 'Y1' && !group.pathwayCode && group.batchYearLabel);
     return groups.filter((group) => {
       if (group.studyYear !== studyYear) return false;
       if (needsPathway) return group.pathwayCode === pathwayCode;
       if (group.pathwayCode) return false;
-      if (studyYear === 'Y1' && batchYearLabel) {
+      if (hasY1BatchYearChoices) {
+        if (!batchYearLabel) return false;
         return group.batchYearLabel === batchYearLabel;
       }
       return true;

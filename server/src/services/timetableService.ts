@@ -88,7 +88,7 @@ export type StudentTimetableResult = {
   weekly: WeeklyTimetable;
   flat: TimetableSlot[];
   lastUpdated: string | null;
-  enrollment?: { programCode: string; studyYear: string; pathwayCode: string; groupName: string };
+  enrollment?: { programCode: string; studyYear: string; pathwayCode: string; groupName: string; selectedBatchYearLabel?: string | null };
   /** Faithful FET grid for the student's batch (preferred for My Timetable UI) */
   grid?: TimetableGridSnapshot | null;
 };
@@ -96,12 +96,22 @@ export type StudentTimetableResult = {
 export async function getStudentTimetable(studentId: string): Promise<StudentTimetableResult> {
   const memberships = await prisma.studentGroupMember.findMany({
     where: { studentId },
-    select: { group: { select: { id: true, name: true } } },
+    select: { selectedBatchYearLabel: true, group: { select: { id: true, name: true } } },
   });
 
-  const primaryGroup = memberships[0]?.group;
+  const primaryMembership = memberships[0];
+  const primaryGroup = primaryMembership?.group;
+  const parsedEnrollment = primaryGroup ? parseEnrollmentFromGroupName(primaryGroup.name) : undefined;
+  const displayGroupName =
+    parsedEnrollment?.studyYear === 'Y1' && parsedEnrollment.programCode && primaryMembership?.selectedBatchYearLabel
+      ? `Y1-${parsedEnrollment.programCode}-${primaryMembership.selectedBatchYearLabel.slice(-2)}`
+      : primaryGroup?.name;
   const enrollment = primaryGroup
-    ? { ...parseEnrollmentFromGroupName(primaryGroup.name), groupName: primaryGroup.name }
+    ? {
+        ...parsedEnrollment!,
+        groupName: displayGroupName ?? primaryGroup.name,
+        selectedBatchYearLabel: primaryMembership?.selectedBatchYearLabel ?? null,
+      }
     : undefined;
 
   const groupIds = await resolveGroupIdsForStudent(studentId);
@@ -116,12 +126,23 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
   }) as TimetableSlot[];
 
-  const flat = deduplicateEntries(entries);
+  const flat = deduplicateEntries(entries).map((entry) =>
+    primaryGroup && displayGroupName && entry.group.name === primaryGroup.name
+      ? { ...entry, group: { ...entry.group, name: displayGroupName, batchLabel: primaryMembership?.selectedBatchYearLabel ?? entry.group.batchLabel } }
+      : entry,
+  );
   const lastUpdated = await getEntriesLastUpdated({ groupId: { in: groupIds } });
 
   let grid: TimetableGridSnapshot | null = null;
   if (primaryGroup?.name) {
-    grid = await getPublishedGridForGroup(primaryGroup.name);
+    grid = await getPublishedGridForGroup(primaryGroup.name, undefined, primaryMembership?.selectedBatchYearLabel);
+    if (grid && displayGroupName) {
+      grid = {
+        ...grid,
+        tableTitle: displayGroupName,
+        groupName: displayGroupName,
+      };
+    }
   }
 
   if (grid && flat.length > 0) {
