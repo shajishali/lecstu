@@ -55,7 +55,7 @@ export function formatLine(line: string, index: number, allLines: string[]): str
     return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
   }
   if (/\b[A-Z]{2,6}[-\s]+\d{4,5}[A-Za-z0-9_]*\b/i.test(line)) {
-    return line.replace(/\s+[TP]\s*$/i, '').trim();
+    return stripCommonMarker(line.trim());
   }
   return line;
 }

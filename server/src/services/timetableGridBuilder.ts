@@ -81,8 +81,22 @@ function isLecturerOrMetaLine(line: string): boolean {
 }
 
 function stripActivitySuffixFromCourseLine(line: string): string {
-  if (!COURSE_CODE_RE.test(line)) return line.trim();
-  return line.replace(/\s+[TP]\s*$/i, '').trim();
+  return line.trim();
+}
+
+/** Attach standalone P/T lines to the course line above (legacy FET layout). */
+function coalesceFetCourseActivitySuffixes(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    if (isFetActivitySuffix(t) && out.length > 0 && COURSE_CODE_RE.test(out[out.length - 1]!)) {
+      out[out.length - 1] = `${out[out.length - 1]!.trim()} ${t.toUpperCase()}`;
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
 }
 
 function normalizeDisplayLine(line: string): string {
@@ -115,10 +129,12 @@ function isOrphanMetaLine(line: string): boolean {
 }
 
 function normalizeCellLines(raw: string): string[] {
-  const split = raw
-    .split(/\n|[\r\n]+/)
-    .map((l) => l.trim())
-    .filter((l) => l && !isFetEmptyCell(l) && !isOrphanMetaLine(l));
+  const split = coalesceFetCourseActivitySuffixes(
+    raw
+      .split(/\n|[\r\n]+/)
+      .map((l) => l.trim())
+      .filter((l) => l && !isFetEmptyCell(l) && !isOrphanMetaLine(l)),
+  );
 
   const seen = new Set<string>();
   const lines: string[] = [];

@@ -1222,7 +1222,7 @@ function trimFetCourseChunk(chunk: string): string {
   while (parts.length > 1) {
     const last = parts[parts.length - 1]!;
     if (FET_COURSE_LAB_SUFFIX_RE.test(last)) break;
-    if (isFetLecturerCodeToken(last) || isFetActivitySuffix(last)) {
+    if (isFetLecturerCodeToken(last)) {
       parts.pop();
       continue;
     }

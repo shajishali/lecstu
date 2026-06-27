@@ -5,13 +5,26 @@ function stripCommonMarker(text: string): string {
   return text.replace(/\s+COMMON\b/gi, '').trim();
 }
 
-function stripActivitySuffixFromCourse(line: string): string {
-  if (!COURSE_LINE_RE.test(line)) return line;
-  return line.replace(/\s+[TP]\s*$/i, '').trim();
+function formatCourseDisplayLine(line: string): string {
+  return stripCommonMarker(line.trim());
 }
 
 function isActivitySuffix(text: string): boolean {
   return /^[TP]$/i.test(stripCommonMarker(text.trim()));
+}
+
+function coalesceOrphanActivitySuffixes(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const t = stripCommonMarker(line.trim());
+    if (!t) continue;
+    if (isActivitySuffix(t) && out.length > 0 && COURSE_LINE_RE.test(out[out.length - 1]!)) {
+      out[out.length - 1] = `${out[out.length - 1]!.trim()} ${t.toUpperCase()}`;
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
 }
 
 export function formatFetGridLine(line: string, index: number, allLines: string[]): string | null {
@@ -33,18 +46,19 @@ export function formatFetGridLine(line: string, index: number, allLines: string[
   ) {
     return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
   }
-  return stripActivitySuffixFromCourse(line);
+  return formatCourseDisplayLine(line);
 }
 
 export function fetGridDisplayLines(lines: string[]): string[] {
+  const merged = coalesceOrphanActivitySuffixes(lines);
   const courses: string[] = [];
   const halls: string[] = [];
   const extras: string[] = [];
   const lecturers: string[] = [];
   let hasLecturerPlaceholder = false;
 
-  for (const [index, line] of lines.entries()) {
-    const formatted = formatFetGridLine(line, index, lines);
+  for (const [index, line] of merged.entries()) {
+    const formatted = formatFetGridLine(line, index, merged);
     if (!formatted) continue;
 
     const lecturer = formatted.match(/^Lecturer:\s*(.+)$/i)?.[1]?.trim();

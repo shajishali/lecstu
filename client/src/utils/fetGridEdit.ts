@@ -46,7 +46,7 @@ function parseHallFromLine(line: string): string | null {
 }
 
 function courseCodeFromLine(line: string): string {
-  const trimmed = line.trim().replace(/\s+[TP]\s*$/i, '').trim();
+  const trimmed = line.trim();
   const cm = trimmed.match(COURSE_RE);
   if (cm) return `${cm[1]} ${cm[2]}`.trim();
   if (/^[A-Z]{2,6}-\d{4,5}/i.test(trimmed)) return trimmed;
@@ -72,7 +72,7 @@ export function parseCellToEditable(
     const text = line.replace(/^lecturer:\s*/i, '').trim();
     if (/^[TP]$/i.test(text)) continue;
     if (text && text !== '—' && text !== '-') {
-      contentLines.push(COURSE_RE.test(text) ? text.replace(/\s+[TP]\s*$/i, '').trim() : text);
+      contentLines.push(text);
     }
   }
 
@@ -105,7 +105,15 @@ export function parseCellToEditable(
 
 export function buildCellFromEditable(data: EditableCellData): TimetableGridCell {
   const lines: string[] = [];
-  const courseLine = (data.subjectName || data.courseCode).trim();
+  const sub = data.subjectName.trim();
+  const code = data.courseCode.trim();
+  const courseLine = (() => {
+    if (!sub) return code;
+    if (!code) return sub;
+    if (/\s[TP]\s*$/i.test(sub)) return sub;
+    if (/\s[TP]\s*$/i.test(code)) return code;
+    return sub.length >= code.length ? sub : code;
+  })();
   if (courseLine) lines.push(courseLine);
   if (data.lecturerName.trim()) lines.push(data.lecturerName.trim());
   const hall = stripCommonMarker(data.hallName.trim() || 'TBD');
