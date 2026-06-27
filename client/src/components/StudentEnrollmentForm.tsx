@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useStudentEnrollmentOptions, useEnrollmentFields } from '@hooks/useStudentEnrollmentOptions';
+import {
+  useStudentEnrollmentOptions,
+  useEnrollmentFields,
+  resolveEnrollmentGroupId,
+  isY1BatchEnrollmentReady,
+} from '@hooks/useStudentEnrollmentOptions';
 
 const selectClass =
   'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] disabled:bg-slate-100';
@@ -80,8 +85,7 @@ export default function StudentEnrollmentForm({
     pathwayCode,
     batchYearLabel,
   );
-  const groupIdIsValid = groupId && groupOptions.some((group) => group.id === groupId);
-  const resolvedGroupId = groupIdIsValid ? groupId : groupOptions.length === 1 ? groupOptions[0].id : '';
+  const resolvedGroupId = resolveEnrollmentGroupId(groupId, groupOptions);
   const resolvedGroup =
     groupOptions.find(
       (group) =>
@@ -99,7 +103,13 @@ export default function StudentEnrollmentForm({
       groupOptions.length > 0 &&
       (!needsBatchYear || batchYearLabel),
   );
-  const missingRequiredClassBatch = showClassBatch && !resolvedGroupId;
+  const y1BatchEnrollmentReady = isY1BatchEnrollmentReady(
+    studyYear,
+    programCode,
+    batchYearLabel,
+    batchYearOptions.length,
+  );
+  const missingRequiredClassBatch = showClassBatch && !resolvedGroupId && !y1BatchEnrollmentReady;
   const missingRequiredBatchYear = Boolean(programCode && needsBatchYear && !batchYearLabel);
 
   useEffect(() => {
@@ -140,8 +150,8 @@ export default function StudentEnrollmentForm({
       setGroupId('');
       return;
     }
-    if (groupId && groupOptions.some((g) => g.id === groupId)) return;
-    setGroupId(groupOptions.length === 1 ? groupOptions[0].id : '');
+    const resolved = resolveEnrollmentGroupId(groupId, groupOptions);
+    if (resolved !== groupId) setGroupId(resolved);
   }, [batchYearLabel, batchYearOptions.length, groupId, groupOptions, programCode, studyYear]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -150,7 +160,7 @@ export default function StudentEnrollmentForm({
       programCode,
       studyYear,
       pathwayCode: needsPathway ? pathwayCode : undefined,
-      groupId: groupOptions.length > 0 ? resolvedGroupId : undefined,
+      groupId: resolvedGroupId || undefined,
       batchYearLabel: batchYearLabel || undefined,
     });
   };

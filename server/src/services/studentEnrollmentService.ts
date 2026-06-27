@@ -26,6 +26,54 @@ const EXTRA_BATCH_YEARS_BY_GROUP: Record<string, string[]> = {
   'CS-Y1': ['2023'],
 };
 
+type EnrollmentGroupOption = RegisterOptionsProgram['groups'][number] & {
+  sourceName: string;
+  isCanonicalSource: boolean;
+};
+
+function extraBatchYearsForGroup(groupName: string, parsed: {
+  programCode: string;
+  studyYear: StudyYear;
+  pathwayCode?: string;
+}): string[] {
+  const canonicalName = buildGroupName(parsed.programCode, parsed.studyYear, parsed.pathwayCode);
+  return [
+    ...new Set([
+      ...(EXTRA_BATCH_YEARS_BY_GROUP[canonicalName] ?? []),
+      ...(EXTRA_BATCH_YEARS_BY_GROUP[groupName] ?? []),
+    ]),
+  ];
+}
+
+function isCanonicalEnrollmentGroupName(
+  groupName: string,
+  parsed: { programCode: string; studyYear: StudyYear; pathwayCode?: string },
+): boolean {
+  const canonicalName = buildGroupName(parsed.programCode, parsed.studyYear, parsed.pathwayCode);
+  return groupName.trim().toUpperCase() === canonicalName.toUpperCase();
+}
+
+/** One Y1 option per batch year; prefer canonical groups like CS-Y1 over legacy aliases. */
+function dedupeY1BatchEnrollmentGroups(groups: EnrollmentGroupOption[]): RegisterOptionsProgram['groups'] {
+  const passthrough: EnrollmentGroupOption[] = [];
+  const y1ByBatch = new Map<string, EnrollmentGroupOption>();
+
+  for (const entry of groups) {
+    if (entry.studyYear === 'Y1' && !entry.pathwayCode && entry.batchYearLabel) {
+      const existing = y1ByBatch.get(entry.batchYearLabel);
+      if (!existing) {
+        y1ByBatch.set(entry.batchYearLabel, entry);
+      } else if (entry.isCanonicalSource && !existing.isCanonicalSource) {
+        y1ByBatch.set(entry.batchYearLabel, entry);
+      }
+      continue;
+    }
+    passthrough.push(entry);
+  }
+
+  return [...passthrough, ...y1ByBatch.values()].map(({ sourceName: _s, isCanonicalSource: _c, ...rest }) => rest);
+}
+
 function parseGroupEnrollment(name: string): {
   programCode: string;
   studyYear: StudyYear;
@@ -119,7 +167,7 @@ export async function getRegisterOptions(): Promise<{ programs: RegisterOptionsP
     if (batchYear) latestBatchYearByGroup.set(table.groupName, batchYear);
   }
 
-  const groupsByProgram = new Map<string, RegisterOptionsProgram['groups']>();
+  const groupsByProgram = new Map<string, EnrollmentGroupOption[]>();
   for (const group of groups) {
     const parsed = parseAnyGroupEnrollment(group.name);
     if (!parsed) continue;
@@ -128,26 +176,22 @@ export async function getRegisterOptions(): Promise<{ programs: RegisterOptionsP
       normalizeBatchYearLabel(group.batchLabel) ??
       latestBatchYearByGroup.get(group.name) ??
       normalizeBatchYearLabel(group.batchYear);
-    const displayParsed = { ...parsed, batchYearLabel };
     const list = groupsByProgram.get(parsed.programCode) ?? [];
-    const groupOptions = [
-      {
-        id: group.id,
-        name: formatEnrollmentGroupName(group.name, displayParsed),
-        studyYear: parsed.studyYear,
-        pathwayCode: parsed.pathwayCode,
-        batchYearLabel,
-      },
-      ...(EXTRA_BATCH_YEARS_BY_GROUP[group.name] ?? [])
-        .filter((extraBatchYear) => extraBatchYear !== batchYearLabel)
-        .map((extraBatchYear) => ({
-          id: group.id,
-          name: formatEnrollmentGroupName(group.name, { ...parsed, batchYearLabel: extraBatchYear }),
-          studyYear: parsed.studyYear,
-          pathwayCode: parsed.pathwayCode,
-          batchYearLabel: extraBatchYear,
-        })),
-    ];
+    const isCanonicalSource = isCanonicalEnrollmentGroupName(group.name, parsed);
+    const toOption = (label: string | undefined): EnrollmentGroupOption => ({
+      id: group.id,
+      name: formatEnrollmentGroupName(group.name, { ...parsed, batchYearLabel: label }),
+      studyYear: parsed.studyYear,
+      pathwayCode: parsed.pathwayCode,
+      batchYearLabel: label,
+      sourceName: group.name,
+      isCanonicalSource,
+    });
+    const groupOptions: EnrollmentGroupOption[] = [toOption(batchYearLabel)];
+    for (const extraBatchYear of extraBatchYearsForGroup(group.name, parsed)) {
+      if (extraBatchYear === batchYearLabel) continue;
+      groupOptions.push(toOption(extraBatchYear));
+    }
     list.push(...groupOptions);
     groupsByProgram.set(parsed.programCode, list);
   }
@@ -158,7 +202,7 @@ export async function getRegisterOptions(): Promise<{ programs: RegisterOptionsP
       name: p.name,
       years: [...p.years],
       pathways: p.pathways.map((pw) => ({ code: pw.code, name: pw.name })),
-      groups: groupsByProgram.get(p.code) ?? [],
+      groups: dedupeY1BatchEnrollmentGroups(groupsByProgram.get(p.code) ?? []),
     })),
   };
 }

@@ -11,7 +11,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import AuthLayout from '@components/AuthLayout';
-import { useStudentEnrollmentOptions, useEnrollmentFields } from '@hooks/useStudentEnrollmentOptions';
+import { useStudentEnrollmentOptions, useEnrollmentFields, resolveEnrollmentGroupId, isY1BatchEnrollmentReady } from '@hooks/useStudentEnrollmentOptions';
 import { sendRegistrationCode, verifyRegistrationCode } from '@services/authApi';
 import { showApiErrorToast } from '@services/api';
 import type { UserRole } from '../types/auth';
@@ -100,11 +100,11 @@ export default function Register() {
   );
 
   useEffect(() => {
-    if (form.groupId && groupOptions.some((g) => g.id === form.groupId)) return;
     if (!form.programCode || !form.studyYear) return;
     if (form.studyYear === 'Y1' && batchYearOptions.length > 0 && !form.batchYearLabel) return;
-    if (groupOptions.length === 1) {
-      setForm((prev) => ({ ...prev, groupId: groupOptions[0].id }));
+    const resolved = resolveEnrollmentGroupId(form.groupId, groupOptions);
+    if (resolved !== form.groupId) {
+      setForm((prev) => ({ ...prev, groupId: resolved }));
     }
   }, [batchYearOptions.length, form.batchYearLabel, form.groupId, form.programCode, form.studyYear, groupOptions]);
 
@@ -250,7 +250,15 @@ export default function Register() {
       if (form.studyYear === 'Y1' && batchYearOptions.length > 0 && !form.batchYearLabel) {
         return 'Please select your batch year';
       }
-      if (groupOptions.length > 0 && !form.groupId) return 'Please select your class batch';
+      const y1BatchReady = isY1BatchEnrollmentReady(
+        form.studyYear,
+        form.programCode,
+        form.batchYearLabel,
+        batchYearOptions.length,
+      );
+      if (groupOptions.length > 0 && !form.groupId && !y1BatchReady) {
+        return 'Please select your class batch';
+      }
     }
     return null;
   };
@@ -276,7 +284,7 @@ export default function Register() {
           programCode: form.programCode,
           studyYear: form.studyYear,
           pathwayCode: needsPathway ? form.pathwayCode : undefined,
-          groupId: groupOptions.length > 0 ? form.groupId : undefined,
+          groupId: resolveEnrollmentGroupId(form.groupId, groupOptions) || undefined,
           batchYearLabel: form.batchYearLabel || undefined,
         }),
       });

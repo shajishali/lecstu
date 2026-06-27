@@ -4,6 +4,25 @@ import type { RegisterOptionsProgram } from '../types/auth';
 
 const YEARS_WITH_PATHWAY = ['Y3', 'Y4'];
 
+export function resolveEnrollmentGroupId(
+  groupId: string,
+  groupOptions: { id: string }[],
+): string {
+  if (groupId && groupOptions.some((group) => group.id === groupId)) return groupId;
+  const uniqueIds = [...new Set(groupOptions.map((group) => group.id))];
+  if (uniqueIds.length === 1) return uniqueIds[0];
+  return groupOptions.length === 1 ? groupOptions[0].id : '';
+}
+
+export function isY1BatchEnrollmentReady(
+  studyYear: string,
+  programCode: string,
+  batchYearLabel: string,
+  batchYearOptionsCount: number,
+): boolean {
+  return studyYear === 'Y1' && Boolean(programCode && batchYearLabel && batchYearOptionsCount > 0);
+}
+
 export function useStudentEnrollmentOptions() {
   const [programs, setPrograms] = useState<RegisterOptionsProgram[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +66,7 @@ export function useEnrollmentFields(
     const hasY1BatchYearChoices =
       studyYear === 'Y1' &&
       groups.some((group) => group.studyYear === 'Y1' && !group.pathwayCode && group.batchYearLabel);
-    return groups.filter((group) => {
+    const filtered = groups.filter((group) => {
       if (group.studyYear !== studyYear) return false;
       if (needsPathway) return group.pathwayCode === pathwayCode;
       if (group.pathwayCode) return false;
@@ -57,6 +76,11 @@ export function useEnrollmentFields(
       }
       return true;
     });
+    if (studyYear === 'Y1' && batchYearLabel && filtered.length > 1) {
+      const uniqueIds = [...new Set(filtered.map((group) => group.id))];
+      if (uniqueIds.length === 1) return [filtered[0]];
+    }
+    return filtered;
   }, [batchYearLabel, needsPathway, pathwayCode, selectedProgram, studyYear]);
 
   const batchYearOptions = useMemo(() => {
