@@ -169,6 +169,7 @@ export async function getTableSnapshotById(id: string): Promise<TimetableGridSna
 export async function getPublishedGridForGroup(
   groupName: string,
   period?: { year?: number; month?: number; week?: number },
+  preferredBatchYearLabel?: string | null,
 ): Promise<TimetableGridSnapshot | null> {
   const where: {
     groupName: { equals: string; mode: 'insensitive' };
@@ -184,13 +185,26 @@ export async function getPublishedGridForGroup(
   if (period?.month) where.month = period.month;
   if (period?.week) where.week = period.week;
 
-  const row = await prisma.timetableTableSnapshot.findFirst({
-    where,
-    orderBy: [{ year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
-  });
-  if (!row) return null;
-  const grid = row.gridData as unknown as TimetableGridSnapshot;
-  return enrichSnapshotGrid(grid, row.groupName);
+  const shortBatchYear = preferredBatchYearLabel?.slice(-2);
+  const row =
+    shortBatchYear
+      ? await prisma.timetableTableSnapshot.findFirst({
+          where: {
+            ...where,
+            tableTitle: { contains: shortBatchYear, mode: 'insensitive' },
+          },
+          orderBy: [{ year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
+        })
+      : null;
+  const fallbackRow =
+    row ??
+    (await prisma.timetableTableSnapshot.findFirst({
+      where,
+      orderBy: [{ year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
+    }));
+  if (!fallbackRow) return null;
+  const grid = fallbackRow.gridData as unknown as TimetableGridSnapshot;
+  return enrichSnapshotGrid(grid, fallbackRow.groupName);
 }
 
 export async function updateSnapshotSlotCount(groupName: string, year: number, month: number, week: number, count: number) {
