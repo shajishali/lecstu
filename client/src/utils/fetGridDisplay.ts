@@ -1,4 +1,5 @@
 const HALL_LINE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
+const HALL_LINE_GLOBAL_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/gi;
 const COURSE_LINE_RE = /\b[A-Z]{2,6}[-\s]+\d{4,5}[A-Za-z0-9_]*\b/i;
 
 function stripCommonMarker(text: string): string {
@@ -50,7 +51,7 @@ function collectHallCodes(lines: string[]): string[] {
   for (const line of lines) {
     const t = stripCommonMarker(line.trim().replace(/^room:\s*/i, ''));
     if (!t || /^tbd$/i.test(t)) continue;
-    for (const match of t.matchAll(HALL_LINE_RE)) {
+    for (const match of t.matchAll(HALL_LINE_GLOBAL_RE)) {
       const hall = match[1]?.trim();
       if (hall && !halls.some((h) => h.toUpperCase() === hall.toUpperCase())) halls.push(hall);
     }
