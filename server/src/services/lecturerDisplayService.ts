@@ -5,6 +5,7 @@ import {
   isFetLecturerCodeToken,
   lecturerCodesFromName,
   matchLecturerByInitials,
+  splitFetLecturerCodeList,
   type LecturerIdentity,
 } from './lecturerInitialsMatch';
 
@@ -44,12 +45,11 @@ export function invalidateLecturerDisplayIndex(): void {
   cached = null;
 }
 
-/** Resolve FET code (SB, VL_Amila) to faculty full name when uniquely known. */
-export function resolveLecturerDisplayName(
-  raw: string | undefined,
+function resolveSingleLecturerDisplayName(
+  raw: string,
   index: LecturerDisplayIndex,
 ): string | undefined {
-  const t = raw?.trim();
+  const t = raw.trim();
   if (!t || t === '—' || t === '-') return undefined;
   if (t.includes(' ') && !isFetLecturerCodeToken(t.split(/\s+/)[0] ?? '')) return t;
 
@@ -65,6 +65,22 @@ export function resolveLecturerDisplayName(
     }
   }
   return t;
+}
+
+/** Resolve FET code (SB, VL_Amila, PF,RG) to faculty full name when uniquely known. */
+export function resolveLecturerDisplayName(
+  raw: string | undefined,
+  index: LecturerDisplayIndex,
+): string | undefined {
+  const t = raw?.trim();
+  if (!t || t === '—' || t === '-') return undefined;
+
+  const multi = splitFetLecturerCodeList(t);
+  if (multi.length >= 2) {
+    return multi.map((code) => resolveSingleLecturerDisplayName(code, index) ?? code).join(', ');
+  }
+
+  return resolveSingleLecturerDisplayName(t, index);
 }
 
 /** Link unassigned master slots to faculty when sheet initials match one lecturer. */

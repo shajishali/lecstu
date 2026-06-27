@@ -9,7 +9,7 @@ import {
   resolveLecturerDisplayName,
   type LecturerDisplayIndex,
 } from './lecturerDisplayService';
-import { isFetActivitySuffix } from './lecturerInitialsMatch';
+import { isFetActivitySuffix, isFetLecturerLineLabel } from './lecturerInitialsMatch';
 import { splitHallDisplayNames } from './conflictDetector';
 
 type Matrix = unknown[][];
@@ -67,12 +67,13 @@ function isYearBatchLabel(line: string): boolean {
 
 function isLecturerOrMetaLine(line: string): boolean {
   const t = line.trim();
-  if (!t || t.length > 24) return false;
+  if (!t || t.length > 48) return false;
   if (isFetActivitySuffix(t)) return false;
   if (COURSE_CODE_RE.test(t)) return false;
   if (HALL_CODE_RE.test(t)) return false;
   if (/\bonline\b/i.test(t)) return false;
   if (isYearBatchLabel(t)) return false;
+  if (isFetLecturerLineLabel(t)) return true;
   return (
     /^[A-Z]{1,4}(_[A-Za-z]+)?$/.test(t) ||
     /^VL_/i.test(t) ||
@@ -684,7 +685,7 @@ export function mergeFetDisplayLines(
   }
 
   const lectLines = out.filter(
-    (l) => lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—',
+    (l) => lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-',
   );
   if (lectLines.length > 1) {
     const resolved = lectLines.map(
@@ -693,13 +694,23 @@ export function mergeFetDisplayLines(
     const keep = resolved.reduce((a, b) => (a.length >= b.length ? a : b));
     for (let i = out.length - 1; i >= 0; i--) {
       const l = out[i]!;
-      if (lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== keep) {
+      if (lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-' && l !== keep) {
         out.splice(i, 1);
       }
     }
     if (!out.includes(keep)) {
       const courseIdx = out.findIndex((l) => COURSE_CODE_RE.test(l));
       out.splice(courseIdx >= 0 ? courseIdx + 1 : 0, 0, keep);
+    }
+  }
+
+  const hasRealLecturer = out.some(
+    (l) => lineHasLecturer(l) && l !== '—' && l !== '-' && !/^unassigned$/i.test(l),
+  );
+  if (hasRealLecturer) {
+    for (let i = out.length - 1; i >= 0; i--) {
+      const l = out[i]!;
+      if (l === '—' || l === '-' || /^unassigned$/i.test(l)) out.splice(i, 1);
     }
   }
 

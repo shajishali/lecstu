@@ -401,15 +401,27 @@ export async function resolveAndImport(
 
     const sheetLecturer = (r.lecturerName || '').trim();
     const lecturerInitials = sheetLecturer
-      ? isFetLecturerCodeToken(sheetLecturer)
-        ? sheetLecturer.replace(/\s+/g, '').toUpperCase()
-        : sheetLecturer
+      ? sheetLecturer.includes(',')
+        ? sheetLecturer
+            .split(',')
+            .map((part) => part.trim().toUpperCase())
+            .filter(Boolean)
+            .join(',')
+        : isFetLecturerCodeToken(sheetLecturer)
+          ? sheetLecturer.replace(/\s+/g, '').toUpperCase()
+          : sheetLecturer
       : null;
 
     // Link by email first, then by FET sheet code (SB, CJ, …) when it matches one faculty profile.
     let lecturerId = r.lecturerEmail ? lecturerMap.get(r.lecturerEmail.toLowerCase()) : null;
     if (!lecturerId && lecturerInitials) {
-      lecturerId = matchLecturerByInitials(lecturerInitials, lecturerCodeIndex) ?? null;
+      const codesToTry = lecturerInitials.includes(',')
+        ? lecturerInitials.split(',').map((part) => part.trim()).filter(Boolean)
+        : [lecturerInitials];
+      for (const code of codesToTry) {
+        lecturerId = matchLecturerByInitials(code, lecturerCodeIndex) ?? null;
+        if (lecturerId) break;
+      }
     }
     if (!lecturerId && (r.lecturerEmail || isAutoCreatableLecturerLabel(sheetLecturer))) {
       const email = r.lecturerEmail?.trim().toLowerCase();

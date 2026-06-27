@@ -27,6 +27,15 @@ function coalesceOrphanActivitySuffixes(lines: string[]): string[] {
   return out;
 }
 
+function isFetLecturerLabelLine(t: string): boolean {
+  if (/^[A-Z]{1,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) {
+    return t.length <= 48;
+  }
+  if (!t.includes(',')) return false;
+  const parts = t.split(',').map((p) => p.trim()).filter(Boolean);
+  return parts.length >= 2 && parts.every((p) => /^[A-Za-z]{2,8}$/i.test(p) || /^VL_/i.test(p));
+}
+
 export function formatFetGridLine(line: string, index: number, allLines: string[]): string | null {
   const t = stripCommonMarker(line.trim());
   if (!t || isActivitySuffix(t)) return null;
@@ -41,8 +50,7 @@ export function formatFetGridLine(line: string, index: number, allLines: string[
   }
   if (
     index > 0 &&
-    (/^[A-Z]{2,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) &&
-    t.length <= 24
+    (isFetLecturerLabelLine(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t))
   ) {
     return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
   }
@@ -101,9 +109,13 @@ export function fetGridDisplayLines(lines: string[]): string[] {
   const lecturerLine =
     uniqueLecturers.length > 0
       ? [`Lecturer: ${uniqueLecturers.reduce((a, b) => (a.length >= b.length ? a : b))}`]
-      : hasLecturerPlaceholder
+      : hasLecturerPlaceholder && lecturers.length === 0
         ? ['Lecturer: —']
         : [];
 
-  return [...dedupe(courses), ...lecturerLine, ...dedupe(extras), ...dedupe(halls)];
+  const result = [...dedupe(courses), ...lecturerLine, ...dedupe(extras), ...dedupe(halls)];
+  if (uniqueLecturers.length > 0) {
+    return result.filter((line) => !/^Lecturer:\s*[—-]\s*$/i.test(line));
+  }
+  return result;
 }

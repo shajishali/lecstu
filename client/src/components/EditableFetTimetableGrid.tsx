@@ -41,6 +41,15 @@ function stripCommonMarker(text: string): string {
   return text.replace(/\s+COMMON\b/gi, '').trim();
 }
 
+function isFetLecturerLabelLine(t: string): boolean {
+  if (/^[A-Z]{1,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) {
+    return t.length <= 48;
+  }
+  if (!t.includes(',')) return false;
+  const parts = t.split(',').map((p) => p.trim()).filter(Boolean);
+  return parts.length >= 2 && parts.every((p) => /^[A-Za-z]{2,8}$/i.test(p) || /^VL_/i.test(p));
+}
+
 export function formatLine(line: string, index: number, allLines: string[]): string | null {
   const t = stripCommonMarker(line.trim());
   if (/^[TP]$/i.test(t)) return null;
@@ -49,8 +58,7 @@ export function formatLine(line: string, index: number, allLines: string[]): str
   if (HALL_LINE_RE.test(t)) return t.startsWith('Room:') ? t : `Room: ${t}`;
   if (
     index > 0 &&
-    (/^[A-Z]{1,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) &&
-    t.length <= 24
+    (isFetLecturerLabelLine(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t))
   ) {
     return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
   }

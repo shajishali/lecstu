@@ -66,6 +66,26 @@ export function isFetLecturerCodeToken(raw: string): boolean {
 
 }
 
+/** Comma-separated FET codes on one sheet line (e.g. PF,RG or RR,Demo). */
+export function splitFetLecturerCodeList(raw: string): string[] {
+  const t = raw.trim();
+  if (!t || !t.includes(',')) return [];
+  const parts = t.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return [];
+  if (!parts.every((p) => isFetLecturerCodeToken(p))) return [];
+  return parts;
+}
+
+/** Single code or comma-separated list from a dedicated lecturer line. */
+export function isFetLecturerLineLabel(raw: string): boolean {
+  const t = raw.trim();
+  if (!t || t.length > 48) return false;
+  if (isFetActivitySuffix(t)) return false;
+  if (isFetLecturerCodeToken(t)) return true;
+  if (/^VL_/i.test(t)) return true;
+  return splitFetLecturerCodeList(t).length >= 2;
+}
+
 
 
 /**
