@@ -124,13 +124,13 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
   }) as TimetableSlot[];
 
   let grid: TimetableGridSnapshot | null = null;
+  const preferredBatchYear = primaryMembership?.selectedBatchYearLabel ?? null;
   if (primaryGroup?.name) {
-    grid = await getPublishedGridForGroup(primaryGroup.name, undefined, primaryMembership?.selectedBatchYearLabel);
+    grid = await getPublishedGridForGroup(primaryGroup.name, undefined, preferredBatchYear);
     if (grid) {
       const friendlyTitle = formatBatchTableTitle(
         primaryGroup.name,
-        primaryMembership?.selectedBatchYearLabel ??
-          extractBatchYearLabel(grid.tableTitle, primaryGroup.name),
+        preferredBatchYear ?? extractBatchYearLabel(grid.tableTitle, primaryGroup.name),
       );
       grid = {
         ...grid,
@@ -138,6 +138,16 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
         groupName: primaryGroup.name,
       };
     }
+  }
+
+  if (preferredBatchYear && !grid) {
+    return {
+      weekly: organizeByDay([]),
+      flat: [],
+      lastUpdated: null,
+      enrollment,
+      grid: null,
+    };
   }
 
   const periodFiltered =

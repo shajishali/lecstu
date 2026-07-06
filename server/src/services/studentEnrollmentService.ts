@@ -358,7 +358,7 @@ export async function assignStudentToGroup(
     data: {
       studentId,
       groupId: resolvedGroup.id,
-      selectedBatchYearLabel: selectedBatchYearLabel || null,
+      selectedBatchYearLabel: normalizeBatchYearLabel(selectedBatchYearLabel) || null,
     },
   });
 

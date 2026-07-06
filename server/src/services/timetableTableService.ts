@@ -29,6 +29,8 @@ import {
   normalizeBatchTableMeta,
   assignMissingY1AdmissionYears,
   formatBatchTableTitle,
+  extractBatchYearLabel,
+  normalizeBatchYearLabel,
 } from '../config/fct-faculty-config';
 
 export async function saveTableSnapshots(
@@ -293,25 +295,21 @@ export async function getPublishedGridForGroup(
   if (period?.month) where.month = period.month;
   if (period?.week) where.week = period.week;
 
-  const shortBatchYear = preferredBatchYearLabel?.slice(-2);
-  const row =
-    shortBatchYear
-      ? await prisma.timetableTableSnapshot.findFirst({
-          where: {
-            ...where,
-            tableTitle: { contains: shortBatchYear, mode: 'insensitive' },
-          },
-          orderBy: [{ year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
-        })
-      : null;
-  const fallbackRow =
-    row ??
-    (await prisma.timetableTableSnapshot.findFirst({
-      where,
-      orderBy: [{ year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
-    }));
-  if (!fallbackRow) return null;
-  return publishedGridFromRow(fallbackRow);
+  const rows = await prisma.timetableTableSnapshot.findMany({
+    where,
+    orderBy: [{ updatedAt: 'desc' }, { year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
+  });
+  if (!rows.length) return null;
+
+  const preferred = normalizeBatchYearLabel(preferredBatchYearLabel);
+  if (preferred) {
+    const match = rows.find(
+      (row) => extractBatchYearLabel(row.tableTitle, row.groupName) === preferred,
+    );
+    return match ? publishedGridFromRow(match) : null;
+  }
+
+  return publishedGridFromRow(rows[0]!);
 }
 
 export async function updateSnapshotSlotCount(groupName: string, year: number, month: number, week: number, count: number) {
