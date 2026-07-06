@@ -669,19 +669,48 @@ export function mergeFetDisplayLines(
   }
   if (bestCourse) add(bestCourse);
 
-  for (const line of [...existing, ...fromSlot]) {
-    if (lineHasHall(line)) add(line);
+  const existingHalls = existing.filter((l) => lineHasHall(l) || l.toUpperCase() === 'TBD');
+  const slotHalls = fromSlot.filter((l) => lineHasHall(l) || l.toUpperCase() === 'TBD');
+  for (const line of existingHalls) add(line);
+  if (existingHalls.length === 0) {
+    for (const line of slotHalls) add(line);
   }
-  for (const line of [...existing, ...fromSlot]) {
-    if (lineHasLecturer(line) && !lineHasHall(line) && !COURSE_CODE_RE.test(line)) add(line);
+
+  const existingLecturers = existing.filter(
+    (l) =>
+      lineHasLecturer(l) &&
+      !lineHasHall(l) &&
+      !COURSE_CODE_RE.test(l) &&
+      l !== '—' &&
+      l !== '-' &&
+      !/^unassigned$/i.test(l),
+  );
+  const slotLecturers = fromSlot.filter(
+    (l) =>
+      lineHasLecturer(l) &&
+      !lineHasHall(l) &&
+      !COURSE_CODE_RE.test(l) &&
+      l !== '—' &&
+      l !== '-',
+  );
+  for (const line of existingLecturers) add(line);
+  if (existingLecturers.length === 0) {
+    for (const line of slotLecturers) add(line);
   }
+
   for (const line of [...existing, ...fromSlot]) {
     if (!COURSE_CODE_RE.test(line) && !lineHasHall(line) && !lineHasLecturer(line)) add(line);
   }
 
   if (out.length > 0) {
     const hasHall = out.some((l) => lineHasHall(l) || l.toUpperCase() === 'TBD');
-    const hasLect = out.some((l) => lineHasLecturer(l));
+    const hasLect = out.some(
+      (l) =>
+        lineHasLecturer(l) &&
+        l !== '—' &&
+        l !== '-' &&
+        !/^unassigned$/i.test(l),
+    );
     if (!hasHall) out.push('TBD');
     if (!hasLect) out.push('—');
   }
@@ -937,9 +966,11 @@ export function enrichGridFromSlots(
       const ref: GridSlotRef = slot
         ? {
             ...slot,
-            courseName: slot.courseName || fromCell?.courseName || '',
-            hallName: mergeHallNames(fromCell?.hallName, slot.hallName),
-            lecturerName: slot.lecturerName || fromCell?.lecturerName,
+            courseName: fromCell?.courseName || slot.courseName || '',
+            hallName: fromCell?.hallName
+              ? fromCell.hallName
+              : mergeHallNames(slot.hallName),
+            lecturerName: fromCell?.lecturerName || slot.lecturerName,
             hallIsShared: slot.hallIsShared === true || fromCell?.hallIsShared === true,
           }
         : fromCell || {

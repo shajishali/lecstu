@@ -2,16 +2,12 @@ import prisma from '../config/database';
 import { formatBatchTableTitle, extractBatchYearLabel } from '../config/fct-faculty-config';
 import { resolveGroupIdsForStudent, parseEnrollmentFromGroupName } from './studentGroupResolver';
 import { getPublishedGridForGroup } from './timetableTableService';
-import { enrichGridFromSlots, type GridSlotRef } from './timetableGridBuilder';
-import { backfillSlotRefsForGroup } from './timetableRepairService';
-import { getLecturerDisplayIndex } from './lecturerDisplayService';
-import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
+import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import {
   fetchMasterEntriesForLecturer,
   getLecturerCodes,
   syncTeachingScheduleFromMaster,
 } from './lecturerTimetableService';
-import type { TimetableGridSnapshot } from '../types/timetableGrid';
 
 const SLOT_SELECT = {
   id: true,
@@ -127,13 +123,6 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
   }) as TimetableSlot[];
 
-  const flat = deduplicateEntries(entries).map((entry) =>
-    primaryGroup && displayGroupName && entry.group.name === primaryGroup.name
-      ? { ...entry, group: { ...entry.group, name: displayGroupName, batchLabel: primaryMembership?.selectedBatchYearLabel ?? entry.group.batchLabel } }
-      : entry,
-  );
-  const lastUpdated = await getEntriesLastUpdated({ groupId: { in: groupIds } });
-
   let grid: TimetableGridSnapshot | null = null;
   if (primaryGroup?.name) {
     grid = await getPublishedGridForGroup(primaryGroup.name, undefined, primaryMembership?.selectedBatchYearLabel);
@@ -151,27 +140,28 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
     }
   }
 
-  if (grid && flat.length > 0) {
-    const lecturerDisplay = await getLecturerDisplayIndex();
-    const slotRefs = backfillSlotRefsForGroup(
-      primaryGroup.name,
-      flat.map((e) => {
-        let lecturerName = e.lecturerInitials?.trim() || undefined;
-        if (!lecturerName && e.lecturer.email !== UNASSIGNED_LECTURER_EMAIL) {
-          lecturerName = `${e.lecturer.firstName} ${e.lecturer.lastName}`.trim() || undefined;
+  const periodFiltered =
+    grid != null
+      ? entries.filter(
+          (e) => e.year === grid!.year && e.month === grid!.month && e.week === grid!.week,
+        )
+      : entries;
+
+  const flat = deduplicateEntries(periodFiltered).map((entry) =>
+    primaryGroup && displayGroupName && entry.group.name === primaryGroup.name
+      ? { ...entry, group: { ...entry.group, name: displayGroupName, batchLabel: primaryMembership?.selectedBatchYearLabel ?? entry.group.batchLabel } }
+      : entry,
+  );
+  const lastUpdated = await getEntriesLastUpdated(
+    grid != null
+      ? {
+          groupId: { in: groupIds },
+          year: grid.year,
+          month: grid.month,
+          week: grid.week,
         }
-        return {
-          dayOfWeek: e.dayOfWeek,
-          startTime: e.startTime,
-          endTime: e.endTime,
-          courseName: e.course.name,
-          hallName: e.hall.name,
-          lecturerName,
-        };
-      }),
-    );
-    grid = enrichGridFromSlots(grid, slotRefs, { lecturerDisplay });
-  }
+      : { groupId: { in: groupIds } },
+  );
 
   return { weekly: organizeByDay(flat), flat, lastUpdated, enrollment, grid };
 }
