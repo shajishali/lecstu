@@ -1,6 +1,9 @@
 import prisma from '../config/database';
+import {
+  resolveCanonicalGroupName,
+  isY1GroupWithAdmissionYear,
+} from '../config/fct-faculty-config';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
-import { resolveCanonicalGroupName } from '../config/fct-faculty-config';
 import type { ConflictInfo } from './conflictDetector';
 import { gridSnapshotsToParsedRows, normalizeGridSnapshot } from './timetableGridBuilder';
 import { invalidateAll as invalidateTimetableCache } from './timetableCache';
@@ -108,6 +111,16 @@ export async function filterStaleCrossBatchHallConflicts(
     });
     if (!entry) continue;
     if (groupNamesEqual(entry.group.name, editingGroupName)) continue;
+    const entryCanon = resolveCanonicalGroupName(entry.group.name)?.toUpperCase();
+    const editingCanon = resolveCanonicalGroupName(editingGroupName)?.toUpperCase();
+    if (
+      entryCanon &&
+      editingCanon &&
+      entryCanon === editingCanon &&
+      isY1GroupWithAdmissionYear(entryCanon)
+    ) {
+      continue;
+    }
 
     const visible = await batchSnapshotShowsHallSlot(entry.group.name, period, {
       dayOfWeek: entry.dayOfWeek,

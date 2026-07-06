@@ -586,11 +586,15 @@ export async function updateTimetableTable(req: Request, res: Response, next: Ne
       throw new AppError('grid is required', 400);
     }
     const result = await updateTableSnapshotGrid(id, grid);
+    const syncWarnings = result.syncWarnings as string | undefined;
     res.json({
       success: true,
-      message: `Timetable saved (${result.imported} slot(s) synced)`,
+      message: syncWarnings
+        ? syncWarnings
+        : `Timetable saved (${result.imported} slot(s) synced)`,
       data: result.grid,
       imported: result.imported,
+      syncWarnings,
     });
   } catch (err) {
     next(err);

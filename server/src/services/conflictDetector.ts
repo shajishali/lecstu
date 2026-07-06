@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { resolveCanonicalGroupName, isY1GroupWithAdmissionYear } from '../config/fct-faculty-config';
 
 export const PLACEHOLDER_HALL_NAME = 'TBD';
 export const UNASSIGNED_LECTURER_EMAIL = 'unassigned@lecstu.edu';
@@ -46,6 +47,14 @@ function isReplacingGroupEntry(
 ): boolean {
   if (replacingGroupId && entry.groupId === replacingGroupId) return true;
   if (replacingGroupName && groupNamesEqual(entry.group.name, replacingGroupName)) return true;
+  const entryCanonical = resolveCanonicalGroupName(entry.group.name)?.toUpperCase();
+  const replacingCanonical = replacingGroupName
+    ? resolveCanonicalGroupName(replacingGroupName)?.toUpperCase()
+    : undefined;
+  if (entryCanonical && replacingCanonical && entryCanonical === replacingCanonical) {
+    // Y1 CS / ET / CT share one group code across 2023 & 2024 — replacing one batch table.
+    if (isY1GroupWithAdmissionYear(entryCanonical)) return true;
+  }
   return false;
 }
 

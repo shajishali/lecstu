@@ -223,7 +223,14 @@ export default function TimetableSavedTables() {
     setSaveConflictSummary(null);
     try {
       const res = await api.patch(`/admin/timetable/tables/${selectedId}`, { grid: snapshot });
-      showToast('success', res.data?.message || 'Timetable saved');
+      const syncWarnings = res.data?.syncWarnings as string | undefined;
+      if (syncWarnings) {
+        setSaveConflictSummary(syncWarnings);
+        showToast('info', 'Timetable saved with room booking warnings — see message below');
+      } else {
+        setSaveConflictSummary(null);
+        showToast('success', res.data?.message || 'Timetable saved');
+      }
       const listData = await fetchList();
       await loadTableGrid(selectedId, listData);
       setList((prev) =>
@@ -236,17 +243,8 @@ export default function TimetableSavedTables() {
     } catch (err) {
       const ax = err as { response?: { data?: { message?: string }; status?: number } };
       const summary = ax.response?.data?.message;
-      const isConflict = ax.response?.status === 409;
-      if (summary && isConflict) {
-        setSaveConflictSummary(summary);
-        if (savedGrid) {
-          const copy = cloneGrid(savedGrid);
-          gridRef.current = copy;
-          setGrid(copy);
-        }
-      } else {
-        showApiErrorToast(err, 'Failed to save timetable');
-      }
+      showApiErrorToast(err, summary || 'Failed to save timetable');
+      if (summary) setSaveConflictSummary(summary);
     } finally {
       setSaving(false);
     }
@@ -458,9 +456,10 @@ export default function TimetableSavedTables() {
           <div className="flex items-start gap-2">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <p>
-              {saveConflictSummary} Unsaved slots were removed — open each cell, click{' '}
-              <strong>Apply</strong>, fix the room or tick <strong>Shared room</strong>, then save
-              again.
+              {saveConflictSummary}{' '}
+              Your grid changes are saved. For Friday&apos;s room clash, open that cell, tick{' '}
+              <strong>Shared room (admin-only)</strong> on both Y1 ET 2023 and Y1 ET 2024 (or change
+              the room), click <strong>Apply</strong>, then save again to sync hall bookings.
             </p>
           </div>
         </div>

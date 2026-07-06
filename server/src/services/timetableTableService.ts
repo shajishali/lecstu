@@ -395,11 +395,11 @@ export async function updateSnapshotSlotCount(groupName: string, year: number, m
 export async function updateTableSnapshotGrid(
   id: string,
   rawGrid: TimetableGridSnapshot,
-): Promise<{ grid: TimetableGridSnapshot; imported: number }> {
+): Promise<{ grid: TimetableGridSnapshot; imported: number; syncWarnings?: string }> {
   const row = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
   if (!row) throw new AppError('Timetable table not found', 404);
 
-  const grid = finalizeEditableGridSnapshot(
+  let grid = finalizeEditableGridSnapshot(
     normalizeGridSnapshot({
       ...rawGrid,
       tableTitle: rawGrid.tableTitle || row.tableTitle,
@@ -410,6 +410,32 @@ export async function updateTableSnapshotGrid(
       semester: rawGrid.semester ?? row.semester,
     }),
   );
+
+  const admissionYear = extractBatchYearLabel(grid.tableTitle, row.groupName);
+  const mappedWeek = admissionYearToStorageWeek(admissionYear);
+  let periodWeek = row.week;
+  if (mappedWeek != null && row.week !== mappedWeek) {
+    try {
+      await prisma.timetableTableSnapshot.update({
+        where: { id },
+        data: { week: mappedWeek },
+      });
+      periodWeek = mappedWeek;
+      grid = { ...grid, week: mappedWeek };
+    } catch {
+      /* week slot taken — keep existing week */
+    }
+  }
+
+  // Always persist the edited grid first (source of truth for admin + student display).
+  await prisma.timetableTableSnapshot.update({
+    where: { id },
+    data: {
+      gridData: grid as object,
+      tableTitle: grid.tableTitle,
+      updatedAt: new Date(),
+    },
+  });
 
   const groups = await prisma.studentGroup.findMany({
     where: { name: { equals: row.groupName, mode: 'insensitive' } },
@@ -433,8 +459,15 @@ export async function updateTableSnapshotGrid(
     ...importOpts,
   });
   if (validation.conflicts.length > 0) {
-    const { summary, flat } = formatTimetableConflictSummary(validation.conflicts);
-    throw new AppError(summary, 409, [{ row: 0, conflicts: flat }]);
+    const { summary } = formatTimetableConflictSummary(validation.conflicts);
+    invalidateTimetableCache();
+    const savedRow = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
+    return {
+      grid: savedRow ? publishedGridFromRow(savedRow) : grid,
+      imported: 0,
+      syncWarnings:
+        `${summary} Your timetable layout was saved. Fix the room conflict (or tick Shared room) and save again to update hall bookings.`,
+    };
   }
 
   await prisma.masterTimetable.deleteMany({
@@ -442,7 +475,7 @@ export async function updateTableSnapshotGrid(
       groupId: { in: groupIds },
       year: row.year,
       month: row.month,
-      week: row.week,
+      week: periodWeek,
     },
   });
 
@@ -455,20 +488,18 @@ export async function updateTableSnapshotGrid(
   }
 
   if (importResult.conflicts.length > 0) {
-    const { summary, flat } = formatTimetableConflictSummary(importResult.conflicts);
-    throw new AppError(summary, 409, [{ row: 0, conflicts: flat }]);
+    const { summary } = formatTimetableConflictSummary(importResult.conflicts);
+    invalidateTimetableCache();
+    const savedRow = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
+    return {
+      grid: savedRow ? publishedGridFromRow(savedRow) : grid,
+      imported: importResult.created,
+      syncWarnings:
+        `${summary} Your timetable layout was saved. Fix the room conflict (or tick Shared room) and save again to update hall bookings.`,
+    };
   }
 
-  await prisma.timetableTableSnapshot.update({
-    where: { id },
-    data: {
-      gridData: grid as object,
-      tableTitle: grid.tableTitle,
-      updatedAt: new Date(),
-    },
-  });
-
-  await updateSnapshotSlotCount(row.groupName, row.year, row.month, row.week, importResult.created);
+  await updateSnapshotSlotCount(row.groupName, row.year, row.month, periodWeek, importResult.created);
   invalidateTimetableCache();
 
   if (importResult.groupIds?.length) {
