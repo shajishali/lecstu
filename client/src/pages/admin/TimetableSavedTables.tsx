@@ -360,7 +360,7 @@ export default function TimetableSavedTables() {
   const selected = list.find((t) => t.id === selectedId);
 
   return (
-    <div className="space-y-4">
+    <div className="admin-batch-tables">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-sm text-slate-600 max-w-3xl">
           Manage batch tables here: create a new batch, rename or fix a mixed group code, or delete a wrong table.
@@ -378,7 +378,8 @@ export default function TimetableSavedTables() {
           FET file from the Import tab.
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="admin-batch-tables-chips">
+          <div className="flex flex-wrap gap-2">
           {list.map((t) => {
             const chipTitle = formatBatchTableChipLabel(t, list);
             return (
@@ -411,6 +412,7 @@ export default function TimetableSavedTables() {
             </div>
             );
           })}
+          </div>
         </div>
       )}
 
@@ -465,7 +467,7 @@ export default function TimetableSavedTables() {
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 max-h-[75vh] overflow-auto">
+      <div className="admin-batch-tables-grid-shell">
         {gridLoading ? (
           <p className="text-sm text-slate-500">Loading grid…</p>
         ) : grid ? (
@@ -475,6 +477,7 @@ export default function TimetableSavedTables() {
             courseOptions={courseOptions}
             lecturerOptions={lecturerOptions}
             hallOptions={hallOptions}
+            className="overflow-visible"
             onChange={(next) => {
               gridRef.current = next;
               setGrid(next);

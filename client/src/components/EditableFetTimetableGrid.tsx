@@ -308,7 +308,7 @@ export default function EditableFetTimetableGrid({
 
   return (
     <>
-      <div className={`fet-grid-root overflow-auto ${className}`}>
+      <div className={`fet-grid-root ${className}`}>
         <p className="mb-2 text-xs text-slate-500">
           Standard day starts at 08:00. Each course has its own colour. If a class starts at 09:00, the 08:00 slot
           stays free. Drag row borders to adjust band times.
