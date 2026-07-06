@@ -1,11 +1,23 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { detectConflicts } from './conflictDetector';
-import { lecturerCodesFromName, effectiveTimetableCode } from './lecturerInitialsMatch';
+import {
+  lecturerCodesFromName,
+  effectiveTimetableCode,
+  matchLecturerByInitials,
+  matchLecturerFromSheetCode,
+} from './lecturerInitialsMatch';
+import { getLecturerDisplayIndex, resolveLecturerDisplayName, type LecturerDisplayIndex } from './lecturerDisplayService';
 import { resolveGroupIdToCanonical } from './studentGroupResolver';
 import { formatShortCourseDisplay } from './timetableParserService';
 import { invalidateAll } from './timetableCache';
 import { notifyTimetableChange } from './notificationService';
+import {
+  extractSlotRefsFromGridSnapshot,
+  normalizeGridSnapshot,
+  type GridSlotRef,
+} from './timetableGridBuilder';
+import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import type { DayOfWeek } from '../generated/prisma/client';
 import type { TimetableSlot } from './timetableService';
 
@@ -95,22 +107,157 @@ export async function fetchMasterEntriesForLecturer(lecturerId: string): Promise
   return entries as TimetableSlot[];
 }
 
-/** Keep LecturerScheduleSlot TEACHING rows aligned with master timetable (for availability/booking). */
+export interface TeachingBlock {
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  label: string | null;
+  location: string | null;
+}
+
+function dedupeTeachingBlocks(blocks: TeachingBlock[]): TeachingBlock[] {
+  const byKey = new Map<string, TeachingBlock>();
+  for (const block of blocks) {
+    const key = `${block.dayOfWeek}|${block.startTime}|${block.endTime}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...block });
+      continue;
+    }
+    if (block.label) {
+      if (!existing.label) {
+        existing.label = block.label;
+      } else if (!existing.label.includes(block.label)) {
+        existing.label = `${existing.label}; ${block.label}`;
+      }
+    }
+    if (block.location && !existing.location) {
+      existing.location = block.location;
+    }
+  }
+  return [...byKey.values()].sort(
+    (a, b) => a.dayOfWeek.localeCompare(b.dayOfWeek) || a.startTime.localeCompare(b.startTime),
+  );
+}
+
+async function fetchLatestPublishedBatchGrids(): Promise<
+  { groupName: string; grid: TimetableGridSnapshot }[]
+> {
+  const snapshots = await prisma.timetableTableSnapshot.findMany({
+    where: { isPublished: true },
+    select: { groupName: true, gridData: true, importedAt: true },
+    orderBy: [{ groupName: 'asc' }, { importedAt: 'desc' }],
+  });
+
+  const byGroup = new Map<string, { groupName: string; grid: TimetableGridSnapshot }>();
+  for (const snap of snapshots) {
+    const key = snap.groupName.trim().toUpperCase();
+    if (byGroup.has(key)) continue;
+    byGroup.set(key, {
+      groupName: snap.groupName,
+      grid: normalizeGridSnapshot(snap.gridData as unknown as TimetableGridSnapshot),
+    });
+  }
+  return [...byGroup.values()];
+}
+
+function slotRefMatchesLecturer(
+  ref: GridSlotRef,
+  lecturer: { id: string; firstName: string; lastName: string },
+  codes: string[],
+  index: LecturerDisplayIndex,
+): boolean {
+  const raw = ref.lecturerName?.trim();
+  if (!raw) return false;
+
+  const fullName = `${lecturer.firstName} ${lecturer.lastName}`.trim();
+  const fullLower = fullName.toLowerCase();
+  const rawLower = raw.toLowerCase();
+
+  if (rawLower === fullLower) return true;
+  if (rawLower.includes(fullLower) || fullLower.includes(rawLower)) return true;
+
+  if (codes.some((c) => c.toUpperCase() === raw.toUpperCase())) return true;
+
+  const matchedId =
+    matchLecturerFromSheetCode(raw, index.idByCode) ?? matchLecturerByInitials(raw, index.idByCode);
+  if (matchedId === lecturer.id) return true;
+
+  const resolved = resolveLecturerDisplayName(raw, index);
+  if (resolved && resolved.toLowerCase() === fullLower) return true;
+
+  return false;
+}
+
+/**
+ * Teaching blocks from every batch timetable: master_timetable rows plus every
+ * published FET grid snapshot (all groups, all days). Ensures no lecturer slot
+ * is missed when students view availability or book appointments.
+ */
+export async function fetchTeachingBlocksForLecturer(lecturerId: string): Promise<TeachingBlock[]> {
+  const lecturer = await prisma.user.findUnique({
+    where: { id: lecturerId },
+    select: { id: true, firstName: true, lastName: true, timetableCode: true },
+  });
+  if (!lecturer) return [];
+
+  const codes = lecturerCodesFromName(lecturer.firstName, lecturer.lastName, lecturer.timetableCode);
+  const index = await getLecturerDisplayIndex();
+  const blocks: TeachingBlock[] = [];
+
+  const masterEntries = await fetchMasterEntriesForLecturer(lecturerId);
+  for (const entry of masterEntries) {
+    if (
+      !lecturerOwnsMasterSlot(lecturerId, codes, {
+        lecturerId: entry.lecturer.id,
+        lecturerInitials: entry.lecturerInitials,
+      })
+    ) {
+      continue;
+    }
+    blocks.push({
+      dayOfWeek: entry.dayOfWeek as DayOfWeek,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      label: entry.course.name || entry.course.code,
+      location: entry.hall.name,
+    });
+  }
+
+  const batchGrids = await fetchLatestPublishedBatchGrids();
+  for (const { grid } of batchGrids) {
+    const refs = extractSlotRefsFromGridSnapshot(grid);
+    for (const ref of refs) {
+      if (!slotRefMatchesLecturer(ref, lecturer, codes, index)) continue;
+      blocks.push({
+        dayOfWeek: ref.dayOfWeek as DayOfWeek,
+        startTime: ref.startTime,
+        endTime: ref.endTime,
+        label: ref.courseName || null,
+        location: ref.hallName || null,
+      });
+    }
+  }
+
+  return dedupeTeachingBlocks(blocks);
+}
+
+/** Keep LecturerScheduleSlot TEACHING rows aligned with all batch timetables. */
 export async function syncTeachingScheduleFromMaster(lecturerId: string): Promise<void> {
-  const flat = await fetchMasterEntriesForLecturer(lecturerId);
+  const blocks = await fetchTeachingBlocksForLecturer(lecturerId);
 
   await prisma.$transaction(async (tx) => {
     await tx.lecturerScheduleSlot.deleteMany({ where: { lecturerId, slotType: 'TEACHING' } });
-    if (flat.length > 0) {
+    if (blocks.length > 0) {
       await tx.lecturerScheduleSlot.createMany({
-        data: flat.map((e) => ({
+        data: blocks.map((e) => ({
           lecturerId,
-          dayOfWeek: e.dayOfWeek as DayOfWeek,
+          dayOfWeek: e.dayOfWeek,
           startTime: e.startTime,
           endTime: e.endTime,
           slotType: 'TEACHING' as const,
-          label: e.course.name,
-          location: e.hall.name,
+          label: e.label,
+          location: e.location,
         })),
       });
     }

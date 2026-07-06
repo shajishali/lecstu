@@ -299,7 +299,7 @@ export default function LecturerProfile() {
       <div className="lecprof-avail-section">
         <h2>Weekly Availability</h2>
         <p className="lecprof-avail-hint">
-          Only green slots are available for booking. Teaching, busy blocks, and existing meetings are blocked.
+          Teaching times are loaded from every batch timetable. Only green slots are available for booking.
         </p>
         <div className="lecprof-legend">
           <span className="lecprof-legend-item"><span className="lecprof-dot free" /> Free (bookable)</span>

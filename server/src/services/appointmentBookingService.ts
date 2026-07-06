@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
+import { fetchTeachingBlocksForLecturer } from './lecturerTimetableService';
 
 const MIN_NOTICE_HOURS = 24;
 const DAY_NAMES = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -68,17 +69,26 @@ export async function validateBooking(
   const startMinutes = timeToMinutes(startTimeStr);
   const endMinutes = timeToMinutes(endTimeStr);
 
-  // 5. Check lecturer busy/teaching blocks (lecturer-managed schedule, not FET import)
-  const busySlots = await prisma.lecturerScheduleSlot.findMany({
-    where: {
-      lecturerId,
-      dayOfWeek: dayOfWeek as never,
-      slotType: { in: ['TEACHING', 'BUSY'] },
-    },
-    select: { startTime: true, endTime: true, label: true },
-  });
+  // 5. Check teaching (all batch timetables) + lecturer personal busy blocks
+  const [teachingBlocks, personalBusy] = await Promise.all([
+    fetchTeachingBlocksForLecturer(lecturerId),
+    prisma.lecturerScheduleSlot.findMany({
+      where: {
+        lecturerId,
+        dayOfWeek: dayOfWeek as never,
+        slotType: 'BUSY',
+      },
+      select: { startTime: true, endTime: true, label: true },
+    }),
+  ]);
 
-  for (const slot of busySlots) {
+  const dayTeaching = teachingBlocks.filter((b) => b.dayOfWeek === dayOfWeek);
+  const blockingSlots = [
+    ...dayTeaching.map((b) => ({ startTime: b.startTime, endTime: b.endTime, label: b.label })),
+    ...personalBusy,
+  ];
+
+  for (const slot of blockingSlots) {
     const slotStart = timeToMinutes(slot.startTime);
     const slotEnd = timeToMinutes(slot.endTime);
     if (startMinutes < slotEnd && endMinutes > slotStart) {
