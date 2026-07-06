@@ -1,7 +1,6 @@
 import prisma from '../config/database';
 import { invalidateAll } from './timetableCache';
 import {
-  rewriteGridCellsFromSlotRefs,
   extractSlotRefsFromGridSnapshot,
   mergeSlotRefSources,
   normalizeGridSnapshot,
@@ -11,7 +10,6 @@ import { parseFetCellContent, mergeConsecutiveSlots, type ParsedTimetableRow } f
 import { isFetLecturerCodeToken } from './lecturerInitialsMatch';
 import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
-  getLecturerDisplayIndex,
   linkLecturersFromSheetInitials,
   invalidateLecturerDisplayIndex,
 } from './lecturerDisplayService';
@@ -448,7 +446,6 @@ export async function repairAllTimetableDetailsFromGrids(): Promise<{
 }> {
   invalidateLecturerDisplayIndex();
   const { linked: lecturersLinked } = await linkLecturersFromSheetInitials();
-  const lecturerDisplay = await getLecturerDisplayIndex(true);
 
   const snapshots = await prisma.timetableTableSnapshot.findMany({
     select: { id: true, groupName: true, gridData: true },
@@ -483,27 +480,6 @@ export async function repairAllTimetableDetailsFromGrids(): Promise<{
     masterUpdated += masterResult.updated;
     stillMissingLecturer += masterResult.stillMissingLect;
     stillMissingHall += masterResult.stillMissingHall;
-
-    const refreshed = await prisma.masterTimetable.findMany({
-      where: {
-        isActive: true,
-        group: { name: { equals: snap.groupName, mode: 'insensitive' } },
-      },
-      include: {
-        course: { select: { name: true } },
-        hall: { select: { name: true } },
-        lecturer: { select: { firstName: true, lastName: true, email: true } },
-      },
-    });
-    slotRefs = backfillSlotRefsForGroup(snap.groupName, refreshed.map(slotRefFromEntry));
-    slotRefs = enrichSlotRefsFromGridParser(grid, slotRefs);
-
-    const rewritten = rewriteGridCellsFromSlotRefs(grid, slotRefs, { lecturerDisplay });
-
-    await prisma.timetableTableSnapshot.update({
-      where: { id: snap.id },
-      data: { gridData: rewritten as object },
-    });
     repaired++;
   }
 

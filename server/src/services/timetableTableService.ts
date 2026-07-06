@@ -208,11 +208,15 @@ export async function listTableSnapshots(filters?: {
 async function enrichSnapshotGrid(
   grid: TimetableGridSnapshot,
   groupName: string,
+  period?: { year: number; month: number; week: number },
 ): Promise<TimetableGridSnapshot> {
   const slots = await prisma.masterTimetable.findMany({
     where: {
       isActive: true,
       group: { name: { equals: groupName, mode: 'insensitive' } },
+      ...(period
+        ? { year: period.year, month: period.month, week: period.week }
+        : {}),
     },
     include: {
       course: { select: { name: true } },
@@ -247,7 +251,16 @@ export async function getTableSnapshotById(id: string): Promise<TimetableGridSna
   const row = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
   if (!row) return null;
   const grid = row.gridData as unknown as TimetableGridSnapshot;
-  return enrichSnapshotGrid(grid, row.groupName);
+  // Admin editor: return stored grid as-is (enrich on read overwrote manual P/T and course edits).
+  return normalizeGridSnapshot({
+    ...grid,
+    tableTitle: grid.tableTitle || row.tableTitle,
+    groupName: row.groupName,
+    year: grid.year ?? row.year,
+    month: grid.month ?? row.month,
+    week: grid.week ?? row.week,
+    semester: grid.semester ?? row.semester,
+  });
 }
 
 export async function getPublishedGridForGroup(
@@ -288,7 +301,11 @@ export async function getPublishedGridForGroup(
     }));
   if (!fallbackRow) return null;
   const grid = fallbackRow.gridData as unknown as TimetableGridSnapshot;
-  return enrichSnapshotGrid(grid, fallbackRow.groupName);
+  return enrichSnapshotGrid(grid, fallbackRow.groupName, {
+    year: fallbackRow.year,
+    month: fallbackRow.month,
+    week: fallbackRow.week,
+  });
 }
 
 export async function updateSnapshotSlotCount(groupName: string, year: number, month: number, week: number, count: number) {

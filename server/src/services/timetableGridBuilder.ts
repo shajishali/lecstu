@@ -648,15 +648,17 @@ export function mergeFetDisplayLines(
   existing = dedupeFetLines(existing);
   fromSlot = dedupeFetLines(fromSlot);
 
-  let bestCourse = '';
-  for (const line of fromSlot) {
-    if (COURSE_CODE_RE.test(line)) bestCourse = line;
-  }
-  if (!bestCourse) {
-    for (const line of existing) {
-      if (COURSE_CODE_RE.test(line) && line.length > bestCourse.length) bestCourse = line;
+  let bestCourseFromExisting = '';
+  for (const line of existing) {
+    if (COURSE_CODE_RE.test(line) && line.length >= bestCourseFromExisting.length) {
+      bestCourseFromExisting = line;
     }
   }
+  let bestCourseFromSlot = '';
+  for (const line of fromSlot) {
+    if (COURSE_CODE_RE.test(line)) bestCourseFromSlot = line;
+  }
+  let bestCourse = bestCourseFromExisting || bestCourseFromSlot;
   if (!bestCourse) {
     for (const line of existing) {
       const t = line.trim();
@@ -879,7 +881,11 @@ export function mergeSlotRefSources(gridRefs: GridSlotRef[], dbRefs: GridSlotRef
     }
     byKey.set(key, {
       ...prev,
-      courseName: g.courseName.length > prev.courseName.length ? g.courseName : prev.courseName,
+      courseName:
+        g.courseName.length > prev.courseName.length ||
+        (g.courseName.length === prev.courseName.length && g.courseName !== prev.courseName)
+          ? g.courseName
+          : prev.courseName,
       hallName: mergeHallNames(prev.hallName, g.hallName),
       lecturerName: prev.lecturerName || g.lecturerName,
       hallIsShared: g.hallIsShared === true || prev.hallIsShared === true,

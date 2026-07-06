@@ -116,8 +116,10 @@ export function buildCellFromEditable(data: EditableCellData): TimetableGridCell
   const courseLine = (() => {
     if (!sub) return code;
     if (!code) return sub;
-    if (/\s[TP]\s*$/i.test(sub)) return sub;
     if (/\s[TP]\s*$/i.test(code)) return code;
+    if (/\s[TP]\s*$/i.test(sub)) return sub;
+    if (/\s[TP]$/i.test(code)) return code;
+    if (/\s[TP]$/i.test(sub)) return sub;
     return sub.length >= code.length ? sub : code;
   })();
   if (courseLine) lines.push(courseLine);

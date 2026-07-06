@@ -438,7 +438,16 @@ export default function EditableFetTimetableGrid({
                 Course code
                 <AutocompleteInput
                   value={form.courseCode}
-                  onChange={(courseCode) => updateForm({ courseCode })}
+                  onChange={(courseCode) =>
+                    updateForm((f) => ({
+                      ...f,
+                      courseCode,
+                      subjectName:
+                        !f.subjectName.trim() || f.subjectName.trim() === f.courseCode.trim()
+                          ? courseCode
+                          : f.subjectName,
+                    }))
+                  }
                   options={courseOptions}
                   placeholder="e.g. BTEC 12062"
                 />
