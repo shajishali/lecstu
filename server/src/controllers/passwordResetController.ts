@@ -13,6 +13,7 @@ import {
 import { sendPasswordResetCodeEmail, getEmailServiceMode, maskEmail } from '../services/emailService';
 import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
 import { config } from '../config';
+import { getUniversityDeliveryWarning, isUniversityEmail } from '../utils/emailDomains';
 
 const GENERIC_FORGOT_MESSAGE =
   'If that email is registered, we sent a reset code. Check your inbox and spam folder.';
@@ -48,44 +49,69 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
     let sentToMasked: string | undefined;
     let emailDelivered = false;
     let devResetCode: string | undefined;
+    let deliveryWarning: string | undefined;
+    let smtpError: string | undefined;
+    let deliveryEmail: string | undefined;
+    let code: string | undefined;
 
     if (user) {
-      const deliveryEmail = getPasswordResetDeliveryEmail(user);
+      deliveryEmail = getPasswordResetDeliveryEmail(user);
+      const token = await createResetToken(user.id);
+      code = token.code;
+
       try {
-        const { code } = await createResetToken(user.id);
         const delivery = await sendPasswordResetCodeEmail({
           to: deliveryEmail,
           firstName: user.firstName,
           code,
           expiryMinutes: RESET_CODE_EXPIRY_MINUTES,
         });
-        if (!delivery.delivered) {
-          logEmailVerificationEvent('forgot-password', req, { userId: user.id, success: false });
+        emailDelivered = delivery.delivered;
+        deliveryWarning = delivery.deliveryWarning || undefined;
+        logEmailVerificationEvent('forgot-password', req, {
+          userId: user.id,
+          success: delivery.delivered,
+        });
+        if (delivery.delivered) {
+          sentToMasked = maskEmail(deliveryEmail);
+          console.log(`[LECSTU][password-reset] Reset code emailed to ${deliveryEmail}`);
+        } else {
           console.warn(
             `[LECSTU][password-reset] Email not sent via SMTP (mode=${delivery.mode}). ` +
               'Disable "Console mode" in Admin → Settings, or check API terminal for the code.',
           );
-          if (config.nodeEnv !== 'production') {
-            devResetCode = code;
-          }
-        } else {
-          emailDelivered = true;
-          sentToMasked = maskEmail(deliveryEmail);
-          logEmailVerificationEvent('forgot-password', req, { userId: user.id, success: true });
-          console.log(`[LECSTU][password-reset] Reset code emailed to ${deliveryEmail}`);
         }
       } catch (err) {
         logEmailVerificationEvent('forgot-password', req, { userId: user.id, success: false });
+        smtpError = err instanceof Error ? err.message : 'SMTP send failed';
         console.error('[LECSTU][password-reset] Failed to send reset email:', err);
       }
     }
 
+    const isDev = config.nodeEnv !== 'production';
+    if (isDev && user && code) {
+      devResetCode = code;
+    }
+
+    const universityWarning = deliveryEmail ? getUniversityDeliveryWarning(deliveryEmail) : null;
+    const combinedWarning =
+      deliveryWarning ||
+      universityWarning ||
+      (!emailDelivered && isDev
+        ? 'Gmail SMTP login failed. Regenerate an app password for SMTP_USER in server/.env, then restart the server.'
+        : undefined);
+
     const emailMode = getEmailServiceMode();
     res.json({
       success: true,
-      message: GENERIC_FORGOT_MESSAGE,
-      ...(emailDelivered && sentToMasked ? { sentToMasked, emailDelivered: true } : {}),
-      ...(config.nodeEnv !== 'production' && {
+      message: emailDelivered
+        ? 'Reset code sent. Check your inbox and spam or junk folder.'
+        : user
+          ? 'Reset code generated. Email could not be delivered — use the code shown below or fix SMTP settings.'
+          : GENERIC_FORGOT_MESSAGE,
+      ...(emailDelivered && sentToMasked ? { sentToMasked, emailDelivered: true } : { emailDelivered: false }),
+      ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
+      ...(isDev && {
         devDelivery: emailMode,
         devResetCode,
         accountFound: Boolean(user),
@@ -95,11 +121,11 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
             ? 'Console mode is ON — email was not sent. Turn off "Console mode" in Admin → Settings, or use the dev code below.'
             : emailDelivered
               ? user?.recoveryEmail
-                ? 'SMTP accepted the message. Reset codes go to your recovery email (not your university inbox).'
-                : 'SMTP accepted the message. @stu.kln.ac.lk uses Microsoft Outlook — check Junk Email and Quarantine, or add a personal recovery email in Profile.'
-              : emailMode === 'smtp'
-                ? 'Account found but email send failed. Check server logs or use the dev code below.'
-                : 'SMTP not configured — set credentials in Admin → Settings → Email verification.',
+                ? 'Reset code sent to your recovery email inbox.'
+                : deliveryEmail && isUniversityEmail(deliveryEmail)
+                  ? 'Code sent from LECSTU. University Outlook may quarantine external mail — also use the dev code below if needed.'
+                  : 'Reset code sent. Check inbox and spam.'
+              : 'Email not sent — use the dev code below or check SMTP settings in server/.env.',
       }),
     });
   } catch (err) {

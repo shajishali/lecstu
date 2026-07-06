@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import dotenv from 'dotenv';
+import path from 'path';
+import { isExternalSenderForUniversityInbox, isUniversityEmail } from '../utils/emailDomains';
 import {
   getEmailRuntimeConfig,
   getEmailAdminSettings,
@@ -8,12 +11,21 @@ import {
 } from './emailConfigStore';
 
 export type EmailServiceMode = 'smtp' | 'console' | 'unconfigured';
+export type EmailSmtpProfile = 'default' | 'university';
 
 export interface SendMailOptions {
   to: string;
   subject: string;
   text: string;
   html: string;
+}
+
+export interface SendMailResult {
+  delivered: boolean;
+  mode: EmailServiceMode;
+  messageId?: string;
+  smtpProfile?: EmailSmtpProfile;
+  deliveryWarning?: string;
 }
 
 export interface EmailServiceStatus {
@@ -29,6 +41,9 @@ export interface EmailServiceStatus {
   senderMasked: string;
   smtpDisabled: boolean;
   hasAppPassword: boolean;
+  universitySmtpConfigured: boolean;
+  universitySmtpHost: string;
+  universitySmtpUser: string;
 }
 
 export interface PasswordResetEmailParams {
@@ -54,7 +69,52 @@ export interface RegistrationVerificationEmailParams {
   expiryMinutes: number;
 }
 
-let transporter: Transporter | null = null;
+let defaultTransporter: Transporter | null = null;
+let universityTransporter: Transporter | null = null;
+
+const ENV_PATH = path.resolve(__dirname, '../../.env');
+
+function reloadEnv(): void {
+  dotenv.config({ path: ENV_PATH, override: true });
+}
+
+function getUniversityRuntimeConfig(): EmailRuntimeConfig {
+  reloadEnv();
+  return {
+    smtpHost: process.env.SMTP_UNIVERSITY_HOST || '',
+    smtpPort: parseInt(process.env.SMTP_UNIVERSITY_PORT || '587', 10),
+    smtpSecure: process.env.SMTP_UNIVERSITY_SECURE === 'true',
+    smtpUser: process.env.SMTP_UNIVERSITY_USER || '',
+    smtpPass: process.env.SMTP_UNIVERSITY_PASS || '',
+    mailFrom: process.env.SMTP_UNIVERSITY_MAIL_FROM || process.env.MAIL_FROM || 'LECSTU <lecstu.system@gmail.com>',
+    smtpDisabled: false,
+  };
+}
+
+export function isUniversitySmtpConfigured(): boolean {
+  const university = getUniversityRuntimeConfig();
+  return Boolean(university.smtpHost && university.smtpUser && university.smtpPass);
+}
+
+function isProfileConfigured(profile: EmailSmtpProfile, runtime: EmailRuntimeConfig): boolean {
+  if (profile === 'university') {
+    return isUniversitySmtpConfigured();
+  }
+  return Boolean(
+    !runtime.smtpDisabled && runtime.smtpHost && runtime.smtpUser && runtime.smtpPass,
+  );
+}
+
+export function resolveSmtpProfile(recipientEmail: string): EmailSmtpProfile {
+  if (isUniversitySmtpConfigured() && isUniversityEmail(recipientEmail)) {
+    return 'university';
+  }
+  return 'default';
+}
+
+function getRuntimeConfigForProfile(profile: EmailSmtpProfile): EmailRuntimeConfig {
+  return profile === 'university' ? getUniversityRuntimeConfig() : getConfig();
+}
 
 export function maskEmail(email: string): string {
   const trimmed = email.trim();
@@ -75,7 +135,16 @@ function getConfig(): EmailRuntimeConfig {
 }
 
 export function clearEmailTransporter(): void {
-  transporter = null;
+  defaultTransporter = null;
+  universityTransporter = null;
+}
+
+function clearProfileTransporter(profile: EmailSmtpProfile): void {
+  if (profile === 'university') {
+    universityTransporter = null;
+  } else {
+    defaultTransporter = null;
+  }
 }
 
 export function isSmtpConfigured(): boolean {
@@ -91,7 +160,7 @@ export function isSmtpConfigured(): boolean {
 export function getEmailServiceMode(): EmailServiceMode {
   const email = getConfig();
   if (email.smtpDisabled) return 'console';
-  if (isSmtpConfigured()) return 'smtp';
+  if (isSmtpConfigured() || isUniversitySmtpConfigured()) return 'smtp';
   return 'unconfigured';
 }
 
@@ -100,6 +169,7 @@ export function getEmailServiceStatus(): EmailServiceStatus {
   const admin = getEmailAdminSettings();
   const mode = getEmailServiceMode();
   const senderSource = email.smtpUser || extractFromAddress(email.mailFrom);
+  const university = getUniversityRuntimeConfig();
 
   return {
     label: 'Email (password reset)',
@@ -114,49 +184,83 @@ export function getEmailServiceStatus(): EmailServiceStatus {
     senderMasked: senderSource ? maskEmail(senderSource) : 'Not configured',
     smtpDisabled: email.smtpDisabled,
     hasAppPassword: admin.hasAppPassword,
+    universitySmtpConfigured: isUniversitySmtpConfigured(),
+    universitySmtpHost: university.smtpHost,
+    universitySmtpUser: university.smtpUser,
   };
 }
 
-function getTransporter(): Transporter {
-  if (!isSmtpConfigured()) {
-    throw new Error('SMTP is not configured. Set SMTP credentials in Admin Settings or server/.env.');
+function getTransporter(profile: EmailSmtpProfile): Transporter {
+  const runtime = getRuntimeConfigForProfile(profile);
+  if (!isProfileConfigured(profile, runtime)) {
+    throw new Error(
+      profile === 'university'
+        ? 'University SMTP is not configured. Set SMTP_UNIVERSITY_* in server/.env.'
+        : 'SMTP is not configured. Set SMTP credentials in Admin Settings or server/.env.',
+    );
   }
-  if (!transporter) {
-    const email = getConfig();
-    transporter = nodemailer.createTransport({
-      host: email.smtpHost,
-      port: email.smtpPort,
-      secure: email.smtpSecure,
+
+  if (profile === 'university') {
+    if (!universityTransporter) {
+      universityTransporter = nodemailer.createTransport({
+        host: runtime.smtpHost,
+        port: runtime.smtpPort,
+        secure: runtime.smtpSecure,
+        auth: {
+          user: runtime.smtpUser,
+          pass: runtime.smtpPass,
+        },
+      });
+    }
+    return universityTransporter;
+  }
+
+  if (!defaultTransporter) {
+    defaultTransporter = nodemailer.createTransport({
+      host: runtime.smtpHost,
+      port: runtime.smtpPort,
+      secure: runtime.smtpSecure,
       auth: {
-        user: email.smtpUser,
-        pass: email.smtpPass,
+        user: runtime.smtpUser,
+        pass: runtime.smtpPass,
       },
     });
   }
-  return transporter;
+  return defaultTransporter;
 }
 
-export async function sendMail(options: SendMailOptions): Promise<{ delivered: boolean; mode: EmailServiceMode; messageId?: string }> {
-  clearEmailTransporter();
+export async function sendMail(options: SendMailOptions): Promise<SendMailResult> {
   const mode = getEmailServiceMode();
+  const smtpProfile = resolveSmtpProfile(options.to);
+  const runtime = getRuntimeConfigForProfile(smtpProfile);
+  clearProfileTransporter(smtpProfile);
+  const deliveryWarning =
+    smtpProfile === 'default' &&
+    isExternalSenderForUniversityInbox(options.to, runtime.smtpUser || extractFromAddress(runtime.mailFrom))
+      ? 'University Outlook may quarantine mail from external senders. Check Junk and Quarantine in Outlook.'
+      : undefined;
 
   if (mode === 'console' || mode === 'unconfigured') {
     console.log('[LECSTU][email] ─── console mode (SMTP disabled or missing credentials) ───');
     console.log(`[LECSTU][email] To: ${options.to}`);
     console.log(`[LECSTU][email] Subject: ${options.subject}`);
     console.log(`[LECSTU][email] Text:\n${options.text}`);
-    return { delivered: false, mode: mode === 'console' ? 'console' : 'unconfigured' };
+    return {
+      delivered: false,
+      mode: mode === 'console' ? 'console' : 'unconfigured',
+      smtpProfile,
+      deliveryWarning,
+    };
   }
 
-  const email = getConfig();
-  const fromAddress = extractFromAddress(email.mailFrom);
+  const fromAddress = extractFromAddress(runtime.mailFrom);
   try {
-    const info = await getTransporter().sendMail({
-      from: email.mailFrom,
+    const info = await getTransporter(smtpProfile).sendMail({
+      from: runtime.mailFrom,
       to: options.to,
       replyTo: fromAddress,
       envelope: {
-        from: email.smtpUser || fromAddress,
+        from: runtime.smtpUser || fromAddress,
         to: options.to,
       },
       subject: options.subject,
@@ -171,12 +275,18 @@ export async function sendMail(options: SendMailOptions): Promise<{ delivered: b
     });
     const messageId = typeof info.messageId === 'string' ? info.messageId : undefined;
     console.log(
-      `[LECSTU][email] Sent to ${options.to} via SMTP` +
+      `[LECSTU][email] Sent to ${options.to} via ${smtpProfile} SMTP` +
         (messageId ? ` (messageId=${messageId})` : ''),
     );
-    return { delivered: true, mode: 'smtp', messageId };
+    return {
+      delivered: true,
+      mode: 'smtp',
+      messageId,
+      smtpProfile,
+      deliveryWarning,
+    };
   } catch (err) {
-    clearEmailTransporter();
+    clearProfileTransporter(smtpProfile);
     throw err;
   }
 }
@@ -212,7 +322,7 @@ export function buildPasswordResetEmail(params: PasswordResetEmailParams): SendM
 
 export async function sendPasswordResetCodeEmail(
   params: PasswordResetEmailParams,
-): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
+): Promise<SendMailResult> {
   const mail = buildPasswordResetEmail(params);
   return sendMail(mail);
 }
@@ -253,7 +363,7 @@ export function buildProfilePasswordChangeAdminEmail(
 
 export async function sendProfilePasswordChangeAdminEmail(
   params: ProfilePasswordChangeAdminEmailParams,
-): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
+): Promise<SendMailResult> {
   const mail = buildProfilePasswordChangeAdminEmail(params);
   return sendMail(mail);
 }
@@ -291,12 +401,12 @@ export function buildRegistrationVerificationEmail(
 
 export async function sendRegistrationVerificationEmail(
   params: RegistrationVerificationEmailParams,
-): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
+): Promise<SendMailResult> {
   const mail = buildRegistrationVerificationEmail(params);
   return sendMail(mail);
 }
 
-export async function sendTestEmail(to: string): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
+export async function sendTestEmail(to: string): Promise<SendMailResult> {
   const code = '123456';
   return sendPasswordResetCodeEmail({
     to,

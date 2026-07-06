@@ -4,6 +4,7 @@ export interface SendRegistrationCodeResult {
   message: string;
   sentToMasked?: string;
   emailDelivered?: boolean;
+  deliveryWarning?: string;
   devHint?: string;
   devDelivery?: 'smtp' | 'console' | 'unconfigured';
   devVerificationCode?: string;
@@ -12,25 +13,27 @@ export interface SendRegistrationCodeResult {
 export async function sendRegistrationCode(payload: {
   email: string;
   firstName?: string;
-  recoveryEmail?: string;
+  recoveryEmail: string;
 }): Promise<SendRegistrationCodeResult> {
   const res = await api.post<{
     success: boolean;
     message: string;
     sentToMasked?: string;
     emailDelivered?: boolean;
+    deliveryWarning?: string;
     devHint?: string;
     devDelivery?: 'smtp' | 'console' | 'unconfigured';
     devVerificationCode?: string;
   }>('/auth/registration/send-code', {
     email: payload.email.trim(),
     firstName: payload.firstName?.trim() || undefined,
-    recoveryEmail: payload.recoveryEmail?.trim() || undefined,
+    recoveryEmail: payload.recoveryEmail.trim(),
   });
   return {
     message: res.data.message,
     sentToMasked: res.data.sentToMasked,
     emailDelivered: res.data.emailDelivered,
+    deliveryWarning: res.data.deliveryWarning,
     devHint: res.data.devHint,
     devDelivery: res.data.devDelivery,
     devVerificationCode: res.data.devVerificationCode,
@@ -48,6 +51,7 @@ export interface ForgotPasswordResult {
   message: string;
   sentToMasked?: string;
   emailDelivered?: boolean;
+  deliveryWarning?: string;
   accountFound?: boolean;
   devHint?: string;
   devDelivery?: 'smtp' | 'console' | 'unconfigured';
@@ -60,6 +64,7 @@ export async function forgotPassword(email: string): Promise<ForgotPasswordResul
     message: string;
     sentToMasked?: string;
     emailDelivered?: boolean;
+    deliveryWarning?: string;
     accountFound?: boolean;
     devHint?: string;
     devDelivery?: 'smtp' | 'console' | 'unconfigured';
@@ -71,6 +76,7 @@ export async function forgotPassword(email: string): Promise<ForgotPasswordResul
     message: res.data.message,
     sentToMasked: res.data.sentToMasked,
     emailDelivered: res.data.emailDelivered,
+    deliveryWarning: res.data.deliveryWarning,
     accountFound: res.data.accountFound,
     devHint: res.data.devHint,
     devDelivery: res.data.devDelivery,

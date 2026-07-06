@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { config } from '../config';
+import dotenv from 'dotenv';
 
 export interface EmailRuntimeConfig {
   smtpHost: string;
@@ -17,17 +17,22 @@ export interface EmailAdminSettings extends EmailRuntimeConfig {
 }
 
 const SETTINGS_PATH = path.resolve(__dirname, '../../data/email-settings.json');
+const ENV_PATH = path.resolve(__dirname, '../../.env');
+
+function reloadEnv(): void {
+  dotenv.config({ path: ENV_PATH, override: true });
+}
 
 function loadFromEnv(): EmailRuntimeConfig {
-  const { email } = config;
+  reloadEnv();
   return {
-    smtpHost: email.smtpHost,
-    smtpPort: email.smtpPort,
-    smtpSecure: email.smtpSecure,
-    smtpUser: email.smtpUser,
-    smtpPass: email.smtpPass,
-    mailFrom: email.mailFrom,
-    smtpDisabled: email.smtpDisabled,
+    smtpHost: (process.env.SMTP_HOST || '').trim(),
+    smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
+    smtpSecure: process.env.SMTP_SECURE === 'true',
+    smtpUser: (process.env.SMTP_USER || '').trim(),
+    smtpPass: (process.env.SMTP_PASS || '').replace(/\s+/g, ''),
+    mailFrom: (process.env.MAIL_FROM || 'LECSTU <lecstu.system@gmail.com>').trim(),
+    smtpDisabled: process.env.SMTP_DISABLED === 'true',
   };
 }
 

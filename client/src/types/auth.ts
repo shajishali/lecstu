@@ -31,7 +31,7 @@ export interface RegisterRequest {
   lastName: string;
   role: UserRole;
   verificationCode: string;
-  recoveryEmail?: string;
+  recoveryEmail: string;
   departmentId?: string;
   phone?: string;
   /** Student only */
@@ -54,6 +54,19 @@ export interface RegisterOptionsProgram {
     pathwayCode?: string;
     batchYearLabel?: string;
   }[];
+}
+
+export interface RegisterOptionsEmail {
+  universityDomains: string[];
+  universitySmtpConfigured: boolean;
+}
+
+export function isUniversityLoginEmail(email: string, universityDomains: string[]): boolean {
+  const domain = email.trim().toLowerCase().match(/@([^@]+)$/)?.[1];
+  if (!domain) return false;
+  return universityDomains.some(
+    (universityDomain) => domain === universityDomain || domain.endsWith(`.${universityDomain}`),
+  );
 }
 
 export interface AuthResponse {

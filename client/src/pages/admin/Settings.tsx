@@ -39,6 +39,7 @@ interface EmailVerificationStatus extends ServiceStatus {
   senderMasked: string;
   smtpDisabled: boolean;
   hasAppPassword: boolean;
+  universitySmtpConfigured?: boolean;
 }
 
 interface AdminSettings {
@@ -436,8 +437,24 @@ export default function Settings() {
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <p className="font-medium">Phase 12 — sender mailbox (Gmail or Outlook)</p>
             <p className="mt-1 text-amber-800">
-              Users receive codes at their <strong>registered email</strong> (Gmail, Outlook, or
-              university mail). Configure the one system sender below.
+              Users receive codes at their <strong>registered email</strong> (Gmail, Outlook) or at a
+              personal <strong>recovery email</strong> when they register with @stu.kln.ac.lk.
+            </p>
+            <p className="mt-2 text-amber-800">
+              Gmail often cannot deliver to university Outlook inboxes (Microsoft quarantines external
+              senders). To send codes directly to @stu.kln.ac.lk, set{' '}
+              <code className="rounded bg-amber-100 px-1">SMTP_UNIVERSITY_*</code> in{' '}
+              <code className="rounded bg-amber-100 px-1">server/.env</code> with an Office 365
+              @kln.ac.lk mailbox from IT.
+              {emailVerification.universitySmtpConfigured ? (
+                <span className="mt-1 block font-medium text-emerald-800">
+                  University SMTP is configured — @stu.kln.ac.lk registration codes use Office 365.
+                </span>
+              ) : (
+                <span className="mt-1 block font-medium">
+                  University SMTP is not configured — students must add a personal recovery email.
+                </span>
+              )}
             </p>
           </div>
 

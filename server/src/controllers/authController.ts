@@ -21,13 +21,24 @@ import {
   consumeRegistrationVerification,
 } from '../services/registrationVerificationService';
 import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
+import { config } from '../config';
+import { isUniversitySmtpConfigured } from '../services/emailService';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
 export async function getRegistrationOptions(_req: Request, res: Response) {
-  res.json({ success: true, data: await getRegisterOptions() });
+  res.json({
+    success: true,
+    data: {
+      ...(await getRegisterOptions()),
+      email: {
+        universityDomains: config.email.universityDomains,
+        universitySmtpConfigured: isUniversitySmtpConfigured(),
+      },
+    },
+  });
 }
 
 export async function register(req: Request, res: Response, next: NextFunction) {
@@ -85,11 +96,12 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       role === 'LECTURER' ? deriveTimetableCodeFromName(String(firstName), String(lastName)) : null;
 
     let normalizedRecovery: string | null = null;
-    if (recoveryEmail && String(recoveryEmail).trim()) {
-      normalizedRecovery = normalizeEmail(String(recoveryEmail));
-      if (normalizedRecovery === normalizedEmail) {
-        throw new AppError('Recovery email must be different from your login email', 400);
-      }
+    if (!recoveryEmail || !String(recoveryEmail).trim()) {
+      throw new AppError('Personal recovery email is required', 400);
+    }
+    normalizedRecovery = normalizeEmail(String(recoveryEmail));
+    if (normalizedRecovery === normalizedEmail) {
+      throw new AppError('Recovery email must be different from your login email', 400);
     }
 
     const user = await prisma.user.create({

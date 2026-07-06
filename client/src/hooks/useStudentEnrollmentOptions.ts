@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '@services/api';
-import type { RegisterOptionsProgram } from '../types/auth';
+import type { RegisterOptionsEmail, RegisterOptionsProgram } from '../types/auth';
 
 const YEARS_WITH_PATHWAY = ['Y3', 'Y4'];
 
@@ -25,20 +25,32 @@ export function isY1BatchEnrollmentReady(
 
 export function useStudentEnrollmentOptions() {
   const [programs, setPrograms] = useState<RegisterOptionsProgram[]>([]);
+  const [emailOptions, setEmailOptions] = useState<RegisterOptionsEmail>({
+    universityDomains: ['stu.kln.ac.lk', 'kln.ac.lk'],
+    universitySmtpConfigured: false,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
-      .get<{ success: boolean; data: { programs: RegisterOptionsProgram[] } }>(
-        '/auth/register-options',
-      )
-      .then((res) => setPrograms(res.data.data.programs))
+      .get<{
+        success: boolean;
+        data: { programs: RegisterOptionsProgram[]; email?: RegisterOptionsEmail };
+      }>('/auth/register-options')
+      .then((res) => {
+        setPrograms(res.data.data.programs);
+        if (res.data.data.email) {
+          setEmailOptions(res.data.data.email);
+        }
+      })
       .catch(() => setPrograms([]))
       .finally(() => setLoading(false));
   }, []);
 
-  return { programs, loading, yearsWithPathway: YEARS_WITH_PATHWAY };
+  return { programs, emailOptions, loading, yearsWithPathway: YEARS_WITH_PATHWAY };
 }
+
+export { isUniversityLoginEmail } from '../types/auth';
 
 export function useEnrollmentFields(
   programs: RegisterOptionsProgram[],

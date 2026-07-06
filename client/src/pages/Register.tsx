@@ -90,6 +90,8 @@ export default function Register() {
   const [sentToMasked, setSentToMasked] = useState('');
   const [codeHint, setCodeHint] = useState('');
   const [devVerificationCode, setDevVerificationCode] = useState('');
+  const [emailDelivered, setEmailDelivered] = useState(false);
+  const [deliveryWarning, setDeliveryWarning] = useState('');
 
   const { yearOptions, needsPathway, pathwayOptions, batchYearOptions, groupOptions } = useEnrollmentFields(
     programs,
@@ -130,6 +132,8 @@ export default function Register() {
     setSentToMasked('');
     setCodeHint('');
     setDevVerificationCode('');
+    setEmailDelivered(false);
+    setDeliveryWarning('');
     setForm((prev) => ({ ...prev, verificationCode: '' }));
   };
 
@@ -182,8 +186,14 @@ export default function Register() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       return 'Enter a valid email address';
     }
-    if (form.recoveryEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.recoveryEmail.trim())) {
-      return 'Enter a valid recovery email';
+    if (!form.recoveryEmail.trim()) {
+      return 'Personal Gmail is required to receive your verification code';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.recoveryEmail.trim())) {
+      return 'Enter a valid personal Gmail address';
+    }
+    if (form.recoveryEmail.trim().toLowerCase() === form.email.trim().toLowerCase()) {
+      return 'Personal Gmail must be different from your login email';
     }
     return null;
   };
@@ -199,10 +209,12 @@ export default function Register() {
       const result = await sendRegistrationCode({
         email: form.email.trim(),
         firstName: form.firstName.trim(),
-        recoveryEmail: form.recoveryEmail.trim() || undefined,
+        recoveryEmail: form.recoveryEmail.trim(),
       });
       setCodeSent(true);
       setSentToMasked(result.sentToMasked ?? '');
+      setEmailDelivered(result.emailDelivered === true);
+      setDeliveryWarning(result.deliveryWarning ?? '');
       setCodeHint(result.devHint ?? result.message);
       setDevVerificationCode(result.devVerificationCode ?? '');
     } catch (err) {
@@ -277,7 +289,7 @@ export default function Register() {
         lastName: form.lastName.trim(),
         email: form.email.trim(),
         verificationCode: form.verificationCode.trim(),
-        recoveryEmail: form.recoveryEmail.trim() || undefined,
+        recoveryEmail: form.recoveryEmail.trim(),
         password: form.password,
         role: form.role,
         ...(form.role === 'STUDENT' && {
@@ -370,7 +382,7 @@ export default function Register() {
 
             <div className={fieldClass}>
               <label htmlFor="recoveryEmail" className={labelClass}>
-                Recovery email <span className="font-normal text-slate-700">(optional)</span>
+                Personal Gmail <span className="font-normal text-slate-700">(required)</span>
               </label>
               <input
                 id="recoveryEmail"
@@ -380,7 +392,12 @@ export default function Register() {
                 placeholder="your.personal@gmail.com"
                 autoComplete="email"
                 className={inputClass}
+                required
               />
+              <p className="mt-1 text-xs text-amber-800">
+                Verification codes are sent to this personal Gmail, not to your university Outlook
+                inbox.
+              </p>
             </div>
 
             <div className={`${formStackClass} rounded-lg border border-slate-200/80 bg-white/75 p-3`}>
@@ -401,19 +418,30 @@ export default function Register() {
             </button>
 
             {codeSent ? (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+              <div
+                className={`rounded-lg border px-3 py-2 text-xs ${
+                  emailDelivered
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                }`}
+              >
                 <div className="flex items-start gap-2">
                   <CheckCircle size={16} className="mt-0.5 shrink-0" />
                   <div className="min-w-0">
-                    {sentToMasked ? (
+                    {emailDelivered && sentToMasked ? (
                       <p className="font-medium">Code sent to {sentToMasked}</p>
                     ) : (
-                      <p className="font-medium">Verification code sent</p>
+                      <p className="font-medium">Verification code ready</p>
                     )}
-                    {codeHint ? <p className="mt-1 text-emerald-800">{codeHint}</p> : null}
-                    <p className="mt-1 text-emerald-800/90">
-                      Check spam or junk if the code doesn&apos;t arrive within a few minutes.
-                    </p>
+                    {codeHint ? <p className="mt-1">{codeHint}</p> : null}
+                    {deliveryWarning ? (
+                      <p className="mt-1 font-medium">{deliveryWarning}</p>
+                    ) : emailDelivered ? (
+                      <p className="mt-1">
+                        Check spam, junk, or Quarantine if the code doesn&apos;t arrive within a few
+                        minutes.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -422,10 +450,14 @@ export default function Register() {
             {devVerificationCode ? (
               <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  Local dev — verification code
+                  Development — use this verification code
                 </p>
                 <p className="mt-0.5 font-mono text-lg font-bold tracking-[0.35em] text-slate-900">
                   {devVerificationCode}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-600">
+                  Shown while running locally so registration works even if university Outlook
+                  quarantines the email.
                 </p>
               </div>
             ) : null}

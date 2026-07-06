@@ -21,6 +21,7 @@ export default function ForgotPassword() {
   const [devResetCode, setDevResetCode] = useState('');
   const [emailDelivered, setEmailDelivered] = useState(false);
   const [accountFound, setAccountFound] = useState<boolean | null>(null);
+  const [deliveryWarning, setDeliveryWarning] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,6 +46,7 @@ export default function ForgotPassword() {
       setDevResetCode(result.devResetCode ?? '');
       setEmailDelivered(result.emailDelivered === true);
       setAccountFound(result.accountFound ?? null);
+      setDeliveryWarning(result.deliveryWarning ?? '');
       setSubmitted(true);
     } catch (err) {
       showApiErrorToast(err, 'Failed to send reset code');
@@ -103,6 +105,9 @@ export default function ForgotPassword() {
                 {devHint ? (
                   <p className="mt-2 font-medium">{devHint}</p>
                 ) : null}
+                {deliveryWarning ? (
+                  <p className="mt-2 font-medium">{deliveryWarning}</p>
+                ) : null}
                 <p className="mt-2 text-slate-700/90">
                   Didn&apos;t receive it within a few minutes? Check your spam or junk folder.
                   University mail (@stu.kln.ac.lk) often quarantines external senders — use a personal
@@ -112,16 +117,17 @@ export default function ForgotPassword() {
             </div>
               );
             })()}
-            {devResetCode && !emailDelivered ? (
+            {devResetCode ? (
               <div className="rounded-lg border border-slate-200 bg-white/80 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Local dev — reset code
+                  Development — use this reset code
                 </p>
                 <p className="mt-2 font-mono text-2xl font-bold tracking-[0.35em] text-slate-900">
                   {devResetCode}
                 </p>
                 <p className="mt-2 text-xs text-slate-600">
-                  Shown only in development when email delivery failed or is slow.
+                  Shown while running locally so password reset works even if university Outlook
+                  quarantines the email.
                 </p>
               </div>
             ) : null}

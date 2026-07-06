@@ -24,11 +24,10 @@ export const registerRules = [
     .matches(/^\d{6}$/)
     .withMessage('Email verification code must be 6 digits'),
   body('recoveryEmail')
-    .optional({ values: 'null' })
     .trim()
-    .custom((val) => val === '' || val === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)))
-    .withMessage('Valid recovery email is required'),
-  body('password')
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Personal recovery email is required'),
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters')
     .matches(/[A-Z]/)
@@ -399,10 +398,10 @@ export const sendRegistrationCodeRules = [
     .withMessage('Valid email is required'),
   body('firstName').optional().trim().escape(),
   body('recoveryEmail')
-    .optional({ values: 'null' })
     .trim()
-    .custom((val) => val === '' || val === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val)))
-    .withMessage('Valid recovery email is required'),
+    .isEmail()
+    .normalizeEmail(emailNormalize)
+    .withMessage('Personal recovery email is required'),
   handleValidationErrors,
 ];
 

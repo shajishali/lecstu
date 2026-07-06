@@ -14,14 +14,17 @@ import {
   maskEmail,
 } from '../services/emailService';
 import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
+import {
+  getRecoveryEmailRequiredMessage,
+  needsRecoveryEmailForCodeDelivery,
+} from '../utils/emailDomains';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function getCodeDeliveryEmail(loginEmail: string, recoveryEmail?: string | null): string {
-  const recovery = recoveryEmail?.trim();
-  return recovery ? normalizeEmail(recovery) : normalizeEmail(loginEmail);
+function getCodeDeliveryEmail(recoveryEmail: string): string {
+  return normalizeEmail(recoveryEmail);
 }
 
 export async function sendRegistrationCode(req: Request, res: Response, next: NextFunction) {
@@ -37,6 +40,10 @@ export async function sendRegistrationCode(req: Request, res: Response, next: Ne
       throw new AppError('Recovery email must be different from your login email', 400);
     }
 
+    if (needsRecoveryEmailForCodeDelivery(recoveryEmail)) {
+      throw new AppError(getRecoveryEmailRequiredMessage(), 400);
+    }
+
     void purgeExpiredRegistrationVerificationTokens().catch(() => {});
 
     const existing = await prisma.user.findFirst({
@@ -50,11 +57,13 @@ export async function sendRegistrationCode(req: Request, res: Response, next: Ne
       );
     }
 
-    const deliveryEmail = getCodeDeliveryEmail(loginEmail, recoveryEmail);
+    const deliveryEmail = getCodeDeliveryEmail(recoveryEmail!);
     const { code } = await createRegistrationVerificationToken(loginEmail);
 
     let emailDelivered = false;
     let devVerificationCode: string | undefined;
+    let deliveryWarning: string | undefined;
+    let smtpError: string | undefined;
 
     try {
       const delivery = await sendRegistrationVerificationEmail({
@@ -64,33 +73,42 @@ export async function sendRegistrationCode(req: Request, res: Response, next: Ne
         expiryMinutes: REGISTRATION_CODE_EXPIRY_MINUTES,
       });
       emailDelivered = delivery.delivered;
+      deliveryWarning = delivery.deliveryWarning || undefined;
       logEmailVerificationEvent('registration-send-code', req, {
         email: loginEmail,
         success: delivery.delivered,
       });
-      if (!delivery.delivered && config.nodeEnv !== 'production') {
-        devVerificationCode = code;
-      }
     } catch (err) {
       logEmailVerificationEvent('registration-send-code', req, { email: loginEmail, success: false });
+      const message = err instanceof Error ? err.message : 'SMTP send failed';
+      smtpError = message;
       console.error('[LECSTU][registration] Failed to send verification email:', err);
-      if (config.nodeEnv !== 'production') {
-        devVerificationCode = code;
-      }
     }
+
+    const isDev = config.nodeEnv !== 'production';
+    if (isDev) {
+      devVerificationCode = code;
+    }
+
+    const combinedWarning =
+      deliveryWarning ||
+      (!emailDelivered && isDev
+        ? 'Gmail SMTP login failed. Regenerate an app password for SMTP_USER in server/.env, then restart the server.'
+        : undefined);
 
     res.json({
       success: true,
-      message: 'If this email is available, we sent a verification code.',
-      ...(emailDelivered ? { sentToMasked: maskEmail(deliveryEmail), emailDelivered: true } : {}),
-      ...(config.nodeEnv !== 'production' && {
+      message: emailDelivered
+        ? 'Verification code sent to your personal email. Check your inbox and spam folder.'
+        : 'Verification code generated. Email could not be delivered — use the code shown below or fix SMTP settings.',
+      ...(emailDelivered ? { sentToMasked: maskEmail(deliveryEmail), emailDelivered: true } : { emailDelivered: false }),
+      ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
+      ...(isDev && {
         devDelivery: getEmailServiceMode(),
-        devVerificationCode: emailDelivered ? undefined : devVerificationCode,
+        devVerificationCode,
         devHint: emailDelivered
-          ? recoveryEmail
-            ? 'Verification code sent to your recovery email inbox.'
-            : 'Verification code sent. Check inbox and spam.'
-          : 'Email not sent — use the dev code below or check SMTP settings.',
+          ? 'Verification code sent to your personal recovery email.'
+          : 'Email not sent — use the dev code below or check SMTP settings in server/.env.',
       }),
     });
   } catch (err) {

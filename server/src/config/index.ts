@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
@@ -63,5 +63,17 @@ export const config = {
     mailFrom: process.env.MAIL_FROM || 'LECSTU <lecstu.system@gmail.com>',
     /** When true, emails are logged to the server console instead of sent via SMTP. */
     smtpDisabled: process.env.SMTP_DISABLED === 'true',
+    universityDomains: (process.env.UNIVERSITY_EMAIL_DOMAINS || 'stu.kln.ac.lk,kln.ac.lk')
+      .split(',')
+      .map((domain) => domain.trim().toLowerCase())
+      .filter(Boolean),
+    universitySmtp: {
+      smtpHost: process.env.SMTP_UNIVERSITY_HOST || '',
+      smtpPort: parseInt(process.env.SMTP_UNIVERSITY_PORT || '587', 10),
+      smtpSecure: process.env.SMTP_UNIVERSITY_SECURE === 'true',
+      smtpUser: process.env.SMTP_UNIVERSITY_USER || '',
+      smtpPass: process.env.SMTP_UNIVERSITY_PASS || '',
+      mailFrom: process.env.SMTP_UNIVERSITY_MAIL_FROM || '',
+    },
   },
 } as const;
