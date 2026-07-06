@@ -23,7 +23,9 @@ export type RegisterOptionsProgram = {
 };
 
 const EXTRA_BATCH_YEARS_BY_GROUP: Record<string, string[]> = {
-  'CS-Y1': ['2023'],
+  'CS-Y1': ['2023', '2024'],
+  'CT-Y1': ['2023', '2024'],
+  'ET-Y1': ['2023', '2024'],
 };
 
 type EnrollmentGroupOption = RegisterOptionsProgram['groups'][number] & {
@@ -268,15 +270,14 @@ async function resolveExactStudentGroup(
   groupId: string,
   programCode: string,
   studyYear: StudyYear,
-  pathwayCode?: string,
+  pathwayCode: string | undefined,
+  departmentId: string,
 ): Promise<{ id: string; name: string; departmentId: string }> {
   const group = await prisma.studentGroup.findUnique({
     where: { id: groupId },
     select: {
       id: true,
       name: true,
-      departmentId: true,
-      department: { select: { code: true } },
     },
   });
   if (!group) throw new AppError('Selected class batch was not found.', 404);
@@ -289,11 +290,21 @@ async function resolveExactStudentGroup(
   if (pathwayCode && parsed.pathwayCode && parsed.pathwayCode !== pathwayCode) {
     throw new AppError('Selected class batch does not match the chosen pathway.', 400);
   }
-  if (group.department.code !== programCode) {
-    throw new AppError('Selected class batch belongs to a different department.', 400);
-  }
 
-  return { id: group.id, name: group.name, departmentId: group.departmentId };
+  return { id: group.id, name: group.name, departmentId };
+}
+
+function groupMatchesEnrollment(
+  groupName: string,
+  programCode: string,
+  studyYear: StudyYear,
+  pathwayCode?: string,
+): boolean {
+  const parsed = parseAnyGroupEnrollment(groupName);
+  if (!parsed) return false;
+  if (parsed.programCode !== programCode || parsed.studyYear !== studyYear) return false;
+  if (pathwayCode && parsed.pathwayCode && parsed.pathwayCode !== pathwayCode) return false;
+  return true;
 }
 
 export async function assignStudentToGroup(
@@ -312,13 +323,35 @@ export async function assignStudentToGroup(
     throw new AppError(`Department for program ${programCode} not found. Run db:seed.`, 500);
   }
 
-  const resolvedGroup = groupId
-    ? await resolveExactStudentGroup(groupId, programCode, studyYear, pathwayCode)
-    : {
+  let resolvedGroup: { id: string; name: string; departmentId: string };
+
+  if (groupId) {
+    const candidate = await prisma.studentGroup.findUnique({
+      where: { id: groupId },
+      select: { id: true, name: true },
+    });
+    if (candidate && groupMatchesEnrollment(candidate.name, programCode, studyYear, pathwayCode)) {
+      resolvedGroup = await resolveExactStudentGroup(
+        groupId,
+        programCode,
+        studyYear,
+        pathwayCode,
+        department.id,
+      );
+    } else {
+      resolvedGroup = {
         id: await resolveStudentGroupId(programCode, studyYear, pathwayCode),
         name: buildGroupName(programCode, studyYear, pathwayCode),
         departmentId: department.id,
       };
+    }
+  } else {
+    resolvedGroup = {
+      id: await resolveStudentGroupId(programCode, studyYear, pathwayCode),
+      name: buildGroupName(programCode, studyYear, pathwayCode),
+      departmentId: department.id,
+    };
+  }
 
   await prisma.studentGroupMember.deleteMany({ where: { studentId } });
   await prisma.studentGroupMember.create({
@@ -331,8 +364,8 @@ export async function assignStudentToGroup(
 
   await prisma.user.update({
     where: { id: studentId },
-    data: { departmentId: resolvedGroup.departmentId },
+    data: { departmentId: department.id },
   });
 
-  return { groupId: resolvedGroup.id, groupName: resolvedGroup.name, departmentId: resolvedGroup.departmentId };
+  return { groupId: resolvedGroup.id, groupName: resolvedGroup.name, departmentId: department.id };
 }

@@ -156,11 +156,17 @@ export default function StudentEnrollmentForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const matchingGroup =
+      groupOptions.find(
+        (group) =>
+          group.id === resolvedGroupId &&
+          (!batchYearLabel || !group.batchYearLabel || group.batchYearLabel === batchYearLabel),
+      ) ?? groupOptions.find((group) => group.id === resolvedGroupId);
     onSubmit({
       programCode,
       studyYear,
       pathwayCode: needsPathway ? pathwayCode : undefined,
-      groupId: resolvedGroupId || undefined,
+      groupId: matchingGroup?.id || undefined,
       batchYearLabel: batchYearLabel || undefined,
     });
   };
