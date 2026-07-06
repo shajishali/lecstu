@@ -289,6 +289,64 @@ export function normalizeBatchTableMeta(
   };
 }
 
+export const Y1_ADMISSION_BATCH_YEARS = ['2023', '2024'] as const;
+const Y1_GROUPS_WITH_ADMISSION_YEAR = new Set(['CS-Y1', 'ET-Y1', 'CT-Y1']);
+
+export function isY1GroupWithAdmissionYear(groupName: string): boolean {
+  const canonical = resolveCanonicalGroupName(groupName)?.toUpperCase() ?? groupName.trim().toUpperCase();
+  return Y1_GROUPS_WITH_ADMISSION_YEAR.has(canonical);
+}
+
+function pickMissingY1AdmissionYear(usedYears: Set<string>): string {
+  if (!usedYears.has('2024') && usedYears.has('2023')) return '2024';
+  if (!usedYears.has('2023') && usedYears.has('2024')) return '2023';
+  if (!usedYears.has('2024')) return '2024';
+  if (!usedYears.has('2023')) return '2023';
+  return '2024';
+}
+
+/** Assign 2023 / 2024 to Y1 CS, ET, CT tables that are missing an admission year. */
+export function assignMissingY1AdmissionYears<
+  T extends { id: string; tableTitle: string; groupName: string; importedAt?: Date | string },
+>(rows: T[]): Map<string, string> {
+  const assignments = new Map<string, string>();
+  const byGroup = new Map<string, T[]>();
+
+  for (const row of rows) {
+    const canonical = resolveCanonicalGroupName(row.groupName)?.toUpperCase() ?? row.groupName.trim().toUpperCase();
+    if (!Y1_GROUPS_WITH_ADMISSION_YEAR.has(canonical)) continue;
+    const list = byGroup.get(canonical) ?? [];
+    list.push(row);
+    byGroup.set(canonical, list);
+  }
+
+  for (const groupRows of byGroup.values()) {
+    const usedYears = new Set<string>();
+    const missing: T[] = [];
+
+    for (const row of groupRows) {
+      const year = extractBatchYearLabel(row.tableTitle, row.groupName);
+      if (year) usedYears.add(year);
+      else missing.push(row);
+    }
+
+    missing.sort((a, b) => {
+      const ta = a.importedAt ? new Date(a.importedAt).getTime() : 0;
+      const tb = b.importedAt ? new Date(b.importedAt).getTime() : 0;
+      if (ta !== tb) return ta - tb;
+      return a.id.localeCompare(b.id);
+    });
+
+    for (const row of missing) {
+      const assign = pickMissingY1AdmissionYear(usedYears);
+      assignments.set(row.id, assign);
+      usedYears.add(assign);
+    }
+  }
+
+  return assignments;
+}
+
 /** Sort batches: year ascending, then program (BS, CS, CT, ET), then pathway. */
 export function compareBatchTableOrder(a: string, b: string): number {
   const parse = (name: string) => {

@@ -27,6 +27,8 @@ import { notifyTimetableChange } from './notificationService';
 import {
   compareBatchTableOrder,
   normalizeBatchTableMeta,
+  assignMissingY1AdmissionYears,
+  formatBatchTableTitle,
 } from '../config/fct-faculty-config';
 
 export async function saveTableSnapshots(
@@ -162,6 +164,38 @@ export async function listTableSnapshots(filters?: {
     repaired.push(
       normalized.tableTitle !== row.tableTitle ? { ...row, tableTitle: normalized.tableTitle } : row,
     );
+  }
+
+  const y1Assignments = assignMissingY1AdmissionYears(repaired);
+  for (const [id, batchYear] of y1Assignments) {
+    const row = repaired.find((r) => r.id === id);
+    if (!row) continue;
+    const nextTitle = formatBatchTableTitle(row.groupName, batchYear);
+    if (nextTitle === row.tableTitle) continue;
+    try {
+      await updateTableSnapshotMeta(id, { tableTitle: nextTitle, groupName: row.groupName });
+      const fresh = await prisma.timetableTableSnapshot.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          tableTitle: true,
+          groupName: true,
+          year: true,
+          month: true,
+          week: true,
+          slotCount: true,
+          importedAt: true,
+          sourceFile: true,
+        },
+      });
+      if (fresh) {
+        const idx = repaired.findIndex((r) => r.id === id);
+        if (idx >= 0) repaired[idx] = fresh;
+      }
+    } catch {
+      const idx = repaired.findIndex((r) => r.id === id);
+      if (idx >= 0) repaired[idx] = { ...repaired[idx]!, tableTitle: nextTitle };
+    }
   }
 
   return repaired.sort(

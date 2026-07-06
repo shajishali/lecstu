@@ -194,7 +194,7 @@ export default function TimetableSavedTables() {
         const prepared = loaded ? prepareGridForEditing(loaded) : null;
         const meta = list.find((t) => t.id === selectedId);
         if (prepared && meta) {
-          prepared.tableTitle = formatBatchTableChipLabel(meta);
+          prepared.tableTitle = formatBatchTableChipLabel(meta, list);
         }
         setGrid(prepared);
         setSavedGrid(prepared ? cloneGrid(prepared) : null);
@@ -362,7 +362,7 @@ export default function TimetableSavedTables() {
       ) : (
         <div className="flex flex-wrap gap-2">
           {list.map((t) => {
-            const chipTitle = formatBatchTableChipLabel(t);
+            const chipTitle = formatBatchTableChipLabel(t, list);
             return (
             <div key={t.id} className="inline-flex items-stretch rounded-lg overflow-hidden border border-slate-200">
               <button

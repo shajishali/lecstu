@@ -82,8 +82,65 @@ export function formatBatchTableTitle(
   return batch ? `${base} ${batch}` : base;
 }
 
-export function formatBatchTableChipLabel(meta: { tableTitle: string; groupName: string }): string {
-  const batchYear = extractBatchYearLabel(meta.tableTitle, meta.groupName);
+export const ADMISSION_BATCH_YEARS = ['2023', '2024', '2025', '2026', '2027', '2028'] as const;
+
+const Y1_GROUPS_WITH_ADMISSION_YEAR = new Set(['CS-Y1', 'ET-Y1', 'CT-Y1']);
+
+function canonicalY1GroupName(groupName: string): string | null {
+  const trimmed = groupName.trim().toUpperCase();
+  const legacy = trimmed.match(/^Y1[-\s]+(CS|ET|CT)$/);
+  if (legacy) return `${legacy[1]}-Y1`;
+  const direct = trimmed.match(/^(CS|ET|CT)-Y1$/);
+  return direct ? `${direct[1]}-Y1` : null;
+}
+
+function pickMissingY1AdmissionYear(usedYears: Set<string>): string {
+  if (!usedYears.has('2024') && usedYears.has('2023')) return '2024';
+  if (!usedYears.has('2023') && usedYears.has('2024')) return '2023';
+  if (!usedYears.has('2024')) return '2024';
+  if (!usedYears.has('2023')) return '2023';
+  return '2024';
+}
+
+/** Mirror server logic: fill 2023/2024 for Y1 CS, ET, CT when missing. */
+export function inferMissingY1AdmissionYear(
+  meta: { id: string; tableTitle: string; groupName: string },
+  all: { id: string; tableTitle: string; groupName: string }[],
+): string | undefined {
+  const existing = extractBatchYearLabel(meta.tableTitle, meta.groupName);
+  if (existing) return existing;
+
+  const canonical = canonicalY1GroupName(meta.groupName);
+  if (!canonical || !Y1_GROUPS_WITH_ADMISSION_YEAR.has(canonical)) return undefined;
+
+  const siblings = all.filter((row) => canonicalY1GroupName(row.groupName) === canonical);
+  const usedYears = new Set<string>();
+  const missing: typeof siblings = [];
+
+  for (const row of siblings) {
+    const year = extractBatchYearLabel(row.tableTitle, row.groupName);
+    if (year) usedYears.add(year);
+    else missing.push(row);
+  }
+
+  missing.sort((a, b) => a.id.localeCompare(b.id));
+  const simulated = new Set(usedYears);
+  for (const row of missing) {
+    const assign = pickMissingY1AdmissionYear(simulated);
+    simulated.add(assign);
+    if (row.id === meta.id) return assign;
+  }
+
+  return undefined;
+}
+
+export function formatBatchTableChipLabel(
+  meta: { id: string; tableTitle: string; groupName: string },
+  all?: { id: string; tableTitle: string; groupName: string }[],
+): string {
+  const batchYear =
+    extractBatchYearLabel(meta.tableTitle, meta.groupName) ??
+    (all ? inferMissingY1AdmissionYear(meta, all) : undefined);
   return formatBatchTableTitle(meta.groupName, batchYear);
 }
 
@@ -104,5 +161,3 @@ export function suggestBatchTableTitle(
   }
   return currentTitle;
 }
-
-export const ADMISSION_BATCH_YEARS = ['2023', '2024', '2025', '2026', '2027', '2028'] as const;
