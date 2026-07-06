@@ -86,12 +86,20 @@ function timeToMinutes(t: string): number {
   return h * 60 + m;
 }
 
-type CellType = 'free' | 'teaching' | 'appointment';
+type CellType = 'free' | 'teaching' | 'appointment' | 'unavailable';
 
 interface CellData {
   type: CellType;
   label?: string;
   detail?: string;
+}
+
+function hourOverlapsRange(hour: number, startTime: string, endTime: string): boolean {
+  const hourStart = hour * 60;
+  const hourEnd = (hour + 1) * 60;
+  const slotStart = timeToMinutes(startTime);
+  const slotEnd = timeToMinutes(endTime);
+  return hourStart < slotEnd && hourEnd > slotStart;
 }
 
 function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, CellData>> {
@@ -100,16 +108,25 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
   for (const day of DAYS) {
     grid[day] = {};
     for (const h of HOUR_SLOTS) {
-      grid[day][h] = { type: 'free' };
+      grid[day][h] = { type: 'unavailable' };
     }
   }
 
   for (const dayData of weekly) {
+    for (const slot of dayData.freeSlots || []) {
+      for (const h of HOUR_SLOTS) {
+        if (hourOverlapsRange(h, slot.startTime, slot.endTime)) {
+          grid[dayData.day][h] = {
+            type: 'free',
+            detail: `Available: ${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`,
+          };
+        }
+      }
+    }
+
     for (const slot of dayData.schedule || []) {
-      const startH = Math.floor(timeToMinutes(slot.startTime) / 60);
-      const endH = Math.ceil(timeToMinutes(slot.endTime) / 60);
-      for (let h = startH; h < endH && h <= 17; h++) {
-        if (h >= 8) {
+      for (const h of HOUR_SLOTS) {
+        if (hourOverlapsRange(h, slot.startTime, slot.endTime)) {
           grid[dayData.day][h] = {
             type: 'teaching',
             label: slot.label || (slot.slotType === 'BUSY' ? 'Busy' : 'Teaching'),
@@ -124,14 +141,14 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
         }
       }
     }
+
     for (const appt of dayData.appointments) {
-      const startH = Math.floor(timeToMinutes(appt.startTime) / 60);
-      const endH = Math.ceil(timeToMinutes(appt.endTime) / 60);
-      for (let h = startH; h < endH && h <= 17; h++) {
-        if (h >= 8) {
+      const isConfirmed = appt.status === 'ACCEPTED' || appt.status === 'SCHEDULED';
+      for (const h of HOUR_SLOTS) {
+        if (hourOverlapsRange(h, appt.startTime, appt.endTime)) {
           grid[dayData.day][h] = {
             type: 'appointment',
-            label: appt.status === 'PENDING' ? 'Pending' : 'Booked',
+            label: isConfirmed ? 'Booked' : 'Pending',
             detail: `Appointment with ${appt.studentName}\n${formatTime(appt.startTime)} - ${formatTime(appt.endTime)}`,
           };
         }
@@ -140,6 +157,22 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
   }
 
   return grid;
+}
+
+const BOOKABLE_SLOT_MINUTES = 30;
+
+function countBookableSlots(weekly: DayAvailability[]): number {
+  let count = 0;
+  for (const day of weekly) {
+    for (const slot of day.freeSlots) {
+      const start = timeToMinutes(slot.startTime);
+      const end = timeToMinutes(slot.endTime);
+      for (let m = start; m + BOOKABLE_SLOT_MINUTES <= end; m += BOOKABLE_SLOT_MINUTES) {
+        count += 1;
+      }
+    }
+  }
+  return count;
 }
 
 export default function LecturerProfile() {
@@ -188,8 +221,11 @@ export default function LecturerProfile() {
 
   const grid = buildGrid(weekly);
 
-  const totalFree = weekly.reduce((sum, d) => sum + d.freeSlots.length, 0);
-  const totalBusy = weekly.reduce((sum, d) => sum + (d.schedule?.length ?? 0), 0);
+  const totalBookable = countBookableSlots(weekly);
+  const totalBusy = weekly.reduce(
+    (sum, d) => sum + (d.schedule?.length ?? 0) + (d.appointments?.length ?? 0),
+    0,
+  );
 
   return (
     <div className="lecprof-page">
@@ -253,8 +289,8 @@ export default function LecturerProfile() {
             <span className="lecprof-stat-label">Busy blocks/week</span>
           </div>
           <div className="lecprof-stat">
-            <span className="lecprof-stat-num free">{totalFree}</span>
-            <span className="lecprof-stat-label">Free slots</span>
+            <span className="lecprof-stat-num free">{totalBookable}</span>
+            <span className="lecprof-stat-label">Bookable slots (30 min)</span>
           </div>
         </div>
       </div>
@@ -262,8 +298,11 @@ export default function LecturerProfile() {
       {/* Availability grid */}
       <div className="lecprof-avail-section">
         <h2>Weekly Availability</h2>
+        <p className="lecprof-avail-hint">
+          Only green slots are available for booking. Teaching, busy blocks, and existing meetings are blocked.
+        </p>
         <div className="lecprof-legend">
-          <span className="lecprof-legend-item"><span className="lecprof-dot free" /> Free</span>
+          <span className="lecprof-legend-item"><span className="lecprof-dot free" /> Free (bookable)</span>
           <span className="lecprof-legend-item"><span className="lecprof-dot teaching" /> Unavailable</span>
           <span className="lecprof-legend-item"><span className="lecprof-dot appointment" /> Booked</span>
         </div>
@@ -283,7 +322,7 @@ export default function LecturerProfile() {
                   {formatTime(`${String(h).padStart(2, '0')}:00`)}
                 </div>
                 {DAYS.map((d) => {
-                  const cell = grid[d]?.[h] || { type: 'free' as CellType };
+                  const cell = grid[d]?.[h] || { type: 'unavailable' as CellType };
                   const isHovered = hoveredCell?.day === d && hoveredCell?.hour === h;
                   return (
                     <div
@@ -305,7 +344,7 @@ export default function LecturerProfile() {
 
       {/* Daily detail */}
       <div className="lecprof-daily-detail">
-        <h3>Daily Breakdown</h3>
+        <h3>Bookable Times (Mon–Fri)</h3>
         {weekly.map((dayData) => (
           <div key={dayData.day} className="lecprof-day-row">
             <div className="lecprof-day-label">{DAY_SHORT[dayData.day]}</div>

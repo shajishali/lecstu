@@ -1261,7 +1261,10 @@
     @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
   }
   .lecprof-avail-section h2 {
-    @apply mb-3 text-lg font-semibold text-slate-800;
+    @apply mb-2 text-lg font-semibold text-slate-800;
+  }
+  .lecprof-avail-hint {
+    @apply mb-3 text-sm text-slate-600;
   }
   .lecprof-legend {
     @apply mb-3 flex flex-wrap gap-4 text-sm text-slate-600;
@@ -1297,6 +1300,7 @@
     @apply flex cursor-default items-center justify-center rounded px-1 text-xs transition-colors;
   }
   .lecprof-grid-cell.free { @apply bg-emerald-50 text-emerald-800; }
+  .lecprof-grid-cell.unavailable { @apply bg-slate-100 text-slate-400; }
   .lecprof-grid-cell.teaching {
     background-color: var(--color-primary-light);
     color: var(--color-primary-hover);

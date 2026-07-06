@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { isFetVirtualLecturerId } from './lecturerDirectoryService';
 import { getLecturerBusySlots } from './lecturerScheduleService';
+import { syncTeachingScheduleFromMaster } from './lecturerTimetableService';
 
 interface TimeSlot {
   startTime: string;
@@ -44,8 +45,29 @@ function minutesToTime(m: number): string {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+function mergeOccupiedSlots(slots: TimeSlot[]): TimeSlot[] {
+  if (slots.length === 0) return [];
+  const sorted = [...slots].sort(
+    (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime),
+  );
+  const merged: TimeSlot[] = [{ ...sorted[0] }];
+  for (let i = 1; i < sorted.length; i++) {
+    const current = sorted[i];
+    const last = merged[merged.length - 1];
+    const lastEnd = timeToMinutes(last.endTime);
+    const curStart = timeToMinutes(current.startTime);
+    const curEnd = timeToMinutes(current.endTime);
+    if (curStart <= lastEnd) {
+      if (curEnd > lastEnd) last.endTime = minutesToTime(curEnd);
+    } else {
+      merged.push({ ...current });
+    }
+  }
+  return merged;
+}
+
 function computeFreeSlots(occupied: TimeSlot[]): TimeSlot[] {
-  const sorted = [...occupied].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const sorted = mergeOccupiedSlots(occupied);
   const free: TimeSlot[] = [];
   let cursor = timeToMinutes(DAY_START);
   const end = timeToMinutes(DAY_END);
@@ -75,11 +97,20 @@ function getStartOfWeek(date: Date): Date {
   return d;
 }
 
+/** Statuses that block the lecturer's calendar (pending + confirmed meetings). */
+const BLOCKING_APPOINTMENT_STATUSES = [
+  'ACCEPTED',
+  'SCHEDULED',
+  'PENDING',
+  'CANCELLATION_REQUESTED',
+] as const;
+
 export async function getLecturerWeeklyAvailability(lecturerId: string): Promise<WeeklyAvailability> {
   if (isFetVirtualLecturerId(lecturerId)) {
     return DAYS.map((day) => ({ day, schedule: [], appointments: [], freeSlots: [] }));
   }
 
+  await syncTeachingScheduleFromMaster(lecturerId);
   const scheduleRows = await getLecturerBusySlots(lecturerId);
   const now = new Date();
   const startOfWeek = getStartOfWeek(now);
@@ -89,7 +120,7 @@ export async function getLecturerWeeklyAvailability(lecturerId: string): Promise
   const appointments = await prisma.appointment.findMany({
     where: {
       lecturerId,
-      status: { in: ['ACCEPTED', 'SCHEDULED', 'PENDING', 'CANCELLATION_REQUESTED'] },
+      status: { in: [...BLOCKING_APPOINTMENT_STATUSES] },
       dateTime: { gte: startOfWeek, lt: endOfWeek },
     },
     select: {
@@ -162,6 +193,7 @@ export async function getLecturerDateAvailability(
     return { day: dayName, schedule: [], appointments: [], freeSlots: [] };
   }
 
+  await syncTeachingScheduleFromMaster(lecturerId);
   const scheduleRows = await getLecturerBusySlots(lecturerId, dayName as never);
   const schedule = scheduleRows.map((e) => ({
     startTime: e.startTime,
@@ -179,7 +211,7 @@ export async function getLecturerDateAvailability(
   const appointments = await prisma.appointment.findMany({
     where: {
       lecturerId,
-      status: { in: ['ACCEPTED', 'SCHEDULED', 'PENDING', 'CANCELLATION_REQUESTED'] },
+      status: { in: [...BLOCKING_APPOINTMENT_STATUSES] },
       dateTime: { gte: dayStart, lte: dayEnd },
     },
     select: {
