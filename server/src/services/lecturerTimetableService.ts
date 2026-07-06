@@ -115,24 +115,108 @@ export interface TeachingBlock {
   location: string | null;
 }
 
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Course identity for merge/dedupe (e.g. CSCI-12042 from "CSCI 12042 T"). */
+function normalizeCourseKey(label: string | null): string {
+  if (!label) return '';
+  const m = label.trim().toUpperCase().match(/([A-Z]{2,6})[\s-]*(\d{4,5})/);
+  return m ? `${m[1]}-${m[2]}` : label.trim().toUpperCase();
+}
+
+function slotsOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return timeToMinutes(aStart) < timeToMinutes(bEnd) && timeToMinutes(bStart) < timeToMinutes(aEnd);
+}
+
+/** Prefer the batch grid's rowSpan duration over a 1h master_timetable row. */
+function upgradeBlockFromGridRefs(block: TeachingBlock, gridRefs: GridSlotRef[]): TeachingBlock {
+  const courseKey = normalizeCourseKey(block.label);
+  if (!courseKey) return block;
+
+  const matches = gridRefs.filter(
+    (g) =>
+      g.dayOfWeek === block.dayOfWeek &&
+      normalizeCourseKey(g.courseName) === courseKey &&
+      slotsOverlap(block.startTime, block.endTime, g.startTime, g.endTime),
+  );
+  if (matches.length === 0) return block;
+
+  const best = matches.reduce((a, b) => {
+    const durA = timeToMinutes(a.endTime) - timeToMinutes(a.startTime);
+    const durB = timeToMinutes(b.endTime) - timeToMinutes(b.startTime);
+    return durB > durA ? b : a;
+  });
+
+  const blockDur = timeToMinutes(block.endTime) - timeToMinutes(block.startTime);
+  const bestDur = timeToMinutes(best.endTime) - timeToMinutes(best.startTime);
+  if (bestDur <= blockDur) return block;
+
+  return {
+    ...block,
+    startTime: best.startTime,
+    endTime: best.endTime,
+    location: block.location || best.hallName || null,
+    label: block.label || best.courseName || null,
+  };
+}
+
+function mergeConsecutiveTeachingBlocks(blocks: TeachingBlock[]): TeachingBlock[] {
+  const sorted = [...blocks].sort(
+    (a, b) => a.dayOfWeek.localeCompare(b.dayOfWeek) || a.startTime.localeCompare(b.startTime),
+  );
+  const merged: TeachingBlock[] = [];
+  let current: TeachingBlock | null = null;
+
+  for (const row of sorted) {
+    if (!current) {
+      current = { ...row };
+      continue;
+    }
+    const sameDay = current.dayOfWeek === row.dayOfWeek;
+    const sameCourse = normalizeCourseKey(current.label) === normalizeCourseKey(row.label);
+    const gap = timeToMinutes(row.startTime) - timeToMinutes(current.endTime);
+
+    if (sameDay && sameCourse && gap >= 0 && gap <= 15) {
+      current = {
+        ...current,
+        endTime:
+          timeToMinutes(row.endTime) > timeToMinutes(current.endTime) ? row.endTime : current.endTime,
+        location: current.location || row.location,
+      };
+    } else {
+      merged.push(current);
+      current = { ...row };
+    }
+  }
+  if (current) merged.push(current);
+  return merged;
+}
+
 function dedupeTeachingBlocks(blocks: TeachingBlock[]): TeachingBlock[] {
   const byKey = new Map<string, TeachingBlock>();
   for (const block of blocks) {
-    const key = `${block.dayOfWeek}|${block.startTime}|${block.endTime}`;
+    const key = `${block.dayOfWeek}|${block.startTime}|${normalizeCourseKey(block.label)}`;
     const existing = byKey.get(key);
     if (!existing) {
       byKey.set(key, { ...block });
       continue;
     }
-    if (block.label) {
-      if (!existing.label) {
-        existing.label = block.label;
-      } else if (!existing.label.includes(block.label)) {
+    const existingDur = timeToMinutes(existing.endTime) - timeToMinutes(existing.startTime);
+    const blockDur = timeToMinutes(block.endTime) - timeToMinutes(block.startTime);
+    if (blockDur > existingDur) {
+      byKey.set(key, {
+        ...block,
+        label: existing.label || block.label,
+        location: existing.location || block.location,
+      });
+    } else {
+      if (block.label && existing.label && !existing.label.includes(block.label)) {
         existing.label = `${existing.label}; ${block.label}`;
       }
-    }
-    if (block.location && !existing.location) {
-      existing.location = block.location;
+      if (block.location && !existing.location) existing.location = block.location;
     }
   }
   return [...byKey.values()].sort(
@@ -168,14 +252,22 @@ function slotRefMatchesLecturer(
   index: LecturerDisplayIndex,
 ): boolean {
   const raw = ref.lecturerName?.trim();
-  if (!raw) return false;
+  if (!raw || raw === '—' || raw === '-' || /^tbd$/i.test(raw) || /^unassigned$/i.test(raw)) {
+    return false;
+  }
 
   const fullName = `${lecturer.firstName} ${lecturer.lastName}`.trim();
   const fullLower = fullName.toLowerCase();
   const rawLower = raw.toLowerCase();
+  const lastLower = lecturer.lastName.trim().toLowerCase();
+  const firstLower = lecturer.firstName.trim().toLowerCase();
 
   if (rawLower === fullLower) return true;
   if (rawLower.includes(fullLower) || fullLower.includes(rawLower)) return true;
+  if (lastLower.length >= 4 && rawLower.includes(lastLower)) return true;
+  if (firstLower.length >= 3 && lastLower.length >= 4 && rawLower.includes(firstLower) && rawLower.includes(lastLower)) {
+    return true;
+  }
 
   if (codes.some((c) => c.toUpperCase() === raw.toUpperCase())) return true;
 
@@ -204,6 +296,13 @@ export async function fetchTeachingBlocksForLecturer(lecturerId: string): Promis
   const codes = lecturerCodesFromName(lecturer.firstName, lecturer.lastName, lecturer.timetableCode);
   const index = await getLecturerDisplayIndex();
   const blocks: TeachingBlock[] = [];
+  const coveredKeys = new Set<string>();
+
+  const batchGrids = await fetchLatestPublishedBatchGrids();
+  const gridRefsByGroup = new Map<string, GridSlotRef[]>();
+  for (const { groupName, grid } of batchGrids) {
+    gridRefsByGroup.set(groupName.trim().toUpperCase(), extractSlotRefsFromGridSnapshot(grid));
+  }
 
   const masterEntries = await fetchMasterEntriesForLecturer(lecturerId);
   for (const entry of masterEntries) {
@@ -215,20 +314,29 @@ export async function fetchTeachingBlocksForLecturer(lecturerId: string): Promis
     ) {
       continue;
     }
-    blocks.push({
-      dayOfWeek: entry.dayOfWeek as DayOfWeek,
-      startTime: entry.startTime,
-      endTime: entry.endTime,
-      label: entry.course.name || entry.course.code,
-      location: entry.hall.name,
-    });
+    const groupKey = entry.group.name.trim().toUpperCase();
+    const gridRefs = gridRefsByGroup.get(groupKey) ?? [];
+    let block = upgradeBlockFromGridRefs(
+      {
+        dayOfWeek: entry.dayOfWeek as DayOfWeek,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        label: entry.course.name || entry.course.code,
+        location: entry.hall.name,
+      },
+      gridRefs,
+    );
+    blocks.push(block);
+    coveredKeys.add(`${block.dayOfWeek}|${block.startTime}|${normalizeCourseKey(block.label)}`);
   }
 
-  const batchGrids = await fetchLatestPublishedBatchGrids();
-  for (const { grid } of batchGrids) {
-    const refs = extractSlotRefsFromGridSnapshot(grid);
+  for (const { groupName } of batchGrids) {
+    const refs = gridRefsByGroup.get(groupName.trim().toUpperCase()) ?? [];
     for (const ref of refs) {
       if (!slotRefMatchesLecturer(ref, lecturer, codes, index)) continue;
+      const key = `${ref.dayOfWeek}|${ref.startTime}|${normalizeCourseKey(ref.courseName)}`;
+      if (coveredKeys.has(key)) continue;
+      coveredKeys.add(key);
       blocks.push({
         dayOfWeek: ref.dayOfWeek as DayOfWeek,
         startTime: ref.startTime,
@@ -239,7 +347,7 @@ export async function fetchTeachingBlocksForLecturer(lecturerId: string): Promis
     }
   }
 
-  return dedupeTeachingBlocks(blocks);
+  return mergeConsecutiveTeachingBlocks(dedupeTeachingBlocks(blocks));
 }
 
 /** Keep LecturerScheduleSlot TEACHING rows aligned with all batch timetables. */
