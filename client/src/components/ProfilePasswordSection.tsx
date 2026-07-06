@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react';
-import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { CheckCircle, Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
 import api from '@services/api';
 import { showToast } from '@components/Toast';
 
-type Step = 'idle' | 'request' | 'confirm';
+type Step = 'idle' | 'request' | 'verify' | 'reset' | 'done';
 
 interface Props {
   onSuccess: (message: string) => void;
@@ -16,20 +16,31 @@ export default function ProfilePasswordSection({
   onError,
   inputCls = 'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)]',
 }: Props) {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>('idle');
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [codeSent, setCodeSent] = useState(false);
   const [sentToMasked, setSentToMasked] = useState('');
+  const [emailDelivered, setEmailDelivered] = useState(false);
+  const [deliveryWarning, setDeliveryWarning] = useState('');
   const [devResetCode, setDevResetCode] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [form, setForm] = useState({
     currentPassword: '',
     verificationCode: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  const goToStep = (next: Step) => {
+    setStep(next);
+    requestAnimationFrame(() => {
+      sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  };
 
   const resetForm = () => {
     setForm({
@@ -40,12 +51,13 @@ export default function ProfilePasswordSection({
     });
     setDevResetCode(null);
     setSentToMasked('');
-    setCodeSent(false);
+    setEmailDelivered(false);
+    setDeliveryWarning('');
+    setSuccessMessage('');
     setStep('idle');
   };
 
-  const handleRequestCode = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleRequestCode = async () => {
     if (!form.currentPassword.trim()) {
       showToast('error', 'Enter your current password');
       onError('Enter your current password');
@@ -58,22 +70,33 @@ export default function ProfilePasswordSection({
         message: string;
         sentToMasked?: string;
         emailDelivered?: boolean;
+        deliveryWarning?: string;
         devResetCode?: string;
-        devHint?: string;
       }>('/profile/password/request-code', {
         currentPassword: form.currentPassword,
       });
-      setCodeSent(true);
       setSentToMasked(res.data.sentToMasked ?? '');
-      setStep('confirm');
+      setEmailDelivered(Boolean(res.data.emailDelivered));
+      setDeliveryWarning(res.data.deliveryWarning ?? '');
       setDevResetCode(res.data.devResetCode ?? null);
-      const successMsg =
-        res.data.sentToMasked && res.data.emailDelivered
-          ? `Verification code sent to ${res.data.sentToMasked}`
-          : res.data.message || 'Verification code sent to your email.';
-      onSuccess(successMsg);
+      goToStep('verify');
+      if (res.data.emailDelivered) {
+        const successMsg =
+          res.data.sentToMasked
+            ? `Verification code sent to ${res.data.sentToMasked}`
+            : res.data.message || 'Verification code sent to your email.';
+        showToast('success', successMsg);
+        onSuccess(successMsg);
+      } else {
+        const warnMsg =
+          res.data.deliveryWarning ||
+          res.data.message ||
+          'Email could not be delivered. Use the dev code below or fix SMTP settings.';
+        showToast('error', warnMsg);
+        onError(warnMsg);
+      }
     } catch (err: unknown) {
-      const ax = err as { response?: { data?: { message?: string }; status?: number } };
+      const ax = err as { response?: { data?: { message?: string } } };
       const message = ax.response?.data?.message || 'Could not send verification code';
       showToast('error', message);
       onError(message);
@@ -82,13 +105,31 @@ export default function ProfilePasswordSection({
     }
   };
 
-  const handleConfirmPassword = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleVerifyCode = async () => {
     if (!/^\d{6}$/.test(form.verificationCode.trim())) {
       showToast('error', 'Enter the 6-digit code from your email');
       onError('Enter the 6-digit code from your email');
       return;
     }
+    setVerifying(true);
+    try {
+      const res = await api.post<{ success: boolean; message: string }>('/profile/password/verify-code', {
+        verificationCode: form.verificationCode.trim(),
+      });
+      goToStep('reset');
+      showToast('success', res.data.message || 'Code verified');
+      onSuccess(res.data.message || 'Code verified. Set your new password below.');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { message?: string } } };
+      const message = ax.response?.data?.message || 'Invalid verification code';
+      showToast('error', message);
+      onError(message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleConfirmPassword = async () => {
     if (form.newPassword.length < 8) {
       showToast('error', 'Password must be at least 8 characters');
       onError('Password must be at least 8 characters');
@@ -116,9 +157,19 @@ export default function ProfilePasswordSection({
         verificationCode: form.verificationCode.trim(),
         newPassword: form.newPassword,
       });
-      resetForm();
-      showToast('success', res.data.message || 'Password updated successfully');
-      onSuccess(res.data.message || 'Password updated successfully');
+      const msg = res.data.message || 'Password updated successfully';
+      setSuccessMessage(msg);
+      setForm({
+        currentPassword: '',
+        verificationCode: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setDevResetCode(null);
+      setSentToMasked('');
+      goToStep('done');
+      showToast('success', msg);
+      onSuccess(msg);
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string } } };
       const message = ax.response?.data?.message || 'Failed to update password';
@@ -130,7 +181,7 @@ export default function ProfilePasswordSection({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+    <div ref={sectionRef} className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
       <div className="mb-3 flex items-center gap-2">
         <KeyRound size={16} className="text-[var(--color-primary)]" />
         <h3 className="text-sm font-semibold text-slate-800">Password</h3>
@@ -154,7 +205,7 @@ export default function ProfilePasswordSection({
           </div>
           <button
             type="button"
-            onClick={() => setStep('request')}
+            onClick={() => goToStep('request')}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <KeyRound size={14} /> Change password
@@ -163,10 +214,10 @@ export default function ProfilePasswordSection({
       )}
 
       {step === 'request' && (
-        <form onSubmit={handleRequestCode} className="space-y-4">
+        <div className="space-y-4">
           <p className="text-xs text-slate-600">
-            Enter your current password. If it is correct, a 6-digit code will be sent to your email
-            (personal Gmail or recovery email). Enter that code below to set a new password.
+            Step 1 of 3 — Enter your current password. If it is correct, a 6-digit code will be sent to your
+            email (personal Gmail or recovery email).
           </p>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pCurrentPassword" className="text-sm font-semibold text-slate-700">
@@ -178,8 +229,13 @@ export default function ProfilePasswordSection({
                 type={showCurrent ? 'text' : 'password'}
                 value={form.currentPassword}
                 onChange={(e) => setForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void handleRequestCode();
+                  }
+                }}
                 autoComplete="current-password"
-                required
                 className={`${inputCls} pr-10`}
               />
               <button
@@ -194,8 +250,9 @@ export default function ProfilePasswordSection({
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              type="submit"
+              type="button"
               disabled={requesting}
+              onClick={() => void handleRequestCode()}
               className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
             >
               {requesting ? (
@@ -213,25 +270,34 @@ export default function ProfilePasswordSection({
               Cancel
             </button>
           </div>
-        </form>
+        </div>
       )}
 
-      {step === 'confirm' && (
-        <form onSubmit={handleConfirmPassword} className="space-y-4">
-          {codeSent && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-              {sentToMasked ? (
-                <p>Code sent to <strong>{sentToMasked}</strong>. Check your inbox and spam folder.</p>
-              ) : (
-                <p>Verification code sent. Check your email inbox and spam folder.</p>
-              )}
-              {devResetCode && (
-                <p className="mt-1 font-mono text-sm">
-                  Dev code: <strong>{devResetCode}</strong>
-                </p>
-              )}
-            </div>
-          )}
+      {step === 'verify' && (
+        <div className="space-y-4">
+          <div
+            className={`rounded-lg border px-3 py-2 text-xs ${
+              emailDelivered
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                : 'border-amber-200 bg-amber-50 text-amber-900'
+            }`}
+          >
+            {emailDelivered ? (
+              <p>
+                Step 2 of 3 — Code sent to <strong>{sentToMasked}</strong>. Check your inbox and spam folder.
+              </p>
+            ) : (
+              <p>
+                Step 2 of 3 — Could not deliver email to <strong>{sentToMasked || 'your address'}</strong>.
+                {deliveryWarning ? ` ${deliveryWarning}` : ' Check SMTP settings or use the dev code below.'}
+              </p>
+            )}
+            {devResetCode && (
+              <p className="mt-1 font-mono text-sm">
+                Dev code: <strong>{devResetCode}</strong>
+              </p>
+            )}
+          </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pVerificationCode" className="text-sm font-semibold text-slate-700">
               Verification code
@@ -245,11 +311,54 @@ export default function ProfilePasswordSection({
               onChange={(e) =>
                 setForm((p) => ({ ...p, verificationCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))
               }
-              placeholder="6-digit code"
-              required
-              className={inputCls}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleVerifyCode();
+                }
+              }}
+              placeholder="000000"
+              autoFocus
+              className={`${inputCls} text-center font-mono tracking-[0.35em]`}
             />
           </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={verifying || form.verificationCode.length !== 6}
+              onClick={() => void handleVerifyCode()}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
+            >
+              {verifying ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <KeyRound size={14} />
+              )}
+              Verify code
+            </button>
+            <button
+              type="button"
+              onClick={() => goToStep('request')}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Resend code
+            </button>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'reset' && (
+        <div className="space-y-4">
+          <p className="text-xs font-medium text-emerald-800">
+            Step 3 of 3 — Code verified. Enter your new password below.
+          </p>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pNewPassword" className="text-sm font-semibold text-slate-700">
               New password
@@ -261,8 +370,7 @@ export default function ProfilePasswordSection({
                 value={form.newPassword}
                 onChange={(e) => setForm((p) => ({ ...p, newPassword: e.target.value }))}
                 autoComplete="new-password"
-                required
-                minLength={8}
+                autoFocus
                 className={`${inputCls} pr-10`}
               />
               <button
@@ -287,15 +395,21 @@ export default function ProfilePasswordSection({
               type="password"
               value={form.confirmPassword}
               onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleConfirmPassword();
+                }
+              }}
               autoComplete="new-password"
-              required
               className={inputCls}
             />
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              type="submit"
+              type="button"
               disabled={saving}
+              onClick={() => void handleConfirmPassword()}
               className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
             >
               {saving ? (
@@ -307,28 +421,28 @@ export default function ProfilePasswordSection({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setStep('request');
-                setForm((p) => ({
-                  ...p,
-                  verificationCode: '',
-                  newPassword: '',
-                  confirmPassword: '',
-                }));
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Resend code
-            </button>
-            <button
-              type="button"
               onClick={resetForm}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </button>
           </div>
-        </form>
+        </div>
+      )}
+
+      {step === 'done' && (
+        <div className="space-y-4 py-2 text-center">
+          <CheckCircle size={40} className="mx-auto text-emerald-600" />
+          <p className="text-base font-semibold text-slate-800">{successMessage}</p>
+          <p className="text-sm text-slate-500">You can continue using LECSTU with your new password.</p>
+          <button
+            type="button"
+            onClick={resetForm}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Done
+          </button>
+        </div>
       )}
     </div>
   );

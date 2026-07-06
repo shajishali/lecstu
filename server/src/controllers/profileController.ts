@@ -27,6 +27,7 @@ import {
   maskEmail,
 } from '../services/emailService';
 import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
+import { getUniversityDeliveryWarning, isUniversityEmail } from '../utils/emailDomains';
 
 const FCT_BUILDING_DEFAULT =
   'Faculty of Computing and Technology, University of Kelaniya';
@@ -37,7 +38,7 @@ function normalizeEmail(email: string): string {
 
 function getProfileCodeDeliveryEmail(user: { email: string; recoveryEmail: string | null }): string {
   const recovery = user.recoveryEmail?.trim();
-  return recovery || user.email;
+  return recovery ? normalizeEmail(recovery) : normalizeEmail(user.email);
 }
 
 async function syncLecturerOffice(
@@ -361,6 +362,7 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
     const { code } = await createResetToken(user.id);
 
     let emailDelivered = false;
+    let deliveryWarning: string | undefined;
     try {
       const delivery = await sendPasswordResetCodeEmail({
         to: deliveryEmail,
@@ -369,6 +371,10 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
         expiryMinutes: RESET_CODE_EXPIRY_MINUTES,
       });
       emailDelivered = delivery.delivered;
+      deliveryWarning = delivery.deliveryWarning || undefined;
+      if (emailDelivered) {
+        console.log(`[LECSTU][profile-password] Reset code emailed to ${deliveryEmail}`);
+      }
     } catch (err) {
       console.error(`[LECSTU][profile-password] Failed to email ${deliveryEmail}:`, err);
     }
@@ -378,23 +384,63 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
       success: emailDelivered,
     });
 
+    const isDev = config.nodeEnv !== 'production';
+    const universityWarning = getUniversityDeliveryWarning(deliveryEmail);
+    const combinedWarning =
+      deliveryWarning ||
+      universityWarning ||
+      (!emailDelivered && isDev
+        ? 'Gmail SMTP login failed. Regenerate an app password for SMTP_USER in server/.env, then restart the server.'
+        : undefined);
+
     const emailMode = getEmailServiceMode();
+    const sentToMasked = maskEmail(deliveryEmail);
     res.json({
       success: true,
       message: emailDelivered
-        ? 'Verification code sent to your email. Enter it below to set your new password.'
+        ? `Verification code sent to ${sentToMasked}. Enter it below to set your new password.`
         : 'Verification code created. Email could not be delivered — check SMTP settings or use the dev code below.',
-      ...(emailDelivered ? { sentToMasked: maskEmail(deliveryEmail), emailDelivered: true } : { emailDelivered: false }),
-      ...(config.nodeEnv !== 'production' && {
+      sentToMasked,
+      emailDelivered,
+      ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
+      ...(isDev && {
         devDelivery: emailMode,
         devResetCode: code,
-        devHint: emailDelivered
-          ? 'Check your inbox and spam folder for the 6-digit code.'
-          : emailMode === 'console'
-            ? 'Console mode is ON — check the API terminal for the code.'
-            : 'Development only: use the code below if email was not delivered.',
+        devHint: emailMode === 'console'
+          ? 'Console mode is ON — check the API terminal for the code.'
+          : emailDelivered
+            ? user.recoveryEmail
+              ? 'Code sent to your recovery email inbox.'
+              : isUniversityEmail(deliveryEmail)
+                ? 'University Outlook may quarantine external mail — also use the dev code below if needed.'
+                : 'Check your inbox and spam folder for the 6-digit code.'
+            : 'Email not sent — use the dev code below or fix SMTP in server/.env.',
       }),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function verifyPasswordChangeCode(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.userId;
+    const code = String(req.body.verificationCode || '').trim();
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true },
+    });
+    if (!user || !user.isActive) throw new AppError('User not found', 404);
+
+    const verification = await verifyResetCode(user.id, code);
+    if (!verification.valid) {
+      logEmailVerificationEvent('profile-password-verify-code', req, { userId: user.id, success: false });
+      throw new AppError('Invalid or expired verification code. Check the code and try again.', 400);
+    }
+
+    logEmailVerificationEvent('profile-password-verify-code', req, { userId: user.id, success: true });
+    res.json({ success: true, valid: true, message: 'Code verified. You can set your new password.' });
   } catch (err) {
     next(err);
   }

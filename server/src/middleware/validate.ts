@@ -349,6 +349,14 @@ export const profilePasswordChangeWithCodeRules = [
   handleValidationErrors,
 ];
 
+export const profilePasswordVerifyCodeRules = [
+  body('verificationCode')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Verification code must be 6 digits'),
+  handleValidationErrors,
+];
+
 export const forgotPasswordRules = [
   body('email')
     .trim()

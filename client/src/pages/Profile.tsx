@@ -314,8 +314,8 @@ export default function Profile() {
                 className={inputCls}
               />
               <p className="text-xs text-slate-500">
-                Optional personal Gmail/Outlook for reset codes. Recommended if your university
-                (@stu.kln.ac.lk) inbox blocks external senders.
+                Password reset codes are sent here when set; otherwise they go to your login email above.
+                Click <strong>Save Changes</strong> after editing, then request a code.
               </p>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -419,15 +419,18 @@ export default function Profile() {
               <label className="text-sm font-semibold text-slate-700">Role</label>
               <input type="text" value={user.role} disabled className={inputCls} />
             </div>
+            <button type="submit" disabled={saving} className="mt-2 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]">
+              {saving ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Save size={16} /> Save Changes</>}
+            </button>
+          </form>
+
+          <div className="mt-6 border-t border-slate-200 pt-6">
             <ProfilePasswordSection
               onSuccess={(text) => showMessage('success', text)}
               onError={(text) => showMessage('error', text)}
               inputCls={inputCls}
             />
-            <button type="submit" disabled={saving} className="mt-2 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]">
-              {saving ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Save size={16} /> Save Changes</>}
-            </button>
-          </form>
+          </div>
 
           {user.role === 'STUDENT' && (
             <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-6">

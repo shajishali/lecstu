@@ -7,6 +7,7 @@ import {
   getGroups,
   updateStudentEnrollment,
   requestPasswordChangeCode,
+  verifyPasswordChangeCode,
   changePassword,
   confirmPasswordChange,
 } from '../controllers/profileController';
@@ -17,6 +18,7 @@ import {
   passwordChangeRules,
   profilePasswordChangeWithCodeRules,
   profilePasswordRequestCodeRules,
+  profilePasswordVerifyCodeRules,
   profileUpdateRules,
 } from '../middleware/validate';
 
@@ -31,6 +33,7 @@ router.get('/departments', getDepartments);
 router.get('/groups', getGroups);
 router.patch('/enrollment', validateEnrollmentUpdate, updateStudentEnrollment);
 router.post('/password/request-code', profilePasswordRequestCodeRules, requestPasswordChangeCode);
+router.post('/password/verify-code', profilePasswordVerifyCodeRules, verifyPasswordChangeCode);
 router.patch('/password/confirm', profilePasswordChangeWithCodeRules, confirmPasswordChange);
 router.patch('/password', passwordChangeRules, changePassword);
 

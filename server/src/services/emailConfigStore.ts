@@ -54,7 +54,8 @@ function readRuntimeConfig(): EmailRuntimeConfig {
   return {
     ...base,
     ...overrides,
-    smtpPass: overrides.smtpPass || base.smtpPass,
+    // Prefer server/.env SMTP_PASS so a stale admin JSON file cannot block updated credentials.
+    smtpPass: base.smtpPass || overrides.smtpPass || '',
   };
 }
 
