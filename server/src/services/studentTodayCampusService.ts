@@ -191,9 +191,10 @@ async function getTodayRawSlots(studentId: string): Promise<{
   const dayOfWeek = getCampusDayOfWeek();
   const campusTime = getCampusTimeStr();
   const { flat, grid } = await getStudentTimetable(studentId);
+  const gridSnapshot = grid ?? null;
 
   if (flat.length === 0) {
-    return { dayOfWeek, campusTime, entries: [], grid };
+    return { dayOfWeek, campusTime, entries: [], grid: gridSnapshot };
   }
 
   const period = pickLatestPeriodKey(flat);
@@ -201,7 +202,7 @@ async function getTodayRawSlots(studentId: string): Promise<{
     .filter((s) => s.dayOfWeek === dayOfWeek && (!period || periodKey(s) === period))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  return { dayOfWeek, campusTime, entries, grid };
+  return { dayOfWeek, campusTime, entries, grid: gridSnapshot };
 }
 
 export async function getStudentTodayOnCampus(studentId: string): Promise<TodayOnCampusResult> {
