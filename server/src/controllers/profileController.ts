@@ -22,7 +22,7 @@ import {
   RESET_CODE_EXPIRY_MINUTES,
 } from '../services/passwordResetService';
 import {
-  sendProfilePasswordChangeAdminEmail,
+  sendPasswordResetCodeEmail,
   getEmailServiceMode,
   maskEmail,
 } from '../services/emailService';
@@ -33,6 +33,11 @@ const FCT_BUILDING_DEFAULT =
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+function getProfileCodeDeliveryEmail(user: { email: string; recoveryEmail: string | null }): string {
+  const recovery = user.recoveryEmail?.trim();
+  return recovery || user.email;
 }
 
 async function syncLecturerOffice(
@@ -341,49 +346,31 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
         firstName: true,
         lastName: true,
         email: true,
+        recoveryEmail: true,
         isActive: true,
       },
     });
     if (!user || !user.isActive) throw new AppError('User not found', 404);
-    if (user.role !== 'STUDENT' && user.role !== 'LECTURER') {
-      throw new AppError('Password change approval is only required for students and lecturers.', 403);
-    }
 
     const valid = await comparePassword(String(currentPassword), user.password);
-    if (!valid) throw new AppError('Current password is incorrect', 400);
+    if (!valid) throw new AppError('Current password is incorrect. Please try again.', 400);
 
     void purgeExpiredResetTokens().catch(() => {});
 
-    const admins = await prisma.user.findMany({
-      where: { role: 'ADMIN', isActive: true },
-      select: { email: true, firstName: true },
-    });
-    if (admins.length === 0) {
-      throw new AppError('No active administrator found to approve password changes.', 503);
-    }
-
+    const deliveryEmail = getProfileCodeDeliveryEmail(user);
     const { code } = await createResetToken(user.id);
-    const userFullName = `${user.firstName} ${user.lastName}`.trim();
-    let emailDelivered = false;
-    const sentToMasked: string[] = [];
 
-    for (const admin of admins) {
-      try {
-        const delivery = await sendProfilePasswordChangeAdminEmail({
-          to: admin.email,
-          userFullName,
-          userEmail: user.email,
-          userRole: user.role,
-          code,
-          expiryMinutes: RESET_CODE_EXPIRY_MINUTES,
-        });
-        if (delivery.delivered) {
-          emailDelivered = true;
-          sentToMasked.push(maskEmail(admin.email));
-        }
-      } catch (err) {
-        console.error(`[LECSTU][profile-password] Failed to email admin ${admin.email}:`, err);
-      }
+    let emailDelivered = false;
+    try {
+      const delivery = await sendPasswordResetCodeEmail({
+        to: deliveryEmail,
+        firstName: user.firstName,
+        code,
+        expiryMinutes: RESET_CODE_EXPIRY_MINUTES,
+      });
+      emailDelivered = delivery.delivered;
+    } catch (err) {
+      console.error(`[LECSTU][profile-password] Failed to email ${deliveryEmail}:`, err);
     }
 
     logEmailVerificationEvent('profile-password-request-code', req, {
@@ -395,14 +382,15 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
     res.json({
       success: true,
       message: emailDelivered
-        ? 'Verification code sent to the administrator. Enter the code below to set your new password.'
-        : 'Verification code created. Ask your administrator for the code (check server email logs if SMTP is off).',
-      ...(emailDelivered ? { sentToMasked, emailDelivered: true } : {}),
+        ? 'Verification code sent to your email. Enter it below to set your new password.'
+        : 'Verification code created. Email could not be delivered — check SMTP settings or use the dev code below.',
+      ...(emailDelivered ? { sentToMasked: maskEmail(deliveryEmail), emailDelivered: true } : { emailDelivered: false }),
       ...(config.nodeEnv !== 'production' && {
         devDelivery: emailMode,
         devResetCode: code,
-        devHint:
-          emailMode === 'console'
+        devHint: emailDelivered
+          ? 'Check your inbox and spam folder for the 6-digit code.'
+          : emailMode === 'console'
             ? 'Console mode is ON — check the API terminal for the code.'
             : 'Development only: use the code below if email was not delivered.',
       }),
@@ -425,7 +413,7 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
 
     if (user.role === 'STUDENT' || user.role === 'LECTURER') {
       throw new AppError(
-        'Students and lecturers must verify with an admin code. Use the password section in My Profile.',
+        'Use the password section below: verify your current password, then enter the email code.',
         403,
       );
     }
@@ -458,10 +446,6 @@ export async function confirmPasswordChange(req: Request, res: Response, next: N
       select: { id: true, role: true, password: true },
     });
     if (!user) throw new AppError('User not found', 404);
-
-    if (user.role !== 'STUDENT' && user.role !== 'LECTURER') {
-      throw new AppError('This endpoint is only for students and lecturers.', 403);
-    }
 
     const code = String(verificationCode || '').trim();
     const verification = await verifyResetCode(user.id, code);

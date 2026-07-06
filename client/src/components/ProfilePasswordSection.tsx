@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
-import api, { showApiErrorToast } from '@services/api';
+import api from '@services/api';
+import { showToast } from '@components/Toast';
 
 type Step = 'idle' | 'request' | 'confirm';
 
@@ -21,6 +22,7 @@ export default function ProfilePasswordSection({
   const [requesting, setRequesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [sentToMasked, setSentToMasked] = useState('');
   const [devResetCode, setDevResetCode] = useState<string | null>(null);
   const [form, setForm] = useState({
     currentPassword: '',
@@ -37,6 +39,7 @@ export default function ProfilePasswordSection({
       confirmPassword: '',
     });
     setDevResetCode(null);
+    setSentToMasked('');
     setCodeSent(false);
     setStep('idle');
   };
@@ -44,6 +47,7 @@ export default function ProfilePasswordSection({
   const handleRequestCode = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.currentPassword.trim()) {
+      showToast('error', 'Enter your current password');
       onError('Enter your current password');
       return;
     }
@@ -52,18 +56,27 @@ export default function ProfilePasswordSection({
       const res = await api.post<{
         success: boolean;
         message: string;
+        sentToMasked?: string;
+        emailDelivered?: boolean;
         devResetCode?: string;
+        devHint?: string;
       }>('/profile/password/request-code', {
         currentPassword: form.currentPassword,
       });
       setCodeSent(true);
+      setSentToMasked(res.data.sentToMasked ?? '');
       setStep('confirm');
       setDevResetCode(res.data.devResetCode ?? null);
-      onSuccess(res.data.message || 'Verification code sent to the administrator.');
+      const successMsg =
+        res.data.sentToMasked && res.data.emailDelivered
+          ? `Verification code sent to ${res.data.sentToMasked}`
+          : res.data.message || 'Verification code sent to your email.';
+      onSuccess(successMsg);
     } catch (err: unknown) {
-      showApiErrorToast(err, 'Could not send verification code');
-      const ax = err as { response?: { data?: { message?: string } } };
-      onError(ax.response?.data?.message || 'Could not send verification code');
+      const ax = err as { response?: { data?: { message?: string }; status?: number } };
+      const message = ax.response?.data?.message || 'Could not send verification code';
+      showToast('error', message);
+      onError(message);
     } finally {
       setRequesting(false);
     }
@@ -72,22 +85,27 @@ export default function ProfilePasswordSection({
   const handleConfirmPassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!/^\d{6}$/.test(form.verificationCode.trim())) {
-      onError('Enter the 6-digit code from your administrator');
+      showToast('error', 'Enter the 6-digit code from your email');
+      onError('Enter the 6-digit code from your email');
       return;
     }
     if (form.newPassword.length < 8) {
+      showToast('error', 'Password must be at least 8 characters');
       onError('Password must be at least 8 characters');
       return;
     }
     if (!/[A-Z]/.test(form.newPassword)) {
+      showToast('error', 'Password must contain an uppercase letter');
       onError('Password must contain an uppercase letter');
       return;
     }
     if (!/[0-9]/.test(form.newPassword)) {
+      showToast('error', 'Password must contain a number');
       onError('Password must contain a number');
       return;
     }
     if (form.newPassword !== form.confirmPassword) {
+      showToast('error', 'New passwords do not match');
       onError('New passwords do not match');
       return;
     }
@@ -99,11 +117,13 @@ export default function ProfilePasswordSection({
         newPassword: form.newPassword,
       });
       resetForm();
+      showToast('success', res.data.message || 'Password updated successfully');
       onSuccess(res.data.message || 'Password updated successfully');
     } catch (err: unknown) {
-      showApiErrorToast(err, 'Failed to update password');
       const ax = err as { response?: { data?: { message?: string } } };
-      onError(ax.response?.data?.message || 'Failed to update password');
+      const message = ax.response?.data?.message || 'Failed to update password';
+      showToast('error', message);
+      onError(message);
     } finally {
       setSaving(false);
     }
@@ -145,8 +165,8 @@ export default function ProfilePasswordSection({
       {step === 'request' && (
         <form onSubmit={handleRequestCode} className="space-y-4">
           <p className="text-xs text-slate-600">
-            Enter your current password. A verification code will be emailed to the administrator.
-            After you receive the code, you can set a new password.
+            Enter your current password. If it is correct, a 6-digit code will be sent to your email
+            (personal Gmail or recovery email). Enter that code below to set a new password.
           </p>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pCurrentPassword" className="text-sm font-semibold text-slate-700">
@@ -183,7 +203,7 @@ export default function ProfilePasswordSection({
               ) : (
                 <Mail size={14} />
               )}
-              Send code to admin
+              Send code to email
             </button>
             <button
               type="button"
@@ -200,7 +220,11 @@ export default function ProfilePasswordSection({
         <form onSubmit={handleConfirmPassword} className="space-y-4">
           {codeSent && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-              Code requested. Ask your administrator for the 6-digit code sent to their email.
+              {sentToMasked ? (
+                <p>Code sent to <strong>{sentToMasked}</strong>. Check your inbox and spam folder.</p>
+              ) : (
+                <p>Verification code sent. Check your email inbox and spam folder.</p>
+              )}
               {devResetCode && (
                 <p className="mt-1 font-mono text-sm">
                   Dev code: <strong>{devResetCode}</strong>
@@ -210,7 +234,7 @@ export default function ProfilePasswordSection({
           )}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pVerificationCode" className="text-sm font-semibold text-slate-700">
-              Admin verification code
+              Verification code
             </label>
             <input
               id="pVerificationCode"
