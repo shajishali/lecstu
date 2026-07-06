@@ -317,17 +317,35 @@ export const adminEmailSettingsRules = [
   handleValidationErrors,
 ];
 
+const newPasswordRules = body('newPassword')
+  .isLength({ min: 8 })
+  .withMessage('Password must be at least 8 characters')
+  .matches(/[A-Z]/)
+  .withMessage('Password must contain an uppercase letter')
+  .matches(/[0-9]/)
+  .withMessage('Password must contain a number');
+
 export const passwordChangeRules = [
   body('currentPassword')
     .notEmpty()
     .withMessage('Current password is required'),
-  body('newPassword')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters')
-    .matches(/[A-Z]/)
-    .withMessage('Password must contain an uppercase letter')
-    .matches(/[0-9]/)
-    .withMessage('Password must contain a number'),
+  newPasswordRules,
+  handleValidationErrors,
+];
+
+export const profilePasswordRequestCodeRules = [
+  body('currentPassword')
+    .notEmpty()
+    .withMessage('Current password is required'),
+  handleValidationErrors,
+];
+
+export const profilePasswordChangeWithCodeRules = [
+  body('verificationCode')
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage('Verification code must be 6 digits'),
+  newPasswordRules,
   handleValidationErrors,
 ];
 

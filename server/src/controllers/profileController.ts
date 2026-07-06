@@ -14,6 +14,19 @@ import {
 } from '../services/lecturerInitialsMatch';
 import { userProfileSelect } from '../constants/userProfileSelect';
 import { comparePassword, hashPassword } from '../utils/password';
+import {
+  createResetToken,
+  verifyResetCode,
+  markResetTokenUsed,
+  purgeExpiredResetTokens,
+  RESET_CODE_EXPIRY_MINUTES,
+} from '../services/passwordResetService';
+import {
+  sendProfilePasswordChangeAdminEmail,
+  getEmailServiceMode,
+  maskEmail,
+} from '../services/emailService';
+import { logEmailVerificationEvent } from '../utils/emailVerificationAudit';
 
 const FCT_BUILDING_DEFAULT =
   'Faculty of Computing and Technology, University of Kelaniya';
@@ -314,6 +327,91 @@ export async function getGroups(_req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function requestPasswordChangeCode(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        isActive: true,
+      },
+    });
+    if (!user || !user.isActive) throw new AppError('User not found', 404);
+    if (user.role !== 'STUDENT' && user.role !== 'LECTURER') {
+      throw new AppError('Password change approval is only required for students and lecturers.', 403);
+    }
+
+    const valid = await comparePassword(String(currentPassword), user.password);
+    if (!valid) throw new AppError('Current password is incorrect', 400);
+
+    void purgeExpiredResetTokens().catch(() => {});
+
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN', isActive: true },
+      select: { email: true, firstName: true },
+    });
+    if (admins.length === 0) {
+      throw new AppError('No active administrator found to approve password changes.', 503);
+    }
+
+    const { code } = await createResetToken(user.id);
+    const userFullName = `${user.firstName} ${user.lastName}`.trim();
+    let emailDelivered = false;
+    const sentToMasked: string[] = [];
+
+    for (const admin of admins) {
+      try {
+        const delivery = await sendProfilePasswordChangeAdminEmail({
+          to: admin.email,
+          userFullName,
+          userEmail: user.email,
+          userRole: user.role,
+          code,
+          expiryMinutes: RESET_CODE_EXPIRY_MINUTES,
+        });
+        if (delivery.delivered) {
+          emailDelivered = true;
+          sentToMasked.push(maskEmail(admin.email));
+        }
+      } catch (err) {
+        console.error(`[LECSTU][profile-password] Failed to email admin ${admin.email}:`, err);
+      }
+    }
+
+    logEmailVerificationEvent('profile-password-request-code', req, {
+      userId: user.id,
+      success: emailDelivered,
+    });
+
+    const emailMode = getEmailServiceMode();
+    res.json({
+      success: true,
+      message: emailDelivered
+        ? 'Verification code sent to the administrator. Enter the code below to set your new password.'
+        : 'Verification code created. Ask your administrator for the code (check server email logs if SMTP is off).',
+      ...(emailDelivered ? { sentToMasked, emailDelivered: true } : {}),
+      ...(config.nodeEnv !== 'production' && {
+        devDelivery: emailMode,
+        devResetCode: code,
+        devHint:
+          emailMode === 'console'
+            ? 'Console mode is ON — check the API terminal for the code.'
+            : 'Development only: use the code below if email was not delivered.',
+      }),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -321,9 +419,16 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, password: true },
+      select: { id: true, role: true, password: true },
     });
     if (!user) throw new AppError('User not found', 404);
+
+    if (user.role === 'STUDENT' || user.role === 'LECTURER') {
+      throw new AppError(
+        'Students and lecturers must verify with an admin code. Use the password section in My Profile.',
+        403,
+      );
+    }
 
     const valid = await comparePassword(currentPassword, user.password);
     if (!valid) throw new AppError('Current password is incorrect', 400);
@@ -337,6 +442,46 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
       data: { password: await hashPassword(newPassword) },
     });
 
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function confirmPasswordChange(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.userId;
+    const { verificationCode, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, password: true },
+    });
+    if (!user) throw new AppError('User not found', 404);
+
+    if (user.role !== 'STUDENT' && user.role !== 'LECTURER') {
+      throw new AppError('This endpoint is only for students and lecturers.', 403);
+    }
+
+    const code = String(verificationCode || '').trim();
+    const verification = await verifyResetCode(user.id, code);
+    if (!verification.valid) {
+      logEmailVerificationEvent('profile-password-change', req, { userId: user.id, success: false });
+      throw new AppError('Invalid or expired verification code. Request a new code and try again.', 400);
+    }
+
+    const samePassword = await comparePassword(String(newPassword), user.password);
+    if (samePassword) {
+      throw new AppError('New password must be different from the current password', 400);
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: await hashPassword(String(newPassword)) },
+    });
+    await markResetTokenUsed(verification.tokenId);
+
+    logEmailVerificationEvent('profile-password-change', req, { userId: user.id, success: true });
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     next(err);

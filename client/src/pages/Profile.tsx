@@ -8,6 +8,7 @@ import { Camera, Save, AlertCircle, CheckCircle, User, Calendar, MapPin } from '
 const FCT_BUILDING_DEFAULT =
   'Faculty of Computing and Technology, University of Kelaniya';
 import StudentEnrollmentForm, { parseGroupName } from '@components/StudentEnrollmentForm';
+import ProfilePasswordSection from '@components/ProfilePasswordSection';
 
 interface Department {
   id: string;
@@ -418,6 +419,13 @@ export default function Profile() {
               <label className="text-sm font-semibold text-slate-700">Role</label>
               <input type="text" value={user.role} disabled className={inputCls} />
             </div>
+            {(user.role === 'STUDENT' || user.role === 'LECTURER') && (
+              <ProfilePasswordSection
+                onSuccess={(text) => showMessage('success', text)}
+                onError={(text) => showMessage('error', text)}
+                inputCls={inputCls}
+              />
+            )}
             <button type="submit" disabled={saving} className="mt-2 flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]">
               {saving ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Save size={16} /> Save Changes</>}
             </button>

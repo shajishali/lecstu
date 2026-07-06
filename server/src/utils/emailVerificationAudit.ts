@@ -4,6 +4,8 @@ export type EmailVerificationAction =
   | 'forgot-password'
   | 'verify-reset-code'
   | 'reset-password'
+  | 'profile-password-request-code'
+  | 'profile-password-change'
   | 'registration-send-code'
   | 'registration-verify-code'
   | 'register';

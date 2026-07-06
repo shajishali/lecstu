@@ -38,6 +38,15 @@ export interface PasswordResetEmailParams {
   expiryMinutes: number;
 }
 
+export interface ProfilePasswordChangeAdminEmailParams {
+  to: string;
+  userFullName: string;
+  userEmail: string;
+  userRole: string;
+  code: string;
+  expiryMinutes: number;
+}
+
 export interface RegistrationVerificationEmailParams {
   to: string;
   firstName?: string | null;
@@ -205,6 +214,47 @@ export async function sendPasswordResetCodeEmail(
   params: PasswordResetEmailParams,
 ): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
   const mail = buildPasswordResetEmail(params);
+  return sendMail(mail);
+}
+
+export function buildProfilePasswordChangeAdminEmail(
+  params: ProfilePasswordChangeAdminEmailParams,
+): SendMailOptions {
+  const subject = `LECSTU password change approval — ${params.userFullName}`;
+  const text = [
+    'Hi Admin,',
+    '',
+    `${params.userFullName} (${params.userEmail}, ${params.userRole}) requested to change their LECSTU password.`,
+    '',
+    `Approval code: ${params.code}`,
+    '',
+    `Share this code with the user so they can set a new password. Expires in ${params.expiryMinutes} minutes.`,
+    '',
+    '— LECSTU Academic Platform',
+  ].join('\n');
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;max-width:480px;margin:0 auto;color:#1e293b">
+      <p style="font-size:16px">Hi Admin,</p>
+      <p style="font-size:15px;line-height:1.5">
+        <strong>${params.userFullName}</strong> (${params.userEmail}, ${params.userRole}) verified their current password
+        and requested to change it.
+      </p>
+      <p style="font-size:15px;line-height:1.5">Give them this approval code to enter in My Profile:</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:24px 0;padding:16px;background:#f1f5f9;border-radius:8px;text-align:center">${params.code}</p>
+      <p style="font-size:14px;color:#64748b">Expires in <strong>${params.expiryMinutes} minutes</strong>.</p>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
+      <p style="font-size:12px;color:#94a3b8">LECSTU — AI-Integrated Academic Platform</p>
+    </div>
+  `.trim();
+
+  return { to: params.to, subject, text, html };
+}
+
+export async function sendProfilePasswordChangeAdminEmail(
+  params: ProfilePasswordChangeAdminEmailParams,
+): Promise<{ delivered: boolean; mode: EmailServiceMode }> {
+  const mail = buildProfilePasswordChangeAdminEmail(params);
   return sendMail(mail);
 }
 
