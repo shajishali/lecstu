@@ -465,7 +465,8 @@ export default function TimetableSavedTables() {
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 overflow-y-auto overflow-x-auto max-h-[min(75vh,calc(100vh-14rem))] overscroll-contain">
+      <div className="admin-batch-grid-panel rounded-xl border border-slate-200 bg-white p-4">
+        <div className="admin-batch-grid-scroll">
         {gridLoading ? (
           <p className="text-sm text-slate-500">Loading grid…</p>
         ) : grid ? (
@@ -475,7 +476,7 @@ export default function TimetableSavedTables() {
             courseOptions={courseOptions}
             lecturerOptions={lecturerOptions}
             hallOptions={hallOptions}
-            className="!overflow-visible"
+            scrollContainer="outer"
             onChange={(next) => {
               gridRef.current = next;
               setGrid(next);
@@ -485,6 +486,7 @@ export default function TimetableSavedTables() {
         ) : list.length === 0 ? null : (
           <p className="text-sm text-slate-500">Select a batch table above.</p>
         )}
+        </div>
       </div>
 
       <Modal

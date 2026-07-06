@@ -194,6 +194,33 @@ const emptyCell = (): TimetableGridCell => ({
   mergeContinue: false,
 });
 
+/** Standard FET day bands (08:00–17:55). Some imported batch tables only store morning rows. */
+const STANDARD_FET_TIME_ROWS: TimetableGridSnapshot['timeRows'] = [
+  { label: '08:00 - 08:55', start: '08:00', end: '08:55' },
+  { label: '09:00 - 09:55', start: '09:00', end: '09:55' },
+  { label: '10:00 - 10:55', start: '10:00', end: '10:55' },
+  { label: '11:00 - 11:55', start: '11:00', end: '11:55' },
+  { label: '12:00 - 12:55', start: '12:00', end: '12:55' },
+  { label: '13:00 - 13:55', start: '13:00', end: '13:55' },
+  { label: '14:00 - 14:55', start: '14:00', end: '14:55' },
+  { label: '15:00 - 15:55', start: '15:00', end: '15:55' },
+  { label: '16:00 - 16:55', start: '16:00', end: '16:55' },
+  { label: '17:00 - 17:55', start: '17:00', end: '17:55' },
+];
+
+/** Pad short grids so the admin editor always shows the full teaching day. */
+export function ensureFullDayTimeRows(grid: TimetableGridSnapshot): TimetableGridSnapshot {
+  if (grid.timeRows.length >= STANDARD_FET_TIME_ROWS.length) return grid;
+  const next = cloneGrid(grid);
+  const dayCount = next.dayColumns.length;
+  while (next.timeRows.length < STANDARD_FET_TIME_ROWS.length) {
+    const idx = next.timeRows.length;
+    next.timeRows.push({ ...STANDARD_FET_TIME_ROWS[idx] });
+    next.cells.push(Array.from({ length: dayCount }, () => emptyCell()));
+  }
+  return next;
+}
+
 /** Split cells that contain multiple course codes into separate time rows */
 function splitMultiCourseCells(grid: TimetableGridSnapshot): TimetableGridSnapshot {
   const next = cloneGrid(grid);
@@ -294,7 +321,9 @@ function repositionCellsToSlots(grid: TimetableGridSnapshot): TimetableGridSnaps
 
 /** Normalize grid for the visual editor: split merged lectures, attach slot times */
 export function prepareGridForEditing(grid: TimetableGridSnapshot): TimetableGridSnapshot {
-  return repositionCellsToSlots(ensureSlotTimesOnCells(splitMultiCourseCells(grid)));
+  return repositionCellsToSlots(
+    ensureSlotTimesOnCells(splitMultiCourseCells(ensureFullDayTimeRows(grid))),
+  );
 }
 
 function timeToMinutes(t: string): number {

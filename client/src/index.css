@@ -1436,6 +1436,20 @@
   .fet-grid-root {
     @apply w-full;
   }
+  /* Admin batch tables: single scroll region for the FET grid (not the whole page). */
+  .admin-batch-grid-panel {
+    @apply flex min-h-0 flex-col;
+  }
+  .admin-batch-grid-scroll {
+    height: min(560px, calc(100svh - 280px));
+    overflow-x: auto;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .admin-batch-grid-scroll .fet-grid-root {
+    overflow: visible;
+  }
 .fet-grid-table td,
 .fet-grid-table th {
   vertical-align: top;

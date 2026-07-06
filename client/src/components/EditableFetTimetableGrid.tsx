@@ -42,6 +42,8 @@ interface Props {
   onChange: (grid: TimetableGridSnapshot) => void;
   tableId?: string;
   className?: string;
+  /** When "outer", parent panel scrolls; inner grid does not create a nested scroll area. */
+  scrollContainer?: 'inner' | 'outer';
   courseOptions?: AutocompleteOption[];
   lecturerOptions?: AutocompleteOption[];
   hallOptions?: AutocompleteOption[];
@@ -167,6 +169,7 @@ export default function EditableFetTimetableGrid({
   onChange,
   tableId,
   className = '',
+  scrollContainer = 'inner',
   courseOptions = [],
   lecturerOptions = [],
   hallOptions = [],
@@ -308,7 +311,9 @@ export default function EditableFetTimetableGrid({
 
   return (
     <>
-      <div className={`fet-grid-root overflow-auto ${className}`}>
+      <div
+        className={`fet-grid-root ${scrollContainer === 'outer' ? '' : 'overflow-auto'} ${className}`}
+      >
         <p className="mb-2 text-xs text-slate-500">
           Standard day starts at 08:00. Each course has its own colour. If a class starts at 09:00, the 08:00 slot
           stays free. Drag row borders to adjust band times.
