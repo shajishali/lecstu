@@ -562,6 +562,124 @@ function cellLines(cell: TimetableGridCell): string[] {
   return Array.isArray(lines) ? lines : [];
 }
 
+function gridTimeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function gridFindRowIndexForStart(
+  timeRows: TimetableGridSnapshot['timeRows'],
+  startTime: string,
+): number {
+  const target = gridTimeToMinutes(startTime);
+  for (let i = 0; i < timeRows.length; i++) {
+    if (timeRows[i].start === startTime) return i;
+  }
+  for (let i = 0; i < timeRows.length; i++) {
+    const rowStart = gridTimeToMinutes(timeRows[i].start);
+    const rowEnd = gridTimeToMinutes(timeRows[i].end);
+    if (target >= rowStart && target < rowEnd) return i;
+  }
+  return 0;
+}
+
+function gridRowsForSlot(
+  timeRows: TimetableGridSnapshot['timeRows'],
+  startTime: string,
+  endTime: string,
+): { startTi: number; endTi: number } {
+  const startM = gridTimeToMinutes(startTime);
+  const endM = gridTimeToMinutes(endTime);
+  let startTi = gridFindRowIndexForStart(timeRows, startTime);
+  let endTi = startTi;
+  for (let i = 0; i < timeRows.length; i++) {
+    const rs = gridTimeToMinutes(timeRows[i].start);
+    const re = gridTimeToMinutes(timeRows[i].end);
+    if (startM >= rs && startM < re) startTi = i;
+    if (endM > rs && endM <= re) endTi = i;
+  }
+  if (endTi < startTi) endTi = startTi;
+  return { startTi, endTi };
+}
+
+const emptyGridCell = (): TimetableGridCell => ({
+  rawText: '',
+  lines: [],
+  displayLines: [],
+  isEmpty: true,
+  isBreak: false,
+  isOnline: false,
+  rowSpan: 1,
+  mergeContinue: false,
+});
+
+/** Canonicalize admin-edited grids before DB save (slot times + row anchors). */
+export function finalizeEditableGridSnapshot(grid: TimetableGridSnapshot): TimetableGridSnapshot {
+  const next: TimetableGridSnapshot = {
+    ...grid,
+    cells: (grid.cells ?? []).map((row) => (row ?? []).map((cell) => ({ ...cell }))),
+    timeRows: [...(grid.timeRows ?? [])],
+    dayColumns: [...(grid.dayColumns ?? [])],
+  };
+
+  for (let ti = 0; ti < next.cells.length; ti++) {
+    for (let di = 0; di < (next.cells[ti]?.length ?? 0); di++) {
+      const cell = next.cells[ti][di];
+      if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
+      if (!cell.slotStart || !cell.slotEnd) {
+        const span = Math.max(1, cell.rowSpan ?? 1);
+        const endTi = Math.min(ti + span - 1, next.timeRows.length - 1);
+        cell.slotStart = next.timeRows[ti]?.start ?? '08:00';
+        cell.slotEnd = next.timeRows[endTi]?.end ?? next.timeRows[ti]?.end ?? '08:55';
+      }
+      const { startTi, endTi } = gridRowsForSlot(next.timeRows, cell.slotStart, cell.slotEnd);
+      cell.rowSpan = Math.max(1, endTi - startTi + 1);
+    }
+  }
+
+  const rowCount = next.cells.length;
+  const colCount = next.cells[0]?.length ?? 0;
+  type Placement = { cell: TimetableGridCell; startTi: number; di: number };
+  const placements: Placement[] = [];
+
+  for (let di = 0; di < colCount; di++) {
+    for (let ti = 0; ti < rowCount; ti++) {
+      const cell = next.cells[ti][di];
+      if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
+      const slotStart = cell.slotStart ?? next.timeRows[ti]?.start ?? '08:00';
+      const slotEnd = cell.slotEnd ?? next.timeRows[ti]?.end ?? '08:55';
+      const { startTi, endTi } = gridRowsForSlot(next.timeRows, slotStart, slotEnd);
+      placements.push({
+        di,
+        startTi,
+        cell: {
+          ...cell,
+          slotStart,
+          slotEnd,
+          rowSpan: Math.max(1, endTi - startTi + 1),
+          mergeContinue: false,
+        },
+      });
+    }
+  }
+
+  for (let ti = 0; ti < rowCount; ti++) {
+    for (let di = 0; di < colCount; di++) {
+      if (next.cells[ti][di]?.isBreak) continue;
+      next.cells[ti][di] = emptyGridCell();
+    }
+  }
+
+  for (const { cell, startTi, di } of placements) {
+    const slot = next.cells[startTi]?.[di];
+    if (slot && !slot.isEmpty && !slot.isBreak) continue;
+    next.cells[startTi][di] = cell;
+  }
+
+  applyRowSpanMerges(next.cells);
+  return next;
+}
+
 /** Mark continuation rows under a rowSpan anchor (client JSON may omit mergeContinue). */
 function applyRowSpanMerges(cells: TimetableGridCell[][]): void {
   const rowCount = cells.length;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { showApiErrorToast } from '@services/api';
 import { showToast } from '@components/Toast';
 import Modal from '@components/Modal';
@@ -79,8 +79,31 @@ export default function TimetableSavedTables() {
   const [courseOptions, setCourseOptions] = useState<AutocompleteOption[]>([]);
   const [lecturerOptions, setLecturerOptions] = useState<AutocompleteOption[]>([]);
   const [hallOptions, setHallOptions] = useState<AutocompleteOption[]>([]);
+  const gridRef = useRef<TimetableGridSnapshot | null>(null);
 
   const isDirty = grid && savedGrid && JSON.stringify(grid) !== JSON.stringify(savedGrid);
+
+  const applyLoadedGrid = useCallback((prepared: TimetableGridSnapshot | null) => {
+    gridRef.current = prepared;
+    setGrid(prepared);
+    setSavedGrid(prepared ? cloneGrid(prepared) : null);
+    setSaveConflictSummary(null);
+  }, []);
+
+  const loadTableGrid = useCallback(
+    async (id: string, listRows: TableMeta[]) => {
+      const res = await api.get(`/admin/timetable/tables/${id}`);
+      const loaded = res.data?.data ?? null;
+      const prepared = loaded ? prepareGridForEditing(loaded) : null;
+      const meta = listRows.find((t) => t.id === id);
+      if (prepared && meta) {
+        prepared.tableTitle = formatBatchTableChipLabel(meta, listRows);
+      }
+      applyLoadedGrid(prepared);
+      return prepared;
+    },
+    [applyLoadedGrid],
+  );
 
   const fetchList = useCallback(async () => {
     try {
@@ -182,39 +205,27 @@ export default function TimetableSavedTables() {
 
   useEffect(() => {
     if (!selectedId) {
+      gridRef.current = null;
       setGrid(null);
       setSavedGrid(null);
       return;
     }
     setGridLoading(true);
-    api
-      .get(`/admin/timetable/tables/${selectedId}`)
-      .then((res) => {
-        const loaded = res.data?.data ?? null;
-        const prepared = loaded ? prepareGridForEditing(loaded) : null;
-        const meta = list.find((t) => t.id === selectedId);
-        if (prepared && meta) {
-          prepared.tableTitle = formatBatchTableChipLabel(meta, list);
-        }
-        setGrid(prepared);
-        setSavedGrid(prepared ? cloneGrid(prepared) : null);
-        setSaveConflictSummary(null);
-      })
+    loadTableGrid(selectedId, list)
       .catch((err) => showApiErrorToast(err, 'Failed to load table'))
       .finally(() => setGridLoading(false));
-  }, [selectedId]);
+  }, [selectedId, loadTableGrid]);
 
   const handleSave = async () => {
-    if (!selectedId || !grid) return;
+    const snapshot = gridRef.current ?? grid;
+    if (!selectedId || !snapshot) return;
     setSaving(true);
     setSaveConflictSummary(null);
     try {
-      const res = await api.patch(`/admin/timetable/tables/${selectedId}`, { grid });
-      const updated = res.data?.data ? prepareGridForEditing(res.data.data) : grid;
-      setGrid(updated);
-      setSavedGrid(cloneGrid(updated));
-      setSaveConflictSummary(null);
+      const res = await api.patch(`/admin/timetable/tables/${selectedId}`, { grid: snapshot });
       showToast('success', res.data?.message || 'Timetable saved');
+      const listData = await fetchList();
+      await loadTableGrid(selectedId, listData);
       setList((prev) =>
         prev.map((t) =>
           t.id === selectedId
@@ -229,7 +240,9 @@ export default function TimetableSavedTables() {
       if (summary && isConflict) {
         setSaveConflictSummary(summary);
         if (savedGrid) {
-          setGrid(cloneGrid(savedGrid));
+          const copy = cloneGrid(savedGrid);
+          gridRef.current = copy;
+          setGrid(copy);
         }
       } else {
         showApiErrorToast(err, 'Failed to save timetable');
@@ -241,7 +254,9 @@ export default function TimetableSavedTables() {
 
   const handleRevert = () => {
     if (savedGrid) {
-      setGrid(cloneGrid(savedGrid));
+      const copy = cloneGrid(savedGrid);
+      gridRef.current = copy;
+      setGrid(copy);
       setSaveConflictSummary(null);
     }
   };
@@ -294,7 +309,12 @@ export default function TimetableSavedTables() {
         showToast('success', 'Batch table updated');
         const data = await fetchList();
         const nextId = updated?.id ?? editTarget.id;
-        if (data.some((t) => t.id === nextId)) setSelectedId(nextId);
+        if (data.some((t) => t.id === nextId)) {
+          setSelectedId(nextId);
+          if (nextId === selectedId) {
+            await loadTableGrid(nextId, data);
+          }
+        }
         setFormOpen(false);
       } else {
         const res = await api.post('/admin/timetable/tables', {
@@ -457,6 +477,7 @@ export default function TimetableSavedTables() {
             lecturerOptions={lecturerOptions}
             hallOptions={hallOptions}
             onChange={(next) => {
+              gridRef.current = next;
               setGrid(next);
               setSaveConflictSummary(null);
             }}

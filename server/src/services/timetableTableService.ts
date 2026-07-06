@@ -4,6 +4,7 @@ import { invalidateAll as invalidateTimetableCache } from './timetableCache';
 import {
   createEmptyBatchGrid,
   enrichGridFromSlots,
+  finalizeEditableGridSnapshot,
   gridSnapshotsToParsedRows,
   normalizeGridSnapshot,
   type GridSlotRef,
@@ -213,12 +214,29 @@ export async function listTableSnapshots(filters?: {
     const mappedWeek = admissionYearToStorageWeek(batchYear);
     if (mappedWeek == null || mappedWeek === row.week) continue;
     try {
-      await prisma.timetableTableSnapshot.update({
-        where: { id: row.id },
-        data: { week: mappedWeek },
+      await updateTableSnapshotMeta(row.id, {
+        tableTitle: row.tableTitle,
+        groupName: row.groupName,
+        week: mappedWeek,
       });
-      const idx = repaired.findIndex((r) => r.id === row.id);
-      if (idx >= 0) repaired[idx] = { ...repaired[idx]!, week: mappedWeek };
+      const fresh = await prisma.timetableTableSnapshot.findUnique({
+        where: { id: row.id },
+        select: {
+          id: true,
+          tableTitle: true,
+          groupName: true,
+          year: true,
+          month: true,
+          week: true,
+          slotCount: true,
+          importedAt: true,
+          sourceFile: true,
+        },
+      });
+      if (fresh) {
+        const idx = repaired.findIndex((r) => r.id === row.id);
+        if (idx >= 0) repaired[idx] = fresh;
+      }
     } catch {
       /* week slot taken — keep existing week; matching still uses title */
     }
@@ -381,15 +399,17 @@ export async function updateTableSnapshotGrid(
   const row = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
   if (!row) throw new AppError('Timetable table not found', 404);
 
-  const grid = normalizeGridSnapshot({
-    ...rawGrid,
-    tableTitle: rawGrid.tableTitle || row.tableTitle,
-    groupName: row.groupName,
-    year: row.year,
-    month: row.month,
-    week: row.week,
-    semester: rawGrid.semester ?? row.semester,
-  });
+  const grid = finalizeEditableGridSnapshot(
+    normalizeGridSnapshot({
+      ...rawGrid,
+      tableTitle: rawGrid.tableTitle || row.tableTitle,
+      groupName: row.groupName,
+      year: row.year,
+      month: row.month,
+      week: row.week,
+      semester: rawGrid.semester ?? row.semester,
+    }),
+  );
 
   const groups = await prisma.studentGroup.findMany({
     where: { name: { equals: row.groupName, mode: 'insensitive' } },
@@ -459,8 +479,10 @@ export async function updateTableSnapshotGrid(
     }
   }
 
-  // Return the stored grid as-is for the editor (enrich on read can shift slot times).
-  return { grid, imported: importResult.created };
+  // Return the stored grid exactly as written (reload confirms persistence).
+  const savedRow = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
+  const persisted = savedRow ? publishedGridFromRow(savedRow) : grid;
+  return { grid: persisted, imported: importResult.created };
 }
 
 export async function validateTableSlot(
