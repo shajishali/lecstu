@@ -72,10 +72,6 @@ function daySummary(data: TodayOnCampusData): string {
   return parts.join(' · ');
 }
 
-function isOnlineSlot(slot: TodayCampusSlot): boolean {
-  return Boolean(slot.isOnline);
-}
-
 function navigateUrl(slot: TodayCampusSlot): string {
   if (!slot.mapBuildingId) return '/map';
   return buildCampusMapUrl({
