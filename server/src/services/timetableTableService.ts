@@ -31,6 +31,10 @@ import {
   formatBatchTableTitle,
   extractBatchYearLabel,
   normalizeBatchYearLabel,
+  resolveCanonicalGroupName,
+  isY1GroupWithAdmissionYear,
+  admissionYearToStorageWeek,
+  admissionYearFromStorageWeek,
 } from '../config/fct-faculty-config';
 
 export async function saveTableSnapshots(
@@ -48,12 +52,14 @@ export async function saveTableSnapshots(
       tableTitle: normalized.tableTitle,
       groupName: normalized.groupName,
     });
+    const storageWeek = y1StorageWeekForTitle(table.tableTitle, table.groupName, table.week);
+    const tableWithWeek = { ...table, week: storageWeek };
     if (replacePeriod) {
       await prisma.timetableTableSnapshot.deleteMany({
         where: {
-          groupName: table.groupName,
-          year: table.year,
-          month: table.month,
+          groupName: tableWithWeek.groupName,
+          year: tableWithWeek.year,
+          month: tableWithWeek.month,
         },
       });
     }
@@ -61,27 +67,27 @@ export async function saveTableSnapshots(
     const row = await prisma.timetableTableSnapshot.upsert({
       where: {
         groupName_year_month_week: {
-          groupName: table.groupName,
-          year: table.year,
-          month: table.month,
-          week: table.week,
+          groupName: tableWithWeek.groupName,
+          year: tableWithWeek.year,
+          month: tableWithWeek.month,
+          week: tableWithWeek.week,
         },
       },
       create: {
-        tableTitle: table.tableTitle,
-        groupName: table.groupName,
-        year: table.year,
-        month: table.month,
-        week: table.week,
-        semester: table.semester,
-        gridData: table as object,
+        tableTitle: tableWithWeek.tableTitle,
+        groupName: tableWithWeek.groupName,
+        year: tableWithWeek.year,
+        month: tableWithWeek.month,
+        week: tableWithWeek.week,
+        semester: tableWithWeek.semester,
+        gridData: tableWithWeek as object,
         sourceFile,
         slotCount: 0,
         isPublished: true,
       },
       update: {
-        tableTitle: table.tableTitle,
-        gridData: table as object,
+        tableTitle: tableWithWeek.tableTitle,
+        gridData: tableWithWeek as object,
         sourceFile,
         isPublished: true,
         importedAt: new Date(),
@@ -200,6 +206,24 @@ export async function listTableSnapshots(filters?: {
     }
   }
 
+  for (const row of repaired) {
+    if (!isY1GroupWithAdmissionYear(row.groupName)) continue;
+    const batchYear =
+      extractBatchYearLabel(row.tableTitle, row.groupName) ?? y1Assignments.get(row.id);
+    const mappedWeek = admissionYearToStorageWeek(batchYear);
+    if (mappedWeek == null || mappedWeek === row.week) continue;
+    try {
+      await prisma.timetableTableSnapshot.update({
+        where: { id: row.id },
+        data: { week: mappedWeek },
+      });
+      const idx = repaired.findIndex((r) => r.id === row.id);
+      if (idx >= 0) repaired[idx] = { ...repaired[idx]!, week: mappedWeek };
+    } catch {
+      /* week slot taken — keep existing week; matching still uses title */
+    }
+  }
+
   return repaired.sort(
     (a, b) =>
       compareBatchTableOrder(a.groupName, b.groupName) ||
@@ -249,6 +273,36 @@ async function enrichSnapshotGrid(
   return enrichGridFromSlots(normalizeGridSnapshot(grid), refs, { lecturerDisplay });
 }
 
+function snapshotCanonicalGroup(row: { groupName: string; tableTitle: string }): string | undefined {
+  return resolveCanonicalGroupName(row.groupName) ?? resolveCanonicalGroupName(row.tableTitle) ?? undefined;
+}
+
+function gridTitleFromSnapshotRow(row: { gridData: unknown }): string {
+  if (row.gridData && typeof row.gridData === 'object' && 'tableTitle' in row.gridData) {
+    const title = (row.gridData as { tableTitle?: string }).tableTitle;
+    if (typeof title === 'string' && title.trim()) return title.trim();
+  }
+  return '';
+}
+
+function resolveRowAdmissionYear(
+  row: { id: string; tableTitle: string; groupName: string; week: number; gridData: unknown },
+  inferredYears: Map<string, string>,
+): string | undefined {
+  if (inferredYears.has(row.id)) return inferredYears.get(row.id);
+  return (
+    extractBatchYearLabel(row.tableTitle, row.groupName) ??
+    extractBatchYearLabel(gridTitleFromSnapshotRow(row), row.groupName) ??
+    admissionYearFromStorageWeek(row.groupName, row.week)
+  );
+}
+
+function y1StorageWeekForTitle(tableTitle: string, groupName: string, fallbackWeek: number): number {
+  if (!isY1GroupWithAdmissionYear(groupName)) return fallbackWeek;
+  const mapped = admissionYearToStorageWeek(extractBatchYearLabel(tableTitle, groupName));
+  return mapped ?? fallbackWeek;
+}
+
 function publishedGridFromRow(row: {
   gridData: unknown;
   tableTitle: string;
@@ -281,16 +335,15 @@ export async function getPublishedGridForGroup(
   period?: { year?: number; month?: number; week?: number },
   preferredBatchYearLabel?: string | null,
 ): Promise<TimetableGridSnapshot | null> {
+  const canonicalTarget = (resolveCanonicalGroupName(groupName) ?? groupName.trim()).toUpperCase();
+  if (!canonicalTarget) return null;
+
   const where: {
-    groupName: { equals: string; mode: 'insensitive' };
     isPublished: boolean;
     year?: number;
     month?: number;
     week?: number;
-  } = {
-    groupName: { equals: groupName, mode: 'insensitive' },
-    isPublished: true,
-  };
+  } = { isPublished: true };
   if (period?.year) where.year = period.year;
   if (period?.month) where.month = period.month;
   if (period?.week) where.week = period.week;
@@ -299,17 +352,19 @@ export async function getPublishedGridForGroup(
     where,
     orderBy: [{ updatedAt: 'desc' }, { year: 'desc' }, { month: 'desc' }, { week: 'desc' }],
   });
-  if (!rows.length) return null;
+  const groupRows = rows.filter(
+    (row) => snapshotCanonicalGroup(row)?.toUpperCase() === canonicalTarget,
+  );
+  if (!groupRows.length) return null;
 
+  const inferredYears = assignMissingY1AdmissionYears(groupRows);
   const preferred = normalizeBatchYearLabel(preferredBatchYearLabel);
   if (preferred) {
-    const match = rows.find(
-      (row) => extractBatchYearLabel(row.tableTitle, row.groupName) === preferred,
-    );
+    const match = groupRows.find((row) => resolveRowAdmissionYear(row, inferredYears) === preferred);
     return match ? publishedGridFromRow(match) : null;
   }
 
-  return publishedGridFromRow(rows[0]!);
+  return publishedGridFromRow(groupRows[0]!);
 }
 
 export async function updateSnapshotSlotCount(groupName: string, year: number, month: number, week: number, count: number) {
@@ -537,13 +592,15 @@ export async function createTableSnapshot(input: {
   const tableTitle = normalized.tableTitle;
   if (!groupName) throw new AppError('groupName is required', 400);
 
+  const week = y1StorageWeekForTitle(tableTitle, groupName, input.week);
+
   const duplicate = await prisma.timetableTableSnapshot.findUnique({
     where: {
       groupName_year_month_week: {
         groupName,
         year: input.year,
         month: input.month,
-        week: input.week,
+        week,
       },
     },
   });
@@ -562,7 +619,7 @@ export async function createTableSnapshot(input: {
     groupName,
     year: input.year,
     month: input.month,
-    week: input.week,
+    week,
     semester: input.semester,
     dayColumns: template?.dayColumns,
     timeRows: template?.timeRows,
@@ -574,7 +631,7 @@ export async function createTableSnapshot(input: {
       groupName,
       year: input.year,
       month: input.month,
-      week: input.week,
+      week,
       semester: input.semester ?? 1,
       gridData: grid as object,
       sourceFile: 'admin-manual',
@@ -623,7 +680,7 @@ export async function updateTableSnapshotMeta(
   const nextTitle = normalized.tableTitle;
   const nextYear = input.year ?? row.year;
   const nextMonth = input.month ?? row.month;
-  const nextWeek = input.week ?? row.week;
+  const nextWeek = y1StorageWeekForTitle(nextTitle, nextGroupName, input.week ?? row.week);
   const nextSemester = input.semester ?? row.semester;
 
   if (!nextGroupName || !nextTitle) throw new AppError('tableTitle and groupName are required', 400);

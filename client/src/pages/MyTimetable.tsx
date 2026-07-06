@@ -146,6 +146,17 @@ interface TimetableEnrollment {
   selectedBatchYearLabel?: string | null;
 }
 
+function countGridOccupiedSlots(grid: TimetableGridSnapshot | null): number {
+  if (!grid?.cells?.length) return 0;
+  let count = 0;
+  for (const row of grid.cells) {
+    for (const cell of row) {
+      if (cell && !cell.isEmpty && !cell.isBreak && !cell.mergeContinue) count += 1;
+    }
+  }
+  return count;
+}
+
 function formatMembershipGroupName(
   group: NonNullable<import('../types/auth').User['studentGroupMemberships']>[number]['group'] | undefined,
   selectedBatchYearLabel?: string | null,
@@ -318,6 +329,9 @@ export default function MyTimetable() {
   }, [displayEnrollment]);
 
   const showStoredFetGrid = Boolean(gridSnapshot);
+  const gridSlotCount = useMemo(() => countGridOccupiedSlots(gridSnapshot), [gridSnapshot]);
+  const displaySlotCount = Math.max(flat.length, gridSlotCount);
+  const hasTimetableContent = flat.length > 0 || gridSlotCount > 0;
 
   function formatLastUpdated(iso: string | null | undefined): string {
     if (!iso) return 'Not updated yet';
@@ -342,7 +356,7 @@ export default function MyTimetable() {
           <h1>My Timetable</h1>
           <p className="tt-subtitle">
             {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule —{' '}
-            {flat.length} slot{flat.length !== 1 ? 's' : ''}
+            {displaySlotCount} slot{displaySlotCount !== 1 ? 's' : ''}
             {displayClassTitle && (
               <> · Class: <strong>{displayClassTitle}</strong></>
             )}
@@ -365,13 +379,13 @@ export default function MyTimetable() {
           <button className="btn btn-secondary btn-sm" onClick={handlePrint} title="Print">
             <Printer size={16} />
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={flat.length === 0}>
+          <button className="btn btn-primary btn-sm" onClick={handleExport} disabled={displaySlotCount === 0}>
             <Download size={16} /> Export CSV
           </button>
         </div>
       </div>
 
-      {flat.length === 0 ? (
+      {!hasTimetableContent ? (
         <div className="tt-empty">
           <h3>No timetable entries found</h3>
           <p>

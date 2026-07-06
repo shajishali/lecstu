@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { formatBatchTableTitle, extractBatchYearLabel } from '../config/fct-faculty-config';
+import { formatBatchTableTitle, extractBatchYearLabel, normalizeBatchYearLabel } from '../config/fct-faculty-config';
 import { resolveGroupIdsForStudent, parseEnrollmentFromGroupName } from './studentGroupResolver';
 import { getPublishedGridForGroup } from './timetableTableService';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
@@ -124,7 +124,8 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
   }) as TimetableSlot[];
 
   let grid: TimetableGridSnapshot | null = null;
-  const preferredBatchYear = primaryMembership?.selectedBatchYearLabel ?? null;
+  const preferredBatchYear =
+    normalizeBatchYearLabel(primaryMembership?.selectedBatchYearLabel) ?? null;
   if (primaryGroup?.name) {
     grid = await getPublishedGridForGroup(primaryGroup.name, undefined, preferredBatchYear);
     if (grid) {
@@ -138,16 +139,6 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
         groupName: primaryGroup.name,
       };
     }
-  }
-
-  if (preferredBatchYear && !grid) {
-    return {
-      weekly: organizeByDay([]),
-      flat: [],
-      lastUpdated: null,
-      enrollment,
-      grid: null,
-    };
   }
 
   const periodFiltered =

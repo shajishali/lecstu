@@ -297,6 +297,22 @@ export function isY1GroupWithAdmissionYear(groupName: string): boolean {
   return Y1_GROUPS_WITH_ADMISSION_YEAR.has(canonical);
 }
 
+/** Map Y1 admission year to storage week so 2023 / 2024 tables can share group + calendar period. */
+export function admissionYearToStorageWeek(batchYearLabel: string | null | undefined): number | undefined {
+  const year = normalizeBatchYearLabel(batchYearLabel);
+  if (year === '2023') return 1;
+  if (year === '2024') return 2;
+  return undefined;
+}
+
+/** Infer admission year from storage week for Y1 CS / ET / CT batches. */
+export function admissionYearFromStorageWeek(groupName: string, week: number): string | undefined {
+  if (!isY1GroupWithAdmissionYear(groupName)) return undefined;
+  if (week === 1) return '2023';
+  if (week === 2) return '2024';
+  return undefined;
+}
+
 function pickMissingY1AdmissionYear(usedYears: Set<string>): string {
   if (!usedYears.has('2024') && usedYears.has('2023')) return '2024';
   if (!usedYears.has('2023') && usedYears.has('2024')) return '2023';
@@ -307,7 +323,7 @@ function pickMissingY1AdmissionYear(usedYears: Set<string>): string {
 
 /** Assign 2023 / 2024 to Y1 CS, ET, CT tables that are missing an admission year. */
 export function assignMissingY1AdmissionYears<
-  T extends { id: string; tableTitle: string; groupName: string; importedAt?: Date | string },
+  T extends { id: string; tableTitle: string; groupName: string; week?: number; importedAt?: Date | string },
 >(rows: T[]): Map<string, string> {
   const assignments = new Map<string, string>();
   const byGroup = new Map<string, T[]>();
@@ -325,7 +341,9 @@ export function assignMissingY1AdmissionYears<
     const missing: T[] = [];
 
     for (const row of groupRows) {
-      const year = extractBatchYearLabel(row.tableTitle, row.groupName);
+      const year =
+        extractBatchYearLabel(row.tableTitle, row.groupName) ??
+        admissionYearFromStorageWeek(row.groupName, row.week ?? 0);
       if (year) usedYears.add(year);
       else missing.push(row);
     }
