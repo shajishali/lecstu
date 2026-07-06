@@ -6,6 +6,7 @@ import { showToast } from '@components/Toast';
 import TranslatableText from '@components/TranslatableText';
 import api from '@services/api';
 import { useMarkSectionReadOnVisit } from '@hooks/useMarkSectionReadOnVisit';
+import { formatBatchTableTitle, extractBatchYearLabel } from '@utils/batchTableMeta';
 import { formatCourseLabel } from '@utils/courseDisplay';
 import { formatTimetableLecturer } from '@utils/timetableLecturerDisplay';
 import { Printer, Download, RefreshCw } from 'lucide-react';
@@ -305,6 +306,17 @@ export default function MyTimetable() {
 
   const safeMobileIdx = Math.min(mobileDayIndex, DAYS.length - 1);
 
+  const displayClassTitle = useMemo(() => {
+    if (!displayEnrollment?.programCode || !displayEnrollment.studyYear) return null;
+    const groupKey = displayEnrollment.pathwayCode
+      ? `${displayEnrollment.programCode}-${displayEnrollment.studyYear}-${displayEnrollment.pathwayCode}`
+      : `${displayEnrollment.programCode}-${displayEnrollment.studyYear}`;
+    const batchYear =
+      displayEnrollment.selectedBatchYearLabel ??
+      extractBatchYearLabel(displayEnrollment.groupName, groupKey);
+    return formatBatchTableTitle(groupKey, batchYear);
+  }, [displayEnrollment]);
+
   const showStoredFetGrid = Boolean(gridSnapshot);
 
   function formatLastUpdated(iso: string | null | undefined): string {
@@ -331,14 +343,11 @@ export default function MyTimetable() {
           <p className="tt-subtitle">
             {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule —{' '}
             {flat.length} slot{flat.length !== 1 ? 's' : ''}
-            {displayEnrollment?.groupName && (
-              <> · Class: <strong>{displayEnrollment.groupName}</strong>
-                {displayEnrollment.pathwayCode
-                  ? ` (${displayEnrollment.programCode} ${displayEnrollment.studyYear} ${displayEnrollment.pathwayCode})`
-                  : displayEnrollment.programCode
-                    ? ` (${displayEnrollment.programCode} ${displayEnrollment.studyYear})`
-                    : ''}
-              </>
+            {displayClassTitle && (
+              <> · Class: <strong>{displayClassTitle}</strong></>
+            )}
+            {!displayClassTitle && displayEnrollment?.groupName && (
+              <> · Class: <strong>{displayEnrollment.groupName}</strong></>
             )}
             {' · '}
             Last updated: <strong>{formatLastUpdated(lastUpdated)}</strong>

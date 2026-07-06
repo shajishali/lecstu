@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { formatBatchTableTitle, extractBatchYearLabel } from '../config/fct-faculty-config';
 import { resolveGroupIdsForStudent, parseEnrollmentFromGroupName } from './studentGroupResolver';
 import { getPublishedGridForGroup } from './timetableTableService';
 import { enrichGridFromSlots, type GridSlotRef } from './timetableGridBuilder';
@@ -136,11 +137,16 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
   let grid: TimetableGridSnapshot | null = null;
   if (primaryGroup?.name) {
     grid = await getPublishedGridForGroup(primaryGroup.name, undefined, primaryMembership?.selectedBatchYearLabel);
-    if (grid && displayGroupName) {
+    if (grid) {
+      const friendlyTitle = formatBatchTableTitle(
+        primaryGroup.name,
+        primaryMembership?.selectedBatchYearLabel ??
+          extractBatchYearLabel(grid.tableTitle, primaryGroup.name),
+      );
       grid = {
         ...grid,
-        tableTitle: displayGroupName,
-        groupName: displayGroupName,
+        tableTitle: friendlyTitle,
+        groupName: primaryGroup.name,
       };
     }
   }

@@ -185,19 +185,82 @@ export function resolveCanonicalGroupNames(rawName: string): string[] {
 
 const PROGRAM_SORT_ORDER = ['BS', 'CS', 'CT', 'ET'] as const;
 
-/** Human-readable batch button label from canonical code (BS-Y1 → "Y1 BST Group", CS-Y3-AINT → "Y3 AINT"). */
-export function formatBatchTableTitle(canonicalGroupName: string): string {
+/** Normalize admission batch labels (23 → 2023, 2024 → 2024). */
+export function normalizeBatchYearLabel(value: string | number | null | undefined): string | undefined {
+  const raw = String(value ?? '').trim();
+  if (!raw) return undefined;
+  const twoDigit = raw.match(/^(\d{2})$/);
+  if (twoDigit) return `20${twoDigit[1]}`;
+  const fourDigit = raw.match(/^(20\d{2})$/);
+  return fourDigit ? fourDigit[1] : undefined;
+}
+
+function suffixIsPathwayCode(programCode: string, studyYear: StudyYear, suffix: string): boolean {
+  if (!YEARS_WITH_PATHWAYS.includes(studyYear)) return false;
+  const program = PROGRAMS.find((p) => p.code === programCode.toUpperCase());
+  return Boolean(program?.pathways.some((p) => p.code === suffix.toUpperCase()));
+}
+
+/** Read admission year (2023, 2024, …) from stored title or legacy group codes. */
+export function extractBatchYearLabel(tableTitle: string, groupName = ''): string | undefined {
+  const fromTitle = tableTitle.trim().match(/\b(20\d{2})\b/);
+  if (fromTitle) return fromTitle[1];
+
+  const shortInTitle = tableTitle.trim().match(/\b(\d{2})\b/);
+  if (shortInTitle) {
+    const normalized = normalizeBatchYearLabel(shortInTitle[1]);
+    if (normalized) return normalized;
+  }
+
+  for (const raw of [groupName, tableTitle]) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+
+    const legacy = trimmed.match(/^Y([1-4])[-\s]+(CS|ET|CT|BS|BST)(?:[-\s]+(\d{2}|20\d{2}))?$/i);
+    if (legacy?.[3]) {
+      const normalized = normalizeBatchYearLabel(legacy[3]);
+      if (normalized) return normalized;
+    }
+
+    const withSuffix = trimmed.match(/^(CS|ET|CT|BS)-Y([1-4])-([A-Z0-9]+)$/i);
+    if (withSuffix) {
+      const programCode = withSuffix[1].toUpperCase();
+      const studyYear = `Y${withSuffix[2]}` as StudyYear;
+      const suffix = withSuffix[3].toUpperCase();
+      if (!suffixIsPathwayCode(programCode, studyYear, suffix)) {
+        const normalized = normalizeBatchYearLabel(suffix);
+        if (normalized) return normalized;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/** Human-readable batch label (BS-Y1 → "Y1 BST Group 2023", CS-Y3-AINT → "Y3 AINT"). */
+export function formatBatchTableTitle(
+  canonicalGroupName: string,
+  batchYearLabel?: string | null,
+): string {
   const canonical = resolveCanonicalGroupName(canonicalGroupName) ?? canonicalGroupName.trim();
   const m = canonical.match(/^(CS|ET|CT|BS)-Y([1-4])(?:-([A-Z0-9]+))?$/i);
   if (!m) return canonicalGroupName.trim() || canonical;
 
   const prog = m[1].toUpperCase();
   const year = `Y${m[2]}`;
-  const pathway = m[3]?.toUpperCase();
+  const suffix = m[3]?.toUpperCase();
+  const isPathway =
+    suffix && suffixIsPathwayCode(prog, year as StudyYear, suffix) ? suffix : undefined;
 
-  if (prog === 'BS') return `${year} BST Group`;
-  if (pathway && (year === 'Y3' || year === 'Y4')) return `${year} ${pathway}`;
-  return `${year} ${prog}`;
+  let base: string;
+  if (prog === 'BS') base = `${year} BST Group`;
+  else if (isPathway) base = `${year} ${isPathway}`;
+  else base = `${year} ${prog}`;
+
+  const batch =
+    normalizeBatchYearLabel(batchYearLabel) ??
+    extractBatchYearLabel('', canonicalGroupName);
+  return batch ? `${base} ${batch}` : base;
 }
 
 /** Normalize admin batch table title + group code to FCT conventions. */
@@ -207,6 +270,7 @@ export function normalizeBatchTableMeta(
 ): { tableTitle: string; groupName: string } {
   const rawGroup = groupName.trim();
   const rawTitle = tableTitle.trim();
+  const batchYearLabel = extractBatchYearLabel(rawTitle, rawGroup);
   const canonical =
     resolveCanonicalGroupName(rawGroup) ??
     resolveCanonicalGroupName(rawTitle) ??
@@ -215,7 +279,7 @@ export function normalizeBatchTableMeta(
   if (canonical) {
     return {
       groupName: canonical,
-      tableTitle: formatBatchTableTitle(canonical),
+      tableTitle: formatBatchTableTitle(canonical, batchYearLabel),
     };
   }
 

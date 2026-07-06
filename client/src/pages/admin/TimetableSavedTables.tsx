@@ -8,7 +8,13 @@ import type { AutocompleteOption } from '@components/EditableFetTimetableGrid';
 import { cloneGrid, prepareGridForEditing } from '@utils/fetGridEdit';
 import type { TimetableGridSnapshot } from '../../types/timetableGrid';
 import { Plus, Save, RotateCcw, Edit2, Trash2, AlertTriangle } from 'lucide-react';
-import { formatBatchTableTitle } from '@utils/batchTableMeta';
+import {
+  formatBatchTableTitle,
+  formatBatchTableChipLabel,
+  extractBatchYearLabel,
+  suggestBatchTableTitle,
+  ADMISSION_BATCH_YEARS,
+} from '@utils/batchTableMeta';
 
 interface TableMeta {
   id: string;
@@ -26,6 +32,7 @@ interface BatchForm {
   tableTitle: string;
   groupName: string;
   departmentId: string;
+  batchYearLabel: string;
 }
 
 interface CourseOptionResponse {
@@ -49,6 +56,7 @@ const defaultForm = (): BatchForm => ({
   tableTitle: '',
   groupName: '',
   departmentId: '',
+  batchYearLabel: '',
 });
 
 export default function TimetableSavedTables() {
@@ -184,6 +192,10 @@ export default function TimetableSavedTables() {
       .then((res) => {
         const loaded = res.data?.data ?? null;
         const prepared = loaded ? prepareGridForEditing(loaded) : null;
+        const meta = list.find((t) => t.id === selectedId);
+        if (prepared && meta) {
+          prepared.tableTitle = formatBatchTableChipLabel(meta);
+        }
         setGrid(prepared);
         setSavedGrid(prepared ? cloneGrid(prepared) : null);
         setSaveConflictSummary(null);
@@ -249,6 +261,7 @@ export default function TimetableSavedTables() {
       tableTitle: t.tableTitle,
       groupName: t.groupName,
       departmentId: departments[0]?.id || '',
+      batchYearLabel: extractBatchYearLabel(t.tableTitle, t.groupName) ?? '',
     });
     setFormOpen(true);
   };
@@ -256,9 +269,17 @@ export default function TimetableSavedTables() {
   const handleFormSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const groupName = form.groupName.trim();
-    const tableTitle = form.tableTitle.trim() || formatBatchTableTitle(groupName);
+    const batchYearLabel = form.batchYearLabel.trim();
+    const tableTitle =
+      form.tableTitle.trim() ||
+      formatBatchTableTitle(groupName, batchYearLabel || undefined);
     if (!groupName) {
       showToast('error', 'Group code is required (e.g. CS-Y3-AINT)');
+      return;
+    }
+    const isY1 = /^CS-Y1$|^ET-Y1$|^CT-Y1$|^BS-Y1$/i.test(groupName.replace(/\s/g, ''));
+    if (isY1 && !extractBatchYearLabel(tableTitle, groupName)) {
+      showToast('error', 'Y1 batches need an admission year (2023 or 2024) so tables are not mixed up');
       return;
     }
     setFormSaving(true);
@@ -340,15 +361,17 @@ export default function TimetableSavedTables() {
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {list.map((t) => (
+          {list.map((t) => {
+            const chipTitle = formatBatchTableChipLabel(t);
+            return (
             <div key={t.id} className="inline-flex items-stretch rounded-lg overflow-hidden border border-slate-200">
               <button
                 type="button"
                 className={`btn btn-sm rounded-none border-0 ${selectedId === t.id ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setSelectedId(t.id)}
-                title={`${t.tableTitle} · ${t.groupName}`}
+                title={`${chipTitle} · ${t.groupName}`}
               >
-                <span className="font-medium">{t.tableTitle}</span>
+                <span className="font-medium">{chipTitle}</span>
                 <span className="ml-1.5 text-[11px] opacity-80">({t.groupName})</span>
               </button>
               <button
@@ -368,7 +391,8 @@ export default function TimetableSavedTables() {
                 <Trash2 size={14} />
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -451,15 +475,38 @@ export default function TimetableSavedTables() {
         <form onSubmit={handleFormSave} className="space-y-4">
           <p className="text-sm text-slate-600">
             Use a unique <strong>group code</strong> (e.g. <code className="text-xs">CS-Y3-AINT</code>) so batches do not
-            get mixed. The display title is what students see on the button.
+            get mixed. For <strong>Y1</strong> batches, set the admission year (<strong>2023</strong> or <strong>2024</strong>) so
+            duplicate tables stay distinct.
           </p>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-slate-700">Admission batch year</span>
+            <select
+              value={form.batchYearLabel}
+              onChange={(e) => {
+                const batchYearLabel = e.target.value;
+                const tableTitle = suggestBatchTableTitle(
+                  form.groupName,
+                  form.tableTitle,
+                  batchYearLabel || undefined,
+                );
+                setForm({ ...form, batchYearLabel, tableTitle });
+              }}
+              className="rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)]"
+            >
+              <option value="">— Select year —</option>
+              {ADMISSION_BATCH_YEARS.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            <span className="text-xs text-slate-500">Required for Y1 (e.g. Y1 CS 2023 vs Y1 CS 2024).</span>
+          </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold text-slate-700">Display title</span>
             <input
               type="text"
               value={form.tableTitle}
               onChange={(e) => setForm({ ...form, tableTitle: e.target.value })}
-              placeholder="Y1 BST Group"
+              placeholder="Y1 CS 2023"
               className="rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)]"
             />
           </label>
@@ -470,10 +517,14 @@ export default function TimetableSavedTables() {
               value={form.groupName}
               onChange={(e) => {
                 const groupName = e.target.value;
-                const autoTitle = formatBatchTableTitle(groupName);
+                const autoTitle = suggestBatchTableTitle(
+                  groupName,
+                  form.tableTitle,
+                  form.batchYearLabel || undefined,
+                );
                 const tableTitle =
                   !form.tableTitle ||
-                  form.tableTitle === formatBatchTableTitle(form.groupName) ||
+                  form.tableTitle === suggestBatchTableTitle(form.groupName, '', form.batchYearLabel || undefined) ||
                   !editTarget
                     ? autoTitle
                     : form.tableTitle;
