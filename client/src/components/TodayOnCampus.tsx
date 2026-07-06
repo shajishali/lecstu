@@ -41,6 +41,21 @@ function formatTime(t: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
+function allLecturesFinished(slots: TodayCampusSlot[]): boolean {
+  return (
+    slots.length > 0 &&
+    slots.every((slot) => !slot.isNow && !slot.isNext && !slot.isUpcoming)
+  );
+}
+
+function getAllDoneGreeting(serverTime: string): string {
+  const hour = parseInt(serverTime.split(':')[0], 10);
+  if (Number.isNaN(hour)) return 'All lectures finished for today! Well done.';
+  if (hour < 12) return 'All lectures finished for today! Enjoy the rest of your morning.';
+  if (hour < 17) return 'All lectures finished for today! Enjoy your afternoon.';
+  return 'All lectures finished for today! Have a great evening.';
+}
+
 function navigateUrl(slot: TodayCampusSlot): string {
   if (!slot.mapBuildingId) return '/map';
   return buildCampusMapUrl({
@@ -96,6 +111,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
 
   const dayLabel =
     data.dayOfWeek.charAt(0) + data.dayOfWeek.slice(1).toLowerCase();
+  const finishedForToday = allLecturesFinished(data.slots);
 
   return (
     <div className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}>
@@ -112,7 +128,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {data.hasMultipleLocations && data.slots.length > 1 && (
+          {data.hasMultipleLocations && data.slots.length > 1 && !finishedForToday && (
             <Link
               to={buildGuideAllTodayUrl()}
               className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"
@@ -134,6 +150,19 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
 
       {data.slots.length === 0 ? (
         <p className="px-4 py-6 text-sm text-slate-500">No classes scheduled for today.</p>
+      ) : finishedForToday ? (
+        <div className="px-4 py-8 text-center">
+          <p className="text-3xl" aria-hidden>
+            ✓
+          </p>
+          <p className="mt-2 text-base font-semibold text-slate-800">
+            {getAllDoneGreeting(data.serverTime)}
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            You completed {data.slots.length} class{data.slots.length !== 1 ? 'es' : ''} on campus
+            today. Rest well — see you next time!
+          </p>
+        </div>
       ) : (
         <ul className={`list-none p-0 ${compact ? 'divide-y divide-slate-100' : 'space-y-0'}`}>
           {data.slots.map((slot) => (
