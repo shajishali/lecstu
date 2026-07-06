@@ -3,7 +3,8 @@
 Log of issues encountered during Oracle Cloud hosting and how they were resolved.
 
 **Guide:** [hostingSteps.md](./hostingSteps.md)  
-**Started:** 20 June 2026
+**Started:** 20 June 2026  
+**Last updated:** 7 July 2026 (post-hosting development fixes from Cursor chats)
 
 ---
 
@@ -18,7 +19,7 @@ When something goes wrong during hosting:
 
 If a phase completed with no issues, note **No problems** so we know it was verified.
 
-**Screenshots** for each step are saved in [`hosting-screenshots/`](./hosting-screenshots/) and linked below so you can look back at what you did.
+**Screenshots** for each step are saved in [`hosting-screenshots/`](./hosting-screenshots/) and linked below. Chat screenshots from Cursor development sessions (July 2026) are copied there as `dev-fix01-…` through `dev-fix22-…`.
 
 ---
 
@@ -242,7 +243,7 @@ git clone https://github.com/shajishali/lecstu.git .
 
 ### 4.2 — Upload database backup and uploads folder
 
-**Status:** In progress — backup uploaded
+**Status:** OK — no problems
 
 Database dump uploaded via `pscp` to `/home/ubuntu/lecstu-backup.dump` (505 kB).
 
@@ -253,8 +254,6 @@ Floor plan images uploaded to `/var/www/lecstu/server/uploads/floorplans/` (~33 
 ![Phase 4.2 — pscp lecstu-backup.dump](./hosting-screenshots/phase4-02-pscp-backup.png)
 
 ![Phase 4.2 — pscp floorplans upload](./hosting-screenshots/phase4-03-pscp-floorplans.png)
-
-**Status:** OK — no problems
 
 ### 4.3 — Verify project structure
 
@@ -273,6 +272,7 @@ Floor plan images uploaded to `/var/www/lecstu/server/uploads/floorplans/` (~33 
 | Item | Value |
 |------|--------|
 | Oracle public IP | `149.118.54.64` |
+| Public URL | `https://lecstu.com` |
 | SSH user | `ubuntu` |
 | Project path | `/var/www/lecstu` |
 | PostgreSQL database | `lecstu` |
@@ -472,7 +472,7 @@ chmod -R 755 /var/www/lecstu/server/uploads
 
 ## Phase 7 — Go live (Nginx + PM2 + verify)
 
-**Status:** OK — site live on HTTP with PM2 + Nginx
+**Status:** OK — site live on **https://lecstu.com** (HTTPS added 7 July 2026 — see Fix 13)
 
 ### 7.1 — Nginx site config
 
@@ -490,8 +490,6 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-**Screenshot (add):** `hosting-screenshots/phase7-01-nginx-config-ok.png`
-
 ### 7.2 — PM2 start API
 
 **Status:** OK — no problems
@@ -502,8 +500,6 @@ pm2 start dist/server.js --name lecstu-api
 pm2 logs lecstu-api --lines 30
 curl -s http://127.0.0.1:5000/api/health
 ```
-
-**Screenshot (add):** `hosting-screenshots/phase7-02-pm2-online.png`
 
 ### 7.2 — `NODE_ENV` was development after go-live
 
@@ -521,7 +517,7 @@ pm2 logs lecstu-api --lines 8
 
 ### 7.5 — Login blocked: HTTPS required for auth (production)
 
-**Status:** Resolved (workaround — HTTP only)
+**Status:** Resolved — superseded by Fix 13 (real HTTPS on `lecstu.com`)
 
 **Problem:** Login page showed: `HTTPS is required for authentication requests.`
 
@@ -544,10 +540,6 @@ sed -i 's|^CLIENT_URL=.*|CLIENT_URL=http://149.118.54.64|' .env
 pm2 restart lecstu-api
 ```
 
-**Screenshot (add):**
-
-- `hosting-screenshots/phase7-03-https-required-login.png`
-
 ### 7.3 — PM2 auto-start on reboot
 
 **Status:** OK — no problems
@@ -565,8 +557,6 @@ Verify:
 pm2 list
 curl -s http://149.118.54.64/api/health
 ```
-
-**Screenshot (add):** `hosting-screenshots/phase7-04-pm2-startup-health.png`
 
 ---
 
@@ -1113,14 +1103,324 @@ All saved under [`hosting-screenshots/`](./hosting-screenshots/):
 
 ---
 
-### 8.1 / 8.3 / other optional phases
+---
 
-**Status:** Not started
+### Fix 4 — Registration code not delivered to `@stu.kln.ac.lk` only
 
-| Subphase | Problem | Solution |
-|----------|---------|----------|
-| 8.1 HTTPS | — | — |
-| 8.3 Floor plan vision | — | — |
+**Status:** Resolved (6 July 2026)
+
+**Problem:** Student registers with `user@stu.kln.ac.lk` only. API says code sent, but nothing in Outlook. With personal Gmail as recovery email, code arrives.
+
+**Cause:** Gmail SMTP accepts the send, but **Microsoft 365 quarantines** external senders to university mailboxes.
+
+**Screenshots:**
+
+![Registration — Outlook inbox empty, API says sent](./hosting-screenshots/dev-fix01-registration-outlook-no-mail.png)
+
+![Development — dev verification code shown when SMTP fails](./hosting-screenshots/dev-fix02-registration-dev-code-shown.png)
+
+**Solution:**
+
+1. **Require personal recovery email** for all registrations (codes go to Gmail, not university Outlook).
+2. Optional long-term: configure `SMTP_UNIVERSITY_*` in `server/.env` for Office 365 sender.
+3. UI warnings on Register page when university email is used.
+
+**Files:** `registrationVerificationController.ts`, `emailDomains.ts`, `Register.tsx`, `validate.ts`
+
+---
+
+### Fix 5 — Server crash after registration validation edit
+
+**Status:** Resolved (6 July 2026)
+
+**Problem:** `npm run dev` crashed — `validate.ts:31 Unexpected "."` — client showed `ECONNREFUSED` on `/api/auth/register-options`.
+
+**Cause:** Password validation rules were accidentally merged into `recoveryEmail` rules during Fix 4.
+
+**Solution:** Restore separate `body('recoveryEmail')` and `body('password')` blocks in `server/src/middleware/validate.ts`.
+
+---
+
+### Fix 6 — Dashboard indoor navigation: extra steps on Find My Way
+
+**Status:** Resolved (6 July 2026)
+
+**Problem:** Student picks building on dashboard → goes to Find My Way → must enter From/To again manually.
+
+**Screenshots:**
+
+![Dashboard — old flow, no destination picker](./hosting-screenshots/dev-fix09-dashboard-indoor-nav-before.png)
+
+![Building selected but places list empty](./hosting-screenshots/dev-fix10-dashboard-places-dropdown.png)
+
+![Added Floor dropdown for clearer place selection](./hosting-screenshots/dev-fix11-dashboard-floor-select.png)
+
+**Solution:** Dashboard **Indoor Navigation** card now has Building → Floor → Destination → **Go**. Auto-sets From = Administration Building ground entrance and opens route on Find My Way.
+
+**Files:** `Dashboard.tsx`, indoor navigation API hooks
+
+---
+
+### Fix 7 — “All lectures finished” greeting on dashboard
+
+**Status:** Resolved (6 July 2026)
+
+**Problem:** After last class of the day, dashboard still looked like a normal schedule with no friendly completion message.
+
+**Screenshot:**
+
+![Dashboard — friendly all-done greeting](./hosting-screenshots/dev-fix12-dashboard-all-done-greeting.png)
+
+**Solution:** `TodayOnCampus.tsx` shows time-of-day greeting when all slots are past (morning / afternoon / evening variants).
+
+---
+
+### Fix 8 — Profile password change redirected to dashboard
+
+**Status:** Resolved (6–7 July 2026)
+
+**Problem:** On My Profile, clicking **Send code to email** saved the profile form and navigated away instead of showing the verification step.
+
+**Screenshots:**
+
+![Profile — password change step 1](./hosting-screenshots/dev-fix13-profile-password-step1.png)
+
+![Bug — page jumped to dashboard after Send code](./hosting-screenshots/dev-fix14-password-redirect-bug.png)
+
+**Cause:** `ProfilePasswordSection` was **nested inside** the main profile `<form>` — button triggered parent form submit.
+
+**Solution:**
+
+1. Move password section **outside** profile form.
+2. Step-by-step flow on same page: current password → code → new password → success.
+3. All buttons `type="button"`.
+4. Works for **Student, Lecturer, Admin** roles.
+
+**Files:** `Profile.tsx`, `ProfilePasswordSection.tsx`, `profileController.ts`
+
+---
+
+### Fix 9 — Profile password reset email not delivered (SMTP)
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** UI showed success but no email at recovery Gmail. Dev code appeared instead.
+
+**Screenshot:**
+
+![SMTP failed — no email, dev code shown](./hosting-screenshots/dev-fix15-smtp-no-email-delivered.png)
+
+**Cause:** Stale app password in `server/data/email-settings.json` **overrode** `SMTP_PASS` in `.env`. Gmail returned `535 Username and Password not accepted`.
+
+**Solution:**
+
+1. `emailConfigStore.ts` — prefer `.env` `SMTP_PASS` over JSON override.
+2. Clearer amber warning in UI when delivery fails.
+3. User must **Save Changes** on recovery email before requesting code.
+4. Regenerate Gmail app password if needed.
+
+**Production proof (PM2 logs):**
+
+```text
+[LECSTU][email] Sent to pirabakaranshakiththiyan@gmail.com via default SMTP
+[LECSTU][profile-password] Reset code emailed to ...
+success=true
+```
+
+---
+
+### Fix 10 — Online lectures not identified on dashboard (production)
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** Timetable cell marked **Online** in admin grid, but dashboard showed **Navigate** button and no online badge.
+
+**Screenshots:**
+
+![Request — show online count for the day](./hosting-screenshots/dev-fix16-online-lecture-chip-request.png)
+
+![Production bug — online class still shows Navigate](./hosting-screenshots/dev-fix17-online-lecture-production-bug.png)
+
+**Causes:**
+
+1. Online detection used exact time keys — grid vs master timetable **start/end mismatch**.
+2. Only checked `rawText`, not all grid cell lines.
+3. Client build failed once (`isOnlineSlot` unused) so old UI (“Today on campus”) stayed cached.
+
+**Solution:**
+
+1. `buildOnlineSlotLookup()` + `resolveSlotOnlineFromGrid()` — match by course digits, start time, VL_ codes, virtual/zoom text.
+2. `TodayOnCampus.tsx` — blue **Online** badge, day summary chips, **no Navigate** for online slots.
+3. Fixed TS errors: `grid ?? null` in `studentTodayCampusService.ts`; removed unused `isOnlineSlot`.
+
+**Deploy lesson:** After `git pull`, rebuild **both** `server` and `client`. Hard refresh browser (`Ctrl+Shift+R`).
+
+---
+
+### Fix 11 — Lecturer profile showed all slots as free (green)
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** Student opens lecturer profile → weekly grid entirely green (free). Teaching times and appointments ignored.
+
+**Screenshot:**
+
+![Lecturer profile — incorrectly all free slots](./hosting-screenshots/dev-fix18-lecturer-all-free-bug.png)
+
+**Cause:** Teaching slots synced from master timetable only when **lecturer** opened their own timetable — not when **student** viewed availability.
+
+**Solution:** `lecturerAvailabilityService.ts` syncs teaching schedule on every availability request; merges teaching + manual busy + appointments; grid defaults to gray (unavailable) not green.
+
+---
+
+### Fix 12 — Lecturer availability missing batches / wrong 1-hour duration
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** Some lectures missing on lecturer profile; 2-hour classes shown as 1-hour blocks.
+
+**Screenshot:**
+
+![Wrong duration — 2-hour lecture shown as 1 hour](./hosting-screenshots/dev-fix19-lecturer-wrong-duration.png)
+
+**Cause:**
+
+1. Only `master_timetable` used — missed slots from other batch grids.
+2. Master rows store 1-hour periods; FET grid uses **`rowSpan`** for true 2-hour blocks.
+
+**Solution:** `fetchTeachingBlocksForLecturer()` in `lecturerTimetableService.ts`:
+
+- Scan **all published batch grids** (`TimetableTableSnapshot`) + master timetable.
+- Match lecturer by name, timetable code, FET VL codes.
+- Upgrade duration from grid `rowSpan`; merge adjacent same-course rows.
+
+---
+
+### Fix 13 — Domain `lecstu.com` + HTTPS (Phase 8.1)
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** Site only reachable by IP; login required `ALLOW_HTTP_AUTH=true` workaround; no padlock for users.
+
+**Screenshots:**
+
+![Namecheap Advanced DNS — www URL Redirect conflicted with A record](./hosting-screenshots/dev-fix20-namecheap-dns-redirect-conflict.png)
+
+![Namecheap Domain tab — keep BasicDNS, fix records in Advanced DNS](./hosting-screenshots/dev-fix21-namecheap-domain-tab.png)
+
+![nslookup — lecstu.com and www both → 149.118.54.64](./hosting-screenshots/dev-fix22-nslookup-dns-ok.png)
+
+**Problems faced during setup:**
+
+| # | Problem | Solution |
+|---|---------|----------|
+| 1 | Namecheap **URL Redirect** on `www` conflicted with **A record** | Delete redirect; keep only `@` and `www` A records → server IP |
+| 2 | Pasted old PuTTY output → hundreds of `command not found` | Run **one command at a time**; use `clear` between steps |
+| 3 | Certbot email prompt | Use `lecstu.system@gmail.com` (renewal notices only) |
+| 4 | EFF share email | `N` is fine — does not affect certificate |
+
+**Namecheap DNS (final):**
+
+```
+A Record    @      149.118.54.64
+A Record    www    149.118.54.64
+```
+
+**Server steps:**
+
+```bash
+sudo nano /etc/nginx/sites-available/lecstu
+# server_name lecstu.com www.lecstu.com;
+
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d lecstu.com -d www.lecstu.com
+# Choose redirect HTTP → HTTPS (option 2)
+
+nano /var/www/lecstu/server/.env
+# CLIENT_URL=https://lecstu.com
+# Remove or set ALLOW_HTTP_AUTH=false
+
+pm2 restart lecstu-api
+```
+
+**Result:** HTTPS live, cert expires **2026-10-04**, auto-renew via certbot timer. Public URL: **https://lecstu.com**
+
+---
+
+### Fix 14 — Production server build failed (TypeScript)
+
+**Status:** Resolved (7 July 2026)
+
+**Problem:** After `git pull`, `npm run build` failed on server:
+
+```text
+studentTodayCampusService.ts:196 — grid type undefined not assignable to null
+TodayOnCampus.tsx:75 — isOnlineSlot declared but never read
+```
+
+**Solution:** `const gridSnapshot = grid ?? null`; remove unused `isOnlineSlot`. Push fix → `git pull` → rebuild **server and client**.
+
+**Lesson:** If server `tsc` fails but you `pm2 restart` anyway, API runs **old** compiled code. Client may build while server does not — always check both builds succeed.
+
+---
+
+### Fix 15 — PM2 services running on production (reference, 7 July 2026)
+
+| PM2 name | Role | Approx. RAM |
+|----------|------|-------------|
+| `lecstu-api` | Main API | ~18 MB |
+| `lecstu-rasa` | Chatbot NLU | ~1.3 GB |
+| `lecstu-rasa-actions` | Chatbot actions | ~120 MB |
+| `lecstu-indoor-navigation` | Indoor nav AI | ~469 MB |
+| `lecstu-vision` | Floor plan vision | ~881 MB |
+
+**Note:** Enable AI services one at a time on 4 GB VM; monitor with `free -h`.
+
+---
+
+### 8.1 — HTTPS + custom domain (`lecstu.com`)
+
+**Status:** Resolved — see **Fix 13** above.
+
+| Item | Value |
+|------|--------|
+| Domain | `lecstu.com` (Namecheap) |
+| DNS | A records `@` + `www` → `149.118.54.64` |
+| SSL | Let's Encrypt via certbot |
+| `CLIENT_URL` | `https://lecstu.com` |
+| Cert expiry | 2026-10-04 (auto-renew) |
+
+---
+
+### 8.3 — Floor plan vision AI
+
+**Status:** Running on production (`lecstu-vision` in PM2, ~880 MB RAM)
+
+---
+
+### Development fixes screenshots index (July 2026)
+
+All saved under [`hosting-screenshots/`](./hosting-screenshots/) from Cursor chat images:
+
+| File | What it shows |
+|------|----------------|
+| `dev-fix01-registration-outlook-no-mail.png` | Registration code not in university Outlook |
+| `dev-fix02-registration-dev-code-shown.png` | Dev verification code when email fails |
+| `dev-fix03-registration-why-dev-code.png` | User confusion about dev code display |
+| `dev-fix09-dashboard-indoor-nav-before.png` | Old dashboard indoor nav flow |
+| `dev-fix10-dashboard-places-dropdown.png` | Places list after building selected |
+| `dev-fix11-dashboard-floor-select.png` | Floor dropdown added |
+| `dev-fix12-dashboard-all-done-greeting.png` | All lectures finished greeting |
+| `dev-fix13-profile-password-step1.png` | Profile password change UI |
+| `dev-fix14-password-redirect-bug.png` | Redirect to dashboard bug |
+| `dev-fix15-smtp-no-email-delivered.png` | SMTP failure / dev code fallback |
+| `dev-fix16-online-lecture-chip-request.png` | Request for online lecture indicators |
+| `dev-fix17-online-lecture-production-bug.png` | Online class still showing Navigate |
+| `dev-fix18-lecturer-all-free-bug.png` | Lecturer profile all green (wrong) |
+| `dev-fix19-lecturer-wrong-duration.png` | 2-hour class shown as 1 hour |
+| `dev-fix20-namecheap-dns-redirect-conflict.png` | Namecheap DNS redirect conflict |
+| `dev-fix21-namecheap-domain-tab.png` | Namecheap domain settings |
+| `dev-fix22-nslookup-dns-ok.png` | DNS propagation verified |
 
 ---
 
@@ -1129,9 +1429,16 @@ All saved under [`hosting-screenshots/`](./hosting-screenshots/):
 - **Never run `npm run db:seed` on production** — it wipes all data.
 - **Re-run test account removal on the server** after DB restore: `npm run db:remove-test-hosting-accounts`
 - **Do not commit** `server/.env`, passwords, or `.ppk` keys to Git.
-- If hosting on **HTTP only** (no domain/SSL yet), keep `ALLOW_HTTP_AUTH=true` (temporary). When you enable HTTPS, remove it or set it to `false`.
+- **HTTPS is live** at `https://lecstu.com` — set `CLIENT_URL=https://lecstu.com`; remove `ALLOW_HTTP_AUTH` or set to `false`.
+- **Registration codes** go to **personal recovery email** (Gmail). University `@stu.kln.ac.lk` alone will not receive codes unless university SMTP is configured.
+- **Profile password reset** sends to recovery email; **Save Changes** on profile before requesting code. If email fails, check `server/data/email-settings.json` is not overriding stale SMTP password.
 - **Never edit tracked files on the production server** — always local → `git push` → `git pull`. If pull fails, `git checkout -- <file>` only when GitHub has the correct version.
+- **After every deploy:** rebuild **server AND client**; verify `npm run build` exits with **zero errors** before `pm2 restart`.
 - **After Prisma migration on production:** always run `npx prisma generate` before `npm run build`.
+- **PuTTY:** paste **one command at a time** — never paste old terminal output logs.
+- **Namecheap DNS:** use **A records only** for `@` and `www`; do **not** use URL Redirect Record alongside www A record.
 - **Rasa chatbot:** edit locally → `git push` → production `git pull`. Train **only on ARM server** with `LD_PRELOAD`. See **Phase 8.2** and screenshot index `phase8-01` … `phase8-13`.
 - **`actions.py` only** → `pm2 restart lecstu-rasa-actions`. **Rules/NLU/stories** → `rasa train` + restart both Rasa processes.
-- **Chatbot timetable** must use FET **grid** data (same as My Timetable page), not stale `flat` rows.
+- **Chatbot timetable** and **lecturer availability** must use FET **grid** data (same as My Timetable page), not stale `flat` rows alone.
+- **Lecturer availability** uses all batch grids + `rowSpan` for correct 2-hour teaching blocks.
+- **Online lectures** on dashboard: no Navigate button; match grid `isOnline` / course code / VL_ markers.
