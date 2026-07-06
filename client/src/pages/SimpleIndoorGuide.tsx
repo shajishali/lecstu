@@ -11,11 +11,12 @@ import {
 import {
   getActiveNavigationSession,
   getBuildingsWithGuides,
-  getGuidePlaces,
   getTodayIndoorRoutes,
+  loadBuildingPlaces,
   patchSessionStep,
   postIndoorRoute,
   type IndoorRouteResult,
+  type SelectablePlace,
   type TodayRoutesResult,
 } from '@services/indoorNavApi';
 import { showToast } from '@components/Toast';
@@ -25,13 +26,6 @@ interface Building {
   name: string;
   code: string;
   floors: number;
-}
-
-interface SelectablePlace {
-  id: string;
-  name: string;
-  floor: number;
-  markerId?: string;
 }
 
 type RouteStep = { instruction: string; floor: number; polylineIndex?: number; buildingId?: string };
@@ -54,38 +48,8 @@ function formatTime(t: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
-async function loadBuildingPlaces(buildingId: string): Promise<SelectablePlace[]> {
-  const [guidePlaces, markersRes] = await Promise.all([
-    getGuidePlaces(buildingId).catch(() => []),
-    api.get('/map/markers', { params: { buildingId } }).catch(() => ({ data: { data: [] } })),
-  ]);
-
-  const byKey = new Map<string, SelectablePlace>();
-
-  for (const p of guidePlaces as SelectablePlace[]) {
-    const key = p.markerId || p.id;
-    byKey.set(key, {
-      id: p.id,
-      name: p.name,
-      floor: p.floor,
-      markerId: p.markerId,
-    });
-  }
-
-  for (const m of markersRes.data.data || []) {
-    if (!byKey.has(m.id)) {
-      byKey.set(m.id, {
-        id: m.id,
-        name: m.label,
-        floor: m.floor,
-        markerId: m.id,
-      });
-    }
-  }
-
-  return [...byKey.values()].sort(
-    (a, b) => a.floor - b.floor || a.name.localeCompare(b.name)
-  );
+async function fetchBuildingPlaces(buildingId: string): Promise<SelectablePlace[]> {
+  return loadBuildingPlaces(buildingId);
 }
 
 export default function SimpleIndoorGuide() {
@@ -124,6 +88,10 @@ export default function SimpleIndoorGuide() {
   const prevToBuildingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    autoRouteDone.current = false;
+  }, [searchParams]);
+
+  useEffect(() => {
     void (async () => {
       try {
         const [buildingsRes, guides] = await Promise.all([
@@ -134,20 +102,39 @@ export default function SimpleIndoorGuide() {
         setBuildings(list);
         setGuidedBuildingIds(new Set(guides.map((g) => g.buildingId)));
 
-        const urlBid = searchParams.get('buildingId');
+        const urlFromBid = searchParams.get('fromBuildingId');
+        const urlToBid =
+          searchParams.get('toBuildingId') || searchParams.get('buildingId');
         const urlQ =
           searchParams.get('q') ||
           searchParams.get('destination') ||
           searchParams.get('guide');
+        const urlFromFloor = searchParams.get('fromFloor');
         const urlFloor = searchParams.get('floor');
-        const defaultId =
-          urlBid && list.some((b: Building) => b.id === urlBid)
-            ? urlBid
+        const auto = searchParams.get('auto') === '1';
+        const adminBuilding = list.find((b: Building) => b.code === 'ADMIN');
+
+        const resolvedToId =
+          urlToBid && list.some((b: Building) => b.id === urlToBid)
+            ? urlToBid
             : guides[0]?.buildingId || list[0]?.id || '';
 
-        setFromBuildingId(defaultId);
-        setToBuildingId(defaultId);
+        const resolvedFromId =
+          urlFromBid && list.some((b: Building) => b.id === urlFromBid)
+            ? urlFromBid
+            : auto
+              ? adminBuilding?.id || resolvedToId
+              : resolvedToId;
+
+        setFromBuildingId(resolvedFromId);
+        setToBuildingId(resolvedToId);
         if (urlQ) setToQuery(urlQ);
+        if (urlFromFloor) {
+          const f = parseInt(urlFromFloor, 10);
+          if (!Number.isNaN(f)) setFromFloor(f);
+        } else if (auto) {
+          setFromFloor(0);
+        }
         if (urlFloor) {
           const f = parseInt(urlFloor, 10);
           if (!Number.isNaN(f)) setToFloor(f);
@@ -161,7 +148,7 @@ export default function SimpleIndoorGuide() {
   const refreshFromPlaces = useCallback(async () => {
     if (!fromBuildingId) return;
     try {
-      setFromAllPlaces(await loadBuildingPlaces(fromBuildingId));
+      setFromAllPlaces(await fetchBuildingPlaces(fromBuildingId));
     } catch {
       setFromAllPlaces([]);
     }
@@ -170,7 +157,7 @@ export default function SimpleIndoorGuide() {
   const refreshToPlaces = useCallback(async () => {
     if (!toBuildingId) return;
     try {
-      setToAllPlaces(await loadBuildingPlaces(toBuildingId));
+      setToAllPlaces(await fetchBuildingPlaces(toBuildingId));
     } catch {
       setToAllPlaces([]);
     }
@@ -556,7 +543,9 @@ export default function SimpleIndoorGuide() {
   );
 
   useEffect(() => {
-    if (autoRouteDone.current || isTodayMode || !buildings.length || !toBuildingId) return;
+    if (autoRouteDone.current || isTodayMode || !buildings.length || !toBuildingId || !fromBuildingId) {
+      return;
+    }
     const hallId = searchParams.get('hallId') || searchParams.get('toHallId') || '';
     const markerId = searchParams.get('markerId') || searchParams.get('toMarkerId') || '';
     const q =
@@ -564,14 +553,15 @@ export default function SimpleIndoorGuide() {
       searchParams.get('destination') ||
       searchParams.get('guide') ||
       '';
-    if (!hallId && !markerId && !q) return;
+    const auto = searchParams.get('auto') === '1';
+    if (!auto && !hallId && !markerId && !q) return;
     autoRouteDone.current = true;
     void fetchRoute({
       toHallId: hallId || undefined,
       toMarkerId: markerId || undefined,
-      silent: true,
+      silent: auto,
     });
-  }, [buildings.length, toBuildingId, isTodayMode, searchParams, fetchRoute]);
+  }, [buildings.length, toBuildingId, fromBuildingId, isTodayMode, searchParams, fetchRoute]);
 
   const handleGuide = useCallback(
     async (placeOverride?: SelectablePlace) => fetchRoute({ placeOverride }),

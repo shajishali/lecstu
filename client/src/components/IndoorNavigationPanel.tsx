@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Navigation, Search } from 'lucide-react';
+import { Navigation, Search } from 'lucide-react';
 import api, { showApiErrorToast } from '@services/api';
-import { getGuidePlaces, postStoryGuide } from '@services/indoorNavApi';
+import { loadBuildingPlaces, type SelectablePlace } from '@services/indoorNavApi';
+import {
+  buildDashboardNavigateUrl,
+  DASHBOARD_NAV_FROM_BUILDING_CODE,
+  findBuildingByCode,
+} from '@utils/dashboardNavigation';
 
 interface MapBuilding {
   id: string;
@@ -11,27 +16,51 @@ interface MapBuilding {
   floors: number;
 }
 
-interface GuidePlace {
-  name: string;
-  floor: number;
+function floorLabel(f: number) {
+  return f === 0 ? 'Ground floor' : `Floor ${f}`;
+}
+
+function floorOptionsForBuilding(building: MapBuilding | undefined, places: SelectablePlace[]) {
+  const fromPlaces = [...new Set(places.map((p) => p.floor))].sort((a, b) => a - b);
+  if (fromPlaces.length > 0) return fromPlaces;
+  const count = building?.floors ?? 1;
+  return Array.from({ length: Math.max(1, count) }, (_, i) => i);
 }
 
 export default function IndoorNavigationPanel() {
   const navigate = useNavigate();
-  const destinationRef = useRef<HTMLDivElement>(null);
   const [buildings, setBuildings] = useState<MapBuilding[]>([]);
-  const [places, setPlaces] = useState<GuidePlace[]>([]);
+  const [places, setPlaces] = useState<SelectablePlace[]>([]);
   const [buildingId, setBuildingId] = useState('');
-  const [destination, setDestination] = useState('');
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [floor, setFloor] = useState(0);
+  const [selectedPlaceId, setSelectedPlaceId] = useState('');
+  const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [previewSteps, setPreviewSteps] = useState<string[]>([]);
 
-  const filteredPlaces = useMemo(() => {
-    const q = destination.trim().toLowerCase();
-    if (!q) return places;
-    return places.filter((p) => p.name.toLowerCase().includes(q));
-  }, [places, destination]);
+  const selectedBuilding = useMemo(
+    () => buildings.find((b) => b.id === buildingId),
+    [buildings, buildingId],
+  );
+
+  const adminBuilding = useMemo(
+    () => findBuildingByCode(buildings, DASHBOARD_NAV_FROM_BUILDING_CODE),
+    [buildings],
+  );
+
+  const floorOptions = useMemo(
+    () => floorOptionsForBuilding(selectedBuilding, places),
+    [selectedBuilding, places],
+  );
+
+  const placesOnFloor = useMemo(
+    () => places.filter((p) => p.floor === floor).sort((a, b) => a.name.localeCompare(b.name)),
+    [places, floor],
+  );
+
+  const selectedPlace = useMemo(
+    () => placesOnFloor.find((p) => p.id === selectedPlaceId) ?? null,
+    [placesOnFloor, selectedPlaceId],
+  );
 
   useEffect(() => {
     void (async () => {
@@ -48,56 +77,46 @@ export default function IndoorNavigationPanel() {
 
   useEffect(() => {
     if (!buildingId) return;
-    setDestination('');
-    setSuggestionsOpen(false);
-    setPreviewSteps([]);
-    void (async () => {
-      try {
-        const data = await getGuidePlaces(buildingId);
-        setPlaces(data || []);
-      } catch {
-        setPlaces([]);
-      }
-    })();
+    setSelectedPlaceId('');
+    setFloor(0);
+    setLoadingPlaces(true);
+    void loadBuildingPlaces(buildingId)
+      .then((data) => setPlaces(data || []))
+      .catch(() => setPlaces([]))
+      .finally(() => setLoadingPlaces(false));
   }, [buildingId]);
 
   useEffect(() => {
-    if (!suggestionsOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (destinationRef.current && !destinationRef.current.contains(e.target as Node)) {
-        setSuggestionsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [suggestionsOpen]);
+    if (floorOptions.length === 0) return;
+    setFloor((current) => (floorOptions.includes(current) ? current : floorOptions[0]));
+  }, [floorOptions]);
 
-  const handleNavigate = useCallback(async (destOverride?: string) => {
-    const q = (destOverride || destination).trim();
-    if (!q || !buildingId) return;
-    setLoading(true);
-    setPreviewSteps([]);
-    setSuggestionsOpen(false);
-    try {
-      const result = await postStoryGuide({ buildingId, destination: q });
-      if (result.found && result.steps?.length) {
-        setPreviewSteps(result.steps);
-        navigate(`/navigate?buildingId=${buildingId}&q=${encodeURIComponent(result.destinationLabel || q)}`);
-        return;
-      }
-      setPreviewSteps([result.message || 'Place not found. Ask admin to set up navigation notes for this building.']);
-    } catch (err) {
-      showApiErrorToast(err, 'Navigation failed');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    setSelectedPlaceId('');
+  }, [floor, buildingId]);
+
+  const handleNavigate = useCallback(() => {
+    if (!selectedPlace || !buildingId) return;
+    if (!adminBuilding) {
+      showApiErrorToast(new Error('Administration Building not configured'), 'Navigation unavailable');
+      return;
     }
-  }, [destination, buildingId, navigate]);
 
-  const handlePlaceSelect = (name: string) => {
-    setDestination(name);
-    setSuggestionsOpen(false);
-    void handleNavigate(name);
-  };
+    setLoading(true);
+    navigate(
+      buildDashboardNavigateUrl({
+        fromBuildingId: adminBuilding.id,
+        toBuildingId: buildingId,
+        destination: selectedPlace.name,
+        toFloor: selectedPlace.floor,
+        toMarkerId: selectedPlace.markerId,
+      }),
+    );
+    setLoading(false);
+  }, [adminBuilding, buildingId, navigate, selectedPlace]);
+
+  const selectClass =
+    'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]';
 
   return (
     <section className="nav-panel rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -110,59 +129,67 @@ export default function IndoorNavigationPanel() {
       </div>
 
       {buildings.length > 0 && (
-        <label className="mb-3 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Building</span>
-          <select
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            value={buildingId}
-            onChange={(e) => setBuildingId(e.target.value)}
-          >
-            {buildings.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="mb-3 grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Building</span>
+            <select
+              className={selectClass}
+              value={buildingId}
+              onChange={(e) => setBuildingId(e.target.value)}
+            >
+              {buildings.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Floor</span>
+            <select
+              className={selectClass}
+              value={floor}
+              disabled={loadingPlaces}
+              onChange={(e) => setFloor(parseInt(e.target.value, 10))}
+            >
+              {floorOptions.map((f) => (
+                <option key={f} value={f}>
+                  {floorLabel(f)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       )}
 
       <label className="mb-3 block text-sm">
         <span className="mb-1 block font-medium text-slate-600">Where do you want to go?</span>
         <div className="flex gap-2">
-          <div ref={destinationRef} className="relative flex-1">
-            <input
-              type="text"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
-              placeholder="e.g. cafeteria, security room, reception"
-              value={destination}
-              onChange={(e) => {
-                setDestination(e.target.value);
-                setSuggestionsOpen(true);
-              }}
-              onFocus={() => places.length > 0 && setSuggestionsOpen(true)}
-              onKeyDown={(e) => e.key === 'Enter' && void handleNavigate()}
-            />
-            {suggestionsOpen && filteredPlaces.length > 0 && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                {filteredPlaces.map((p) => (
-                  <button
-                    key={`${p.floor}-${p.name}`}
-                    type="button"
-                    className="block w-full border-b border-slate-100 px-3 py-2.5 text-left text-sm hover:bg-slate-50 last:border-0"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handlePlaceSelect(p.name)}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <select
+            className={`min-w-0 flex-1 ${selectClass}`}
+            value={selectedPlaceId}
+            disabled={loadingPlaces}
+            onChange={(e) => setSelectedPlaceId(e.target.value)}
+          >
+            <option value="">
+              {loadingPlaces
+                ? 'Loading places…'
+                : placesOnFloor.length === 0
+                  ? `No places on ${floorLabel(floor)}`
+                  : 'Select a place'}
+            </option>
+            {placesOnFloor.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
-            disabled={loading || !destination.trim()}
-            onClick={() => void handleNavigate()}
-            className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            disabled={loading || loadingPlaces || !selectedPlaceId}
+            onClick={handleNavigate}
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             <Search size={16} />
             {loading ? '…' : 'Go'}
@@ -170,34 +197,16 @@ export default function IndoorNavigationPanel() {
         </div>
       </label>
 
-      {places.length > 0 && (
-        <div className="mb-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Quick pick</p>
-          <div className="flex flex-wrap gap-2">
-            {places.slice(0, 8).map((p) => (
-              <button
-                key={`${p.floor}-${p.name}`}
-                type="button"
-                onClick={() => handlePlaceSelect(p.name)}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-[var(--color-primary)]"
-              >
-                <MapPin size={12} />
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {previewSteps.length > 0 && (
-        <ol className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm text-slate-600">
-          {previewSteps.slice(0, 5).map((step, i) => (
-            <li key={i}>
-              {i + 1}. {step}
-            </li>
-          ))}
-        </ol>
-      )}
+      <p className="text-xs text-slate-500">
+        Starts from the ground-floor entrance of the Administration Building.
+        {places.length > 0 ? (
+          <>
+            {' '}
+            {placesOnFloor.length} place{placesOnFloor.length !== 1 ? 's' : ''} on {floorLabel(floor)} (
+            {places.length} total in building).
+          </>
+        ) : null}
+      </p>
 
       <Link
         to="/navigate"

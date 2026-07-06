@@ -135,6 +135,48 @@ export async function getGuidePlaces(buildingId: string, floor?: number) {
   return res.data.data;
 }
 
+export interface SelectablePlace {
+  id: string;
+  name: string;
+  floor: number;
+  markerId?: string;
+}
+
+/** Guide places + approved map markers — same source as Find My Way. */
+export async function loadBuildingPlaces(buildingId: string): Promise<SelectablePlace[]> {
+  const [guidePlaces, markersRes] = await Promise.all([
+    getGuidePlaces(buildingId).catch(() => []),
+    api.get('/map/markers', { params: { buildingId } }).catch(() => ({ data: { data: [] } })),
+  ]);
+
+  const byKey = new Map<string, SelectablePlace>();
+
+  for (const p of guidePlaces as SelectablePlace[]) {
+    const key = p.markerId || p.id || `${p.floor}-${p.name}`;
+    byKey.set(key, {
+      id: p.id || key,
+      name: p.name,
+      floor: p.floor,
+      markerId: p.markerId,
+    });
+  }
+
+  for (const m of markersRes.data.data || []) {
+    if (!byKey.has(m.id)) {
+      byKey.set(m.id, {
+        id: m.id,
+        name: m.label,
+        floor: m.floor,
+        markerId: m.id,
+      });
+    }
+  }
+
+  return [...byKey.values()].sort(
+    (a, b) => a.floor - b.floor || a.name.localeCompare(b.name),
+  );
+}
+
 export async function getBuildingsWithGuides(): Promise<
   Array<{ buildingId: string; buildingName: string; placeCount: number; floors: number[] }>
 > {

@@ -391,6 +391,12 @@ export default function Dashboard() {
         </div>
       )}
 
+      {(user?.role === 'LECTURER' || user?.role === 'ADMIN') && (
+        <div className="mb-8">
+          <IndoorNavigationPanel />
+        </div>
+      )}
+
       <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-4">
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-base font-bold text-slate-800">Your Profile</h3>
