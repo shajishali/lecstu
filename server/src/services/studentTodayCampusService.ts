@@ -1,6 +1,8 @@
 import prisma from '../config/database';
 import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 import { getStudentTimetable, type TimetableSlot } from './timetableService';
+import { buildOnlineSlotLookup } from './timetableGridBuilder';
+import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
   getCampusDateIso,
@@ -28,6 +30,7 @@ export interface TodayCampusSlot {
   isNow: boolean;
   isNext: boolean;
   isUpcoming: boolean;
+  isOnline: boolean;
 }
 
 export interface TodayOnCampusResult {
@@ -36,6 +39,10 @@ export interface TodayOnCampusResult {
   slots: TodayCampusSlot[];
   hasMultipleLocations: boolean;
   locationCount: number;
+  onlineCount: number;
+  onCampusCount: number;
+  hasOnlineClasses: boolean;
+  hasOnCampusClasses: boolean;
   serverTime: string;
   campusTimezone: string;
 }
@@ -91,10 +98,31 @@ function resolveMapBuilding(
   return null;
 }
 
+function resolveSlotIsOnline(
+  slot: TimetableSlot,
+  onlineLookup: Map<string, boolean>,
+): boolean {
+  const key = `${slot.dayOfWeek}|${slot.startTime}|${slot.endTime}`;
+  if (onlineLookup.has(key)) return onlineLookup.get(key)!;
+
+  const haystack = [
+    slot.notes,
+    slot.course.name,
+    slot.course.code,
+    slot.hall.name,
+    slot.hall.building,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return /\bonline\b/i.test(haystack);
+}
+
 async function enrichTodaySlots(
   entries: TimetableSlot[],
-  campusTime: string
+  campusTime: string,
+  grid: TimetableGridSnapshot | null,
 ): Promise<TodayCampusSlot[]> {
+  const onlineLookup = buildOnlineSlotLookup(grid);
   const mapBuildings = await prisma.mapBuilding.findMany({
     select: { id: true, name: true, code: true },
   });
@@ -141,6 +169,7 @@ async function enrichTodaySlots(
       isNow,
       isNext: false,
       isUpcoming,
+      isOnline: resolveSlotIsOnline(slot, onlineLookup),
     };
   });
 
@@ -157,13 +186,14 @@ async function getTodayRawSlots(studentId: string): Promise<{
   dayOfWeek: string;
   campusTime: string;
   entries: TimetableSlot[];
+  grid: TimetableGridSnapshot | null;
 }> {
   const dayOfWeek = getCampusDayOfWeek();
   const campusTime = getCampusTimeStr();
-  const { flat } = await getStudentTimetable(studentId);
+  const { flat, grid } = await getStudentTimetable(studentId);
 
   if (flat.length === 0) {
-    return { dayOfWeek, campusTime, entries: [] };
+    return { dayOfWeek, campusTime, entries: [], grid };
   }
 
   const period = pickLatestPeriodKey(flat);
@@ -171,14 +201,17 @@ async function getTodayRawSlots(studentId: string): Promise<{
     .filter((s) => s.dayOfWeek === dayOfWeek && (!period || periodKey(s) === period))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  return { dayOfWeek, campusTime, entries };
+  return { dayOfWeek, campusTime, entries, grid };
 }
 
 export async function getStudentTodayOnCampus(studentId: string): Promise<TodayOnCampusResult> {
-  const { dayOfWeek, campusTime, entries } = await getTodayRawSlots(studentId);
-  const slots = await enrichTodaySlots(entries, campusTime);
+  const { dayOfWeek, campusTime, entries, grid } = await getTodayRawSlots(studentId);
+  const slots = await enrichTodaySlots(entries, campusTime, grid);
 
-  const locationKeys = new Set(slots.map((s) => `${s.hall.building}|${s.hall.id}`));
+  const onCampusSlots = slots.filter((s) => !s.isOnline);
+  const locationKeys = new Set(onCampusSlots.map((s) => `${s.hall.building}|${s.hall.id}`));
+  const onlineCount = slots.filter((s) => s.isOnline).length;
+  const onCampusCount = slots.length - onlineCount;
 
   return {
     date: getCampusDateIso(),
@@ -186,14 +219,18 @@ export async function getStudentTodayOnCampus(studentId: string): Promise<TodayO
     slots,
     hasMultipleLocations: locationKeys.size >= 2,
     locationCount: locationKeys.size,
+    onlineCount,
+    onCampusCount,
+    hasOnlineClasses: onlineCount > 0,
+    hasOnCampusClasses: onCampusCount > 0,
     serverTime: campusTime,
     campusTimezone: getCampusTimezone(),
   };
 }
 
 export async function getStudentTodayNextClass(studentId: string): Promise<TodayNextClassResult> {
-  const { dayOfWeek, campusTime, entries } = await getTodayRawSlots(studentId);
-  const slots = await enrichTodaySlots(entries, campusTime);
+  const { dayOfWeek, campusTime, entries, grid } = await getTodayRawSlots(studentId);
+  const slots = await enrichTodaySlots(entries, campusTime, grid);
 
   let current: TodayCampusSlot | null = null;
   let next: TodayCampusSlot | null = null;

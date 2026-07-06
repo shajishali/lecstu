@@ -996,6 +996,36 @@ export function extractSlotRefsFromGridSnapshot(grid: TimetableGridSnapshot): Gr
   return refs;
 }
 
+/** Map `${dayOfWeek}|${startTime}|${endTime}` → online flag from FET grid cells. */
+export function buildOnlineSlotLookup(
+  grid: TimetableGridSnapshot | null | undefined,
+): Map<string, boolean> {
+  const lookup = new Map<string, boolean>();
+  if (!grid) return lookup;
+
+  const dayCols = grid.dayColumns ?? [];
+  const timeRows = grid.timeRows ?? [];
+
+  for (let di = 0; di < dayCols.length; di++) {
+    const day = dayCols[di]?.day;
+    if (!day) continue;
+
+    for (let ti = 0; ti < timeRows.length; ti++) {
+      const cell = grid.cells?.[ti]?.[di];
+      if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
+
+      const { startTime, endTime } = slotBoundsFromCell(cell, timeRows, ti);
+      if (!startTime || !endTime) continue;
+
+      const key = `${day}|${startTime}|${endTime}`;
+      const isOnline = cell.isOnline || /\bonline\b/i.test(cell.rawText ?? '');
+      lookup.set(key, isOnline);
+    }
+  }
+
+  return lookup;
+}
+
 function slotKey(s: GridSlotRef): string {
   return `${s.dayOfWeek}|${s.startTime}|${s.endTime}`;
 }
