@@ -997,6 +997,45 @@ export function extractSlotRefsFromGridSnapshot(grid: TimetableGridSnapshot): Gr
 }
 
 /** Map `${dayOfWeek}|${startTime}|${endTime}` → online flag from FET grid cells. */
+function gridCellText(cell: TimetableGridCell): string {
+  return [
+    cell.rawText ?? '',
+    ...(cell.displayLines ?? []),
+    ...(cell.lines ?? []),
+  ].join('\n');
+}
+
+function gridCellIsOnline(cell: TimetableGridCell): boolean {
+  const text = gridCellText(cell);
+  return (
+    cell.isOnline ||
+    /\bonline\b/i.test(text) ||
+    /\bvirtual\b/i.test(text) ||
+    /\bzoom\b/i.test(text) ||
+    /\bVL_/i.test(text)
+  );
+}
+
+function courseDigitsFromText(text: string): string | null {
+  const match = text.match(/[A-Z]{2,6}\s*[-]?\s*(\d{4,5})/i);
+  return match ? match[1] : null;
+}
+
+function courseDigitsFromSlot(course: { name: string; code: string }): string | null {
+  const fromCode = course.code.match(/(\d{4,5})/);
+  if (fromCode) return fromCode[1];
+  const fromName = course.name.match(/(\d{4,5})/);
+  return fromName ? fromName[1] : null;
+}
+
+function setOnlineLookup(lookup: Map<string, boolean>, key: string, isOnline: boolean): void {
+  if (isOnline) {
+    lookup.set(key, true);
+    return;
+  }
+  if (!lookup.has(key)) lookup.set(key, false);
+}
+
 export function buildOnlineSlotLookup(
   grid: TimetableGridSnapshot | null | undefined,
 ): Map<string, boolean> {
@@ -1017,13 +1056,80 @@ export function buildOnlineSlotLookup(
       const { startTime, endTime } = slotBoundsFromCell(cell, timeRows, ti);
       if (!startTime || !endTime) continue;
 
-      const key = `${day}|${startTime}|${endTime}`;
-      const isOnline = cell.isOnline || /\bonline\b/i.test(cell.rawText ?? '');
-      lookup.set(key, isOnline);
+      const isOnline = gridCellIsOnline(cell);
+      const text = gridCellText(cell);
+
+      setOnlineLookup(lookup, `${day}|${startTime}|${endTime}`, isOnline);
+      setOnlineLookup(lookup, `${day}|${startTime}`, isOnline);
+
+      const digits = courseDigitsFromText(text);
+      if (digits) {
+        setOnlineLookup(lookup, `${day}|course:${digits}`, isOnline);
+      }
     }
   }
 
   return lookup;
+}
+
+export function resolveSlotOnlineFromGrid(
+  grid: TimetableGridSnapshot | null | undefined,
+  slot: {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    course: { name: string; code: string };
+    hall: { name: string; building: string };
+    notes?: string | null;
+    lecturerInitials?: string | null;
+  },
+): boolean {
+  const slotHaystack = [
+    slot.notes,
+    slot.course.name,
+    slot.course.code,
+    slot.lecturerInitials,
+    slot.hall.name,
+    slot.hall.building,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  if (/\bonline\b|\bvirtual\b|\bzoom\b/i.test(slotHaystack)) return true;
+  if (slot.lecturerInitials && /^VL_/i.test(slot.lecturerInitials.trim())) return true;
+
+  const lookup = buildOnlineSlotLookup(grid);
+  const exactKey = `${slot.dayOfWeek}|${slot.startTime}|${slot.endTime}`;
+  if (lookup.get(exactKey) === true) return true;
+
+  const startKey = `${slot.dayOfWeek}|${slot.startTime}`;
+  if (lookup.get(startKey) === true) return true;
+
+  const digits = courseDigitsFromSlot(slot.course);
+  if (digits && lookup.get(`${slot.dayOfWeek}|course:${digits}`) === true) return true;
+
+  if (grid) {
+    const dayCols = grid.dayColumns ?? [];
+    const timeRows = grid.timeRows ?? [];
+
+    for (let di = 0; di < dayCols.length; di++) {
+      if (dayCols[di]?.day !== slot.dayOfWeek) continue;
+
+      for (let ti = 0; ti < timeRows.length; ti++) {
+        const cell = grid.cells?.[ti]?.[di];
+        if (!cell || cell.isEmpty || cell.isBreak || cell.mergeContinue) continue;
+
+        const text = gridCellText(cell);
+        const cellDigits = courseDigitsFromText(text);
+        if (!digits || cellDigits !== digits) continue;
+
+        if (gridCellIsOnline(cell)) return true;
+      }
+    }
+  }
+
+  if (lookup.has(exactKey)) return lookup.get(exactKey)!;
+  return false;
 }
 
 function slotKey(s: GridSlotRef): string {

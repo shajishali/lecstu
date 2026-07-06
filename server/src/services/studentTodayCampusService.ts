@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 import { getStudentTimetable, type TimetableSlot } from './timetableService';
-import { buildOnlineSlotLookup } from './timetableGridBuilder';
+import { resolveSlotOnlineFromGrid } from './timetableGridBuilder';
 import type { TimetableGridSnapshot } from '../types/timetableGrid';
 import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
 import {
@@ -100,21 +100,17 @@ function resolveMapBuilding(
 
 function resolveSlotIsOnline(
   slot: TimetableSlot,
-  onlineLookup: Map<string, boolean>,
+  grid: TimetableGridSnapshot | null,
 ): boolean {
-  const key = `${slot.dayOfWeek}|${slot.startTime}|${slot.endTime}`;
-  if (onlineLookup.has(key)) return onlineLookup.get(key)!;
-
-  const haystack = [
-    slot.notes,
-    slot.course.name,
-    slot.course.code,
-    slot.hall.name,
-    slot.hall.building,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  return /\bonline\b/i.test(haystack);
+  return resolveSlotOnlineFromGrid(grid, {
+    dayOfWeek: slot.dayOfWeek,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    course: slot.course,
+    hall: slot.hall,
+    notes: slot.notes,
+    lecturerInitials: slot.lecturerInitials,
+  });
 }
 
 async function enrichTodaySlots(
@@ -122,7 +118,6 @@ async function enrichTodaySlots(
   campusTime: string,
   grid: TimetableGridSnapshot | null,
 ): Promise<TodayCampusSlot[]> {
-  const onlineLookup = buildOnlineSlotLookup(grid);
   const mapBuildings = await prisma.mapBuilding.findMany({
     select: { id: true, name: true, code: true },
   });
@@ -169,7 +164,7 @@ async function enrichTodaySlots(
       isNow,
       isNext: false,
       isUpcoming,
-      isOnline: resolveSlotIsOnline(slot, onlineLookup),
+      isOnline: resolveSlotIsOnline(slot, grid),
     };
   });
 
