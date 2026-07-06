@@ -2,8 +2,14 @@ import prisma from '../config/database';
 import { getFacultyBuildingByCode } from '../constants/facultyBuildings';
 import { getStudentTimetable, type TimetableSlot } from './timetableService';
 import { UNASSIGNED_LECTURER_EMAIL } from './conflictDetector';
-
-const DAY_ORDER = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+import {
+  getCampusDateIso,
+  getCampusDayOfWeek,
+  getCampusTimeStr,
+  getCampusTimezone,
+  isTimeInSlot,
+  parseTimeToMinutes,
+} from '../utils/campusTime';
 
 export interface TodayCampusSlot {
   id: string;
@@ -20,6 +26,7 @@ export interface TodayCampusSlot {
   markerId: string | null;
   floor: number;
   isNow: boolean;
+  isNext: boolean;
   isUpcoming: boolean;
 }
 
@@ -30,28 +37,17 @@ export interface TodayOnCampusResult {
   hasMultipleLocations: boolean;
   locationCount: number;
   serverTime: string;
+  campusTimezone: string;
 }
 
 export interface TodayNextClassResult {
   date: string;
   dayOfWeek: string;
   serverTime: string;
+  campusTimezone: string;
   current: TodayCampusSlot | null;
   next: TodayCampusSlot | null;
   slots: TodayCampusSlot[];
-}
-
-function getServerDayOfWeek(): string {
-  return DAY_ORDER[new Date().getDay()];
-}
-
-function getServerTimeStr(): string {
-  const now = new Date();
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-}
-
-function getServerDateIso(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function periodKey(slot: TimetableSlot): string {
@@ -97,7 +93,7 @@ function resolveMapBuilding(
 
 async function enrichTodaySlots(
   entries: TimetableSlot[],
-  serverTime: string
+  campusTime: string
 ): Promise<TodayCampusSlot[]> {
   const mapBuildings = await prisma.mapBuilding.findMany({
     select: { id: true, name: true, code: true },
@@ -114,12 +110,14 @@ async function enrichTodaySlots(
     markers.filter((m) => m.hallId).map((m) => [m.hallId!, m])
   );
 
-  return entries.map((slot) => {
+  const nowMinutes = parseTimeToMinutes(campusTime);
+  const slots = entries.map((slot) => {
     const mapB = resolveMapBuilding(slot.hall.building, mapBuildings);
     const marker = markerByHall.get(slot.hall.id);
     const floor = marker?.floor ?? 0;
-    const isNow = slot.startTime <= serverTime && serverTime < slot.endTime;
-    const isUpcoming = serverTime < slot.startTime;
+    const startMinutes = parseTimeToMinutes(slot.startTime);
+    const isNow = isTimeInSlot(campusTime, slot.startTime, slot.endTime);
+    const isUpcoming = nowMinutes < startMinutes;
 
     return {
       id: slot.id,
@@ -141,22 +139,31 @@ async function enrichTodaySlots(
       markerId: marker?.id ?? null,
       floor,
       isNow,
+      isNext: false,
       isUpcoming,
     };
   });
+
+  const hasCurrent = slots.some((s) => s.isNow);
+  if (hasCurrent) return slots;
+
+  const nextSlot = slots.find((s) => parseTimeToMinutes(s.startTime) > nowMinutes);
+  if (!nextSlot) return slots;
+
+  return slots.map((s) => ({ ...s, isNext: s.id === nextSlot.id }));
 }
 
 async function getTodayRawSlots(studentId: string): Promise<{
   dayOfWeek: string;
-  serverTime: string;
+  campusTime: string;
   entries: TimetableSlot[];
 }> {
-  const dayOfWeek = getServerDayOfWeek();
-  const serverTime = getServerTimeStr();
+  const dayOfWeek = getCampusDayOfWeek();
+  const campusTime = getCampusTimeStr();
   const { flat } = await getStudentTimetable(studentId);
 
   if (flat.length === 0) {
-    return { dayOfWeek, serverTime, entries: [] };
+    return { dayOfWeek, campusTime, entries: [] };
   }
 
   const period = pickLatestPeriodKey(flat);
@@ -164,51 +171,55 @@ async function getTodayRawSlots(studentId: string): Promise<{
     .filter((s) => s.dayOfWeek === dayOfWeek && (!period || periodKey(s) === period))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  return { dayOfWeek, serverTime, entries };
+  return { dayOfWeek, campusTime, entries };
 }
 
 export async function getStudentTodayOnCampus(studentId: string): Promise<TodayOnCampusResult> {
-  const { dayOfWeek, serverTime, entries } = await getTodayRawSlots(studentId);
-  const slots = await enrichTodaySlots(entries, serverTime);
+  const { dayOfWeek, campusTime, entries } = await getTodayRawSlots(studentId);
+  const slots = await enrichTodaySlots(entries, campusTime);
 
   const locationKeys = new Set(slots.map((s) => `${s.hall.building}|${s.hall.id}`));
 
   return {
-    date: getServerDateIso(),
+    date: getCampusDateIso(),
     dayOfWeek,
     slots,
     hasMultipleLocations: locationKeys.size >= 2,
     locationCount: locationKeys.size,
-    serverTime,
+    serverTime: campusTime,
+    campusTimezone: getCampusTimezone(),
   };
 }
 
 export async function getStudentTodayNextClass(studentId: string): Promise<TodayNextClassResult> {
-  const { dayOfWeek, serverTime, entries } = await getTodayRawSlots(studentId);
-  const slots = await enrichTodaySlots(entries, serverTime);
+  const { dayOfWeek, campusTime, entries } = await getTodayRawSlots(studentId);
+  const slots = await enrichTodaySlots(entries, campusTime);
 
   let current: TodayCampusSlot | null = null;
   let next: TodayCampusSlot | null = null;
+  const nowMinutes = parseTimeToMinutes(campusTime);
 
   for (const s of slots) {
-    if (s.startTime <= serverTime && serverTime < s.endTime) {
+    if (isTimeInSlot(campusTime, s.startTime, s.endTime)) {
       current = s;
     }
   }
 
   if (!current) {
-    next = slots.find((s) => s.startTime > serverTime) ?? null;
+    next = slots.find((s) => parseTimeToMinutes(s.startTime) > nowMinutes) ?? null;
   } else {
     const idx = slots.findIndex((s) => s.id === current!.id);
-    next = slots.slice(idx + 1).find((s) => s.startTime > serverTime) ?? null;
+    next =
+      slots.slice(idx + 1).find((s) => parseTimeToMinutes(s.startTime) > nowMinutes) ?? null;
   }
 
   return {
-    date: getServerDateIso(),
+    date: getCampusDateIso(),
     dayOfWeek,
-    serverTime,
+    serverTime: campusTime,
+    campusTimezone: getCampusTimezone(),
     current,
-    next: next ?? (!current ? slots.find((s) => s.startTime > serverTime) ?? null : null),
+    next: next ?? (!current ? slots.find((s) => parseTimeToMinutes(s.startTime) > nowMinutes) ?? null : null),
     slots,
   };
 }

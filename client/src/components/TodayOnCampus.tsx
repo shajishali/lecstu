@@ -16,6 +16,7 @@ export interface TodayCampusSlot {
   markerId: string | null;
   floor: number;
   isNow: boolean;
+  isNext: boolean;
   isUpcoming: boolean;
 }
 
@@ -139,7 +140,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
             <li
               key={slot.id}
               className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${
-                slot.isNow ? 'bg-emerald-50' : ''
+                slot.isNow ? 'bg-emerald-50' : slot.isNext ? 'bg-sky-50' : ''
               }`}
             >
               <div className="min-w-0 flex-1">
@@ -150,6 +151,11 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
                   {slot.isNow && (
                     <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                       Now
+                    </span>
+                  )}
+                  {!slot.isNow && slot.isNext && (
+                    <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                      Next
                     </span>
                   )}
                 </div>
