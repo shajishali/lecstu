@@ -28,6 +28,7 @@ export const registerRules = [
     .isEmail()
     .normalizeEmail(emailNormalize)
     .withMessage('Personal recovery email is required'),
+  body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters')
     .matches(/[A-Z]/)
