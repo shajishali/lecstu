@@ -465,7 +465,7 @@ export default function TimetableSavedTables() {
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 max-h-[75vh] overflow-auto">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 overflow-y-auto overflow-x-auto max-h-[min(75vh,calc(100vh-14rem))] overscroll-contain">
         {gridLoading ? (
           <p className="text-sm text-slate-500">Loading grid…</p>
         ) : grid ? (
@@ -475,6 +475,7 @@ export default function TimetableSavedTables() {
             courseOptions={courseOptions}
             lecturerOptions={lecturerOptions}
             hallOptions={hallOptions}
+            className="!overflow-visible"
             onChange={(next) => {
               gridRef.current = next;
               setGrid(next);
