@@ -270,7 +270,7 @@ export default function TimetableManagement() {
   }
 
   return (
-      <div className={`flex min-h-0 flex-1 flex-col gap-6 ${viewMode === 'tables' ? 'admin-timetable-tables-view' : ''}`}>
+      <div className="space-y-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Timetable Management</h1>

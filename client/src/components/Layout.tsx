@@ -320,7 +320,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-7">
+        <main className="flex min-h-0 flex-1 flex-col px-6 py-7">
           <Outlet />
         </main>
       </div>
