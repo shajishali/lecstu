@@ -54,6 +54,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     if (n.type === 'TIMETABLE_CHANGE') {
       window.dispatchEvent(new CustomEvent('timetable-updated'));
     }
+    window.dispatchEvent(new CustomEvent('notifications-updated'));
   },
 
   fetchUnreadCount: async () => {
@@ -72,6 +73,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         unreadCount: Math.max(0, s.unreadCount - 1),
         recent: s.recent.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       }));
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
+      window.dispatchEvent(new CustomEvent('appointment-notifications-read'));
     } catch {
       /* ignore */
     }
@@ -81,6 +84,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       await api.post('/notifications/mark-all-read');
       set({ unreadCount: 0, recent: get().recent.map((n) => ({ ...n, isRead: true })) });
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
+      window.dispatchEvent(new CustomEvent('appointment-notifications-read'));
     } catch {
       /* ignore */
     }

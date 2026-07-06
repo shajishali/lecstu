@@ -8,6 +8,7 @@ import type { AutocompleteOption } from '@components/EditableFetTimetableGrid';
 import { cloneGrid, prepareGridForEditing } from '@utils/fetGridEdit';
 import type { TimetableGridSnapshot } from '../../types/timetableGrid';
 import { Plus, Save, RotateCcw, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { formatBatchTableTitle } from '@utils/batchTableMeta';
 
 interface TableMeta {
   id: string;
@@ -255,7 +256,7 @@ export default function TimetableSavedTables() {
   const handleFormSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const groupName = form.groupName.trim();
-    const tableTitle = form.tableTitle.trim() || groupName;
+    const tableTitle = form.tableTitle.trim() || formatBatchTableTitle(groupName);
     if (!groupName) {
       showToast('error', 'Group code is required (e.g. CS-Y3-AINT)');
       return;
@@ -345,9 +346,10 @@ export default function TimetableSavedTables() {
                 type="button"
                 className={`btn btn-sm rounded-none border-0 ${selectedId === t.id ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setSelectedId(t.id)}
+                title={`${t.tableTitle} · ${t.groupName}`}
               >
-                {t.tableTitle}
-                <span className="ml-1 opacity-75">({t.groupName})</span>
+                <span className="font-medium">{t.tableTitle}</span>
+                <span className="ml-1.5 text-[11px] opacity-80">({t.groupName})</span>
               </button>
               <button
                 type="button"
@@ -466,11 +468,24 @@ export default function TimetableSavedTables() {
             <input
               type="text"
               value={form.groupName}
-              onChange={(e) => setForm({ ...form, groupName: e.target.value })}
-              placeholder="BS-Y1"
+              onChange={(e) => {
+                const groupName = e.target.value;
+                const autoTitle = formatBatchTableTitle(groupName);
+                const tableTitle =
+                  !form.tableTitle ||
+                  form.tableTitle === formatBatchTableTitle(form.groupName) ||
+                  !editTarget
+                    ? autoTitle
+                    : form.tableTitle;
+                setForm({ ...form, groupName, tableTitle });
+              }}
+              placeholder="CT-Y1"
               required
               className="rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)]"
             />
+            <span className="text-xs text-slate-500">
+              Use FCT format: <code>CS-Y3-AINT</code>, <code>CT-Y1</code>, <code>BS-Y1</code> (not <code>Y1-CT-23</code>)
+            </span>
           </label>
           {!editTarget && departments.length > 0 && (
             <label className="flex flex-col gap-1.5">

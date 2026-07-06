@@ -5,6 +5,7 @@ import { useAuthStore } from '@store/authStore';
 import { useNotificationStore } from '@store/notificationStore';
 import { showToast } from '@components/Toast';
 import { useNotificationStream } from '@hooks/useNotificationStream';
+import { getNotificationNavigatePath } from '@config/sidebarNotifications';
 import TranslatableText from '@components/TranslatableText';
 import api from '@services/api';
 
@@ -53,17 +54,7 @@ export default function NotificationCenter({ darkNav }: NotificationCenterProps)
     if (n.type === 'APPOINTMENT_RESCHEDULED') return;
     markAsRead(n.id);
     setOpen(false);
-    if (n.type === 'TIMETABLE_CHANGE' || n.type === 'LECTURE_REMINDER') {
-      navigate('/timetable');
-    } else if (user?.role === 'ADMIN' && n.type === 'HALL_BOOKING_REQUEST') {
-      navigate('/admin/approvals');
-    } else if (n.metadata?.hallBookingId) {
-      navigate('/notifications');
-    } else if (n.metadata?.appointmentId) {
-      navigate('/appointments');
-    } else {
-      navigate('/notifications');
-    }
+    navigate(getNotificationNavigatePath(n, user?.role));
   };
 
   const handleConfirmReschedule = async (e: React.MouseEvent, n: any) => {
@@ -99,7 +90,8 @@ export default function NotificationCenter({ darkNav }: NotificationCenterProps)
     try {
       await api.delete(`/notifications/${id}`);
       setRecent((prev) => prev.filter((n) => n.id !== id));
-      fetchUnreadCount();
+      await fetchUnreadCount();
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
       showToast('success', 'Notification deleted');
     } catch {
       showToast('error', 'Failed to delete notification');

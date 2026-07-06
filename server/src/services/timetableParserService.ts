@@ -111,6 +111,8 @@ const FET_PATHWAY_HEADER_RE = new RegExp(
 /** Normalize FET section header to canonical group name when possible (CS-Y3-AINT, …) */
 function normalizeFetGroupHeader(line: string): string {
   const trimmed = line.trim();
+  const single = resolveCanonicalGroupName(trimmed);
+  if (single) return single;
   const canonical = resolveCanonicalGroupNames(trimmed);
   if (canonical.length === 1) return canonical[0];
   return trimmed;

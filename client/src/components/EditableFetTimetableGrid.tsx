@@ -35,38 +35,7 @@ function buildCourseColorLookup(grid: TimetableGridSnapshot): Map<string, string
   return map;
 }
 
-const HALL_LINE_RE = /\b([A-Z]{2,4}-[A-Z0-9]{2,6}-\d{2}-\d+)\b/i;
-
-function stripCommonMarker(text: string): string {
-  return text.replace(/\s+COMMON\b/gi, '').trim();
-}
-
-function isFetLecturerLabelLine(t: string): boolean {
-  if (/^[A-Z]{1,4}(_[A-Za-z]+)?$|^VL_/i.test(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t)) {
-    return t.length <= 48;
-  }
-  if (!t.includes(',')) return false;
-  const parts = t.split(',').map((p) => p.trim()).filter(Boolean);
-  return parts.length >= 2 && parts.every((p) => /^[A-Za-z]{2,8}$/i.test(p) || /^VL_/i.test(p));
-}
-
-export function formatLine(line: string, index: number, allLines: string[]): string | null {
-  const t = stripCommonMarker(line.trim());
-  if (/^[TP]$/i.test(t)) return null;
-  if (t === '—' || t === '-' || t.toLowerCase() === 'unassigned') return 'Lecturer: —';
-  if (t.toUpperCase() === 'TBD' && !allLines.some((l) => HALL_LINE_RE.test(l))) return 'Room: TBD';
-  if (HALL_LINE_RE.test(t)) return t.startsWith('Room:') ? t : `Room: ${t}`;
-  if (
-    index > 0 &&
-    (isFetLecturerLabelLine(t) || /^(Dr\.|Prof\.|Mr\.|Ms\.)/i.test(t))
-  ) {
-    return t.startsWith('Lecturer:') ? t : `Lecturer: ${t}`;
-  }
-  if (/\b[A-Z]{2,6}[-\s]+\d{4,5}[A-Za-z0-9_]*\b/i.test(line)) {
-    return stripCommonMarker(line.trim());
-  }
-  return line;
-}
+export { formatFetGridLine as formatLine } from '@utils/fetGridDisplay';
 
 interface Props {
   grid: TimetableGridSnapshot;

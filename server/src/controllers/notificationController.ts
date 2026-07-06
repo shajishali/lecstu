@@ -77,6 +77,32 @@ export async function getUnreadCount(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function markTypesRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.userId;
+    const { types } = req.body as { types?: string[] };
+
+    if (!Array.isArray(types) || types.length === 0) {
+      throw new AppError('types array is required', 400);
+    }
+
+    const typeList = types.map((t) => t.trim()).filter(Boolean) as NotificationType[];
+
+    await prisma.notification.updateMany({
+      where: {
+        userId,
+        isRead: false,
+        type: { in: typeList },
+      },
+      data: { isRead: true },
+    });
+
+    res.json({ success: true, message: 'Notifications marked as read' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function markAppointmentNotificationsRead(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId;

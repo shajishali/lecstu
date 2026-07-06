@@ -82,7 +82,7 @@ export default function AdminDashboard() {
   ];
 
   const quickActions = [
-    { label: 'Approvals', path: '/admin/approvals', icon: <CheckSquare size={16} /> },
+    { label: 'Approvals', path: '/approvals', icon: <CheckSquare size={16} /> },
     { label: 'Manage Users', path: '/admin/users', icon: <Users size={16} /> },
     { label: 'Manage Timetable', path: '/admin/timetable', icon: <Calendar size={16} /> },
     { label: 'Manage Halls', path: '/admin/halls', icon: <Building size={16} /> },

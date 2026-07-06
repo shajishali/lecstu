@@ -24,6 +24,10 @@ import { resolveAndImport, formatTimetableConflictSummary } from './timetableImp
 import { filterStaleCrossBatchHallConflicts } from './timetableSlotVisibility';
 import { AppError } from '../middleware/errorHandler';
 import { notifyTimetableChange } from './notificationService';
+import {
+  compareBatchTableOrder,
+  normalizeBatchTableMeta,
+} from '../config/fct-faculty-config';
 
 export async function saveTableSnapshots(
   tables: TimetableGridSnapshot[],
@@ -34,7 +38,12 @@ export async function saveTableSnapshots(
   let saved = 0;
 
   for (const raw of tables) {
-    const table = normalizeGridSnapshot(raw);
+    const normalized = normalizeBatchTableMeta(raw.tableTitle, raw.groupName);
+    const table = normalizeGridSnapshot({
+      ...raw,
+      tableTitle: normalized.tableTitle,
+      groupName: normalized.groupName,
+    });
     if (replacePeriod) {
       await prisma.timetableTableSnapshot.deleteMany({
         where: {
@@ -104,7 +113,7 @@ export async function listTableSnapshots(filters?: {
   if (filters?.month) where.month = filters.month;
   if (filters?.week) where.week = filters.week;
 
-  return prisma.timetableTableSnapshot.findMany({
+  const rows = await prisma.timetableTableSnapshot.findMany({
     where,
     orderBy: [{ tableTitle: 'asc' }, { groupName: 'asc' }],
     select: {
@@ -119,6 +128,47 @@ export async function listTableSnapshots(filters?: {
       sourceFile: true,
     },
   });
+
+  const repaired: typeof rows = [];
+  for (const row of rows) {
+    const normalized = normalizeBatchTableMeta(row.tableTitle, row.groupName);
+    if (
+      normalized.tableTitle !== row.tableTitle ||
+      normalized.groupName.toUpperCase() !== row.groupName.toUpperCase()
+    ) {
+      try {
+        await updateTableSnapshotMeta(row.id, normalized);
+        const fresh = await prisma.timetableTableSnapshot.findUnique({
+          where: { id: row.id },
+          select: {
+            id: true,
+            tableTitle: true,
+            groupName: true,
+            year: true,
+            month: true,
+            week: true,
+            slotCount: true,
+            importedAt: true,
+            sourceFile: true,
+          },
+        });
+        if (fresh) repaired.push(fresh);
+        continue;
+      } catch {
+        repaired.push({ ...row, ...normalized });
+        continue;
+      }
+    }
+    repaired.push(
+      normalized.tableTitle !== row.tableTitle ? { ...row, tableTitle: normalized.tableTitle } : row,
+    );
+  }
+
+  return repaired.sort(
+    (a, b) =>
+      compareBatchTableOrder(a.groupName, b.groupName) ||
+      a.tableTitle.localeCompare(b.tableTitle),
+  );
 }
 
 async function enrichSnapshotGrid(
@@ -427,8 +477,9 @@ export async function createTableSnapshot(input: {
   semester?: number;
   departmentId?: string;
 }): Promise<{ id: string; meta: Awaited<ReturnType<typeof listTableSnapshots>>[number] }> {
-  const groupName = input.groupName.trim();
-  const tableTitle = (input.tableTitle || groupName).trim();
+  const normalized = normalizeBatchTableMeta(input.tableTitle, input.groupName);
+  const groupName = normalized.groupName;
+  const tableTitle = normalized.tableTitle;
   if (!groupName) throw new AppError('groupName is required', 400);
 
   const duplicate = await prisma.timetableTableSnapshot.findUnique({
@@ -509,8 +560,12 @@ export async function updateTableSnapshotMeta(
   const row = await prisma.timetableTableSnapshot.findUnique({ where: { id } });
   if (!row) throw new AppError('Timetable table not found', 404);
 
-  const nextGroupName = (input.groupName ?? row.groupName).trim();
-  const nextTitle = (input.tableTitle ?? row.tableTitle).trim();
+  const normalized = normalizeBatchTableMeta(
+    input.tableTitle ?? row.tableTitle,
+    input.groupName ?? row.groupName,
+  );
+  const nextGroupName = normalized.groupName;
+  const nextTitle = normalized.tableTitle;
   const nextYear = input.year ?? row.year;
   const nextMonth = input.month ?? row.month;
   const nextWeek = input.week ?? row.week;

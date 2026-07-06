@@ -8,20 +8,24 @@ import {
   Map,
   GraduationCap,
   Bell,
-  BarChart3,
+  BookOpen,
   Clock,
 } from 'lucide-react';
 import TodayOnCampus from '@components/TodayOnCampus';
 import IndoorNavigationPanel from '@components/IndoorNavigationPanel';
 import { usePendingAppointmentCount } from '@hooks/usePendingAppointmentCount';
+import { usePendingApprovalsCount } from '@hooks/usePendingApprovalsCount';
 
-const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const ALL_DAYS = [...WEEKDAYS, 'SATURDAY', 'SUNDAY'];
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Monday',
   TUESDAY: 'Tuesday',
   WEDNESDAY: 'Wednesday',
   THURSDAY: 'Thursday',
   FRIDAY: 'Friday',
+  SATURDAY: 'Saturday',
+  SUNDAY: 'Sunday',
 };
 
 interface SlotData {
@@ -29,16 +33,34 @@ interface SlotData {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
-  year?: number;
-  month?: number;
-  week?: number;
   course: { name: string; code: string };
 }
 
+interface ScheduleSlotData {
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  slotType: string;
+}
+
+interface AdminStats {
+  users: { total: number };
+  facilities: { halls: number };
+  operations: { timetableEntries: number };
+}
+
+type DashboardCard = {
+  title: string;
+  desc: string;
+  icon: React.ReactNode;
+  color: string;
+  href?: string;
+};
+
 function getCurrentDay(): string {
   const jsDay = new Date().getDay();
-  if (jsDay >= 1 && jsDay <= 5) return DAYS[jsDay - 1];
-  return '';
+  if (jsDay === 0) return 'SUNDAY';
+  return ALL_DAYS[jsDay - 1];
 }
 
 function getCurrentTimeStr(): string {
@@ -71,8 +93,8 @@ function computeNextLectureAndTodayCount(flat: SlotData[]): { nextLecture: strin
       todayCount,
     };
   }
-  const dayIdx = DAYS.indexOf(today);
-  const upcomingDays = DAYS.slice(dayIdx + 1).concat(DAYS.slice(0, dayIdx));
+  const dayIdx = ALL_DAYS.indexOf(today);
+  const upcomingDays = ALL_DAYS.slice(dayIdx + 1).concat(ALL_DAYS.slice(0, dayIdx));
   for (const day of upcomingDays) {
     const daySlots = flat
       .filter((s) => s.dayOfWeek === day)
@@ -97,45 +119,76 @@ function computeLecturerTodayCount(flat: SlotData[]): number {
   return flat.filter((s) => s.dayOfWeek === today).length;
 }
 
-function formatPendingAppointments(count: number): string {
-  if (count === 0) return 'None pending';
-  return `${count} pending`;
+function computeStudentWeeklyOverview(flat: SlotData[]): string {
+  if (flat.length === 0) return 'No classes scheduled';
+  const courseCount = new Set(flat.map((s) => s.course.code)).size;
+  return `${courseCount} course${courseCount !== 1 ? 's' : ''} · ${flat.length} class${flat.length !== 1 ? 'es' : ''}/week`;
 }
 
-function applyLecturerCardUpdates(
-  base: { title: string; desc: string; icon: React.ReactNode; color: string }[],
-  todayCount: number,
-  pendingCount: number,
-) {
-  return base.map((c) => {
-    if (c.title === 'My Classes Today') {
-      return { ...c, desc: `${todayCount} lecture${todayCount !== 1 ? 's' : ''}` };
+function computeOfficeHoursDesc(slots: ScheduleSlotData[]): string {
+  const officeSlots = slots
+    .filter((s) => s.slotType === 'OFFICE_HOUR')
+    .sort((a, b) => {
+      const dayDiff = ALL_DAYS.indexOf(a.dayOfWeek) - ALL_DAYS.indexOf(b.dayOfWeek);
+      return dayDiff !== 0 ? dayDiff : a.startTime.localeCompare(b.startTime);
+    });
+
+  if (officeSlots.length === 0) return 'None scheduled';
+
+  const today = getCurrentDay();
+  const nowStr = getCurrentTimeStr();
+  const todaySlots = officeSlots.filter((s) => s.dayOfWeek === today);
+  const activeToday = todaySlots.find((s) => s.endTime > nowStr);
+  if (activeToday) {
+    return `Today ${formatTime(activeToday.startTime)} – ${formatTime(activeToday.endTime)}`;
+  }
+  const laterToday = todaySlots.find((s) => s.startTime > nowStr);
+  if (laterToday) {
+    return `Today ${formatTime(laterToday.startTime)} – ${formatTime(laterToday.endTime)}`;
+  }
+
+  const dayIdx = today ? ALL_DAYS.indexOf(today) : -1;
+  const upcomingDays =
+    dayIdx >= 0 ? ALL_DAYS.slice(dayIdx + 1).concat(ALL_DAYS.slice(0, dayIdx)) : ALL_DAYS;
+  for (const day of upcomingDays) {
+    const daySlots = officeSlots.filter((s) => s.dayOfWeek === day);
+    if (daySlots.length > 0) {
+      const slot = daySlots[0];
+      return `${DAY_LABELS[day]} ${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`;
     }
-    if (c.title === 'Appointments') {
-      return { ...c, desc: formatPendingAppointments(pendingCount) };
-    }
-    return c;
-  });
+  }
+
+  const first = officeSlots[0];
+  return `${DAY_LABELS[first.dayOfWeek]} ${formatTime(first.startTime)} – ${formatTime(first.endTime)}`;
 }
 
-const roleCardsBase: Record<string, { title: string; desc: string; icon: React.ReactNode; color: string }[]> = {
-  ADMIN: [
-    { title: 'Total Users', desc: '122 registered', icon: <Users size={24} />, color: '#3b82f6' },
-    { title: 'Timetable Entries', desc: '30 scheduled', icon: <Calendar size={24} />, color: '#8b5cf6' },
-    { title: 'Lecture Halls', desc: '10 configured', icon: <Map size={24} />, color: '#06b6d4' },
-    { title: 'Notifications', desc: '3 pending', icon: <Bell size={24} />, color: '#f59e0b' },
-  ],
-  LECTURER: [
-    { title: 'My Classes Today', desc: '3 lectures', icon: <Calendar size={24} />, color: '#3b82f6' },
-    { title: 'Appointments', desc: '—', icon: <Users size={24} />, color: '#8b5cf6' },
-    { title: 'Office Hours', desc: '2:00 - 4:00 PM', icon: <Clock size={24} />, color: '#f59e0b' },
-  ],
-  STUDENT: [
-    { title: 'Next Lecture', desc: '-', icon: <GraduationCap size={24} />, color: '#3b82f6' },
-    { title: 'My Schedule', desc: '-', icon: <Calendar size={24} />, color: '#8b5cf6' },
-    { title: 'Analytics', desc: 'Attendance: 92%', icon: <BarChart3 size={24} />, color: '#f59e0b' },
-  ],
-};
+function formatPendingCount(count: number, noun: string): string {
+  if (count === 0) return `None pending`;
+  return `${count} pending ${noun}${count !== 1 ? 's' : ''}`;
+}
+
+function buildRoleCards(role: string, loading: boolean): DashboardCard[] {
+  const placeholder = loading ? 'Loading…' : '—';
+  const cards: Record<string, DashboardCard[]> = {
+    ADMIN: [
+      { title: 'Total Users', desc: placeholder, icon: <Users size={24} />, color: '#3b82f6', href: '/admin/users' },
+      { title: 'Timetable Entries', desc: placeholder, icon: <Calendar size={24} />, color: '#8b5cf6', href: '/admin/timetable' },
+      { title: 'Lecture Halls', desc: placeholder, icon: <Map size={24} />, color: '#06b6d4', href: '/admin/halls' },
+      { title: 'Pending Approvals', desc: placeholder, icon: <Bell size={24} />, color: '#f59e0b', href: '/approvals' },
+    ],
+    LECTURER: [
+      { title: 'My Classes Today', desc: placeholder, icon: <Calendar size={24} />, color: '#3b82f6', href: '/lecturer/schedule' },
+      { title: 'Appointments', desc: placeholder, icon: <Users size={24} />, color: '#8b5cf6', href: '/appointments' },
+      { title: 'Office Hours', desc: placeholder, icon: <Clock size={24} />, color: '#f59e0b', href: '/lecturer/schedule' },
+    ],
+    STUDENT: [
+      { title: 'Next Lecture', desc: placeholder, icon: <GraduationCap size={24} />, color: '#3b82f6', href: '/timetable' },
+      { title: 'My Schedule', desc: placeholder, icon: <Calendar size={24} />, color: '#8b5cf6', href: '/timetable' },
+      { title: 'My Courses', desc: placeholder, icon: <BookOpen size={24} />, color: '#f59e0b', href: '/timetable' },
+    ],
+  };
+  return cards[role] || [];
+}
 
 const roleBadgeColors: Record<string, string> = {
   ADMIN: 'bg-amber-100 text-amber-800',
@@ -145,77 +198,145 @@ const roleBadgeColors: Record<string, string> = {
 
 export default function Dashboard() {
   const { user } = useAuthStore();
-  const studentGroupId =
-    user?.role === 'STUDENT' ? user?.studentGroupMemberships?.[0]?.group?.id : undefined;
   const pendingAppointmentCount = usePendingAppointmentCount(user?.role);
-  const [cards, setCards] = useState<{ title: string; desc: string; icon: React.ReactNode; color: string }[]>([]);
+  const pendingApprovalsCount = usePendingApprovalsCount();
+  const [cards, setCards] = useState<DashboardCard[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchTimetable = useCallback(async () => {
-    if (!user) return;
-    const base = roleCardsBase[user.role] || [];
-    if (user.role === 'ADMIN' || (user.role !== 'STUDENT' && user.role !== 'LECTURER')) {
-      setCards(base);
-      return;
-    }
-    try {
-      const res = await api.get<{ success: boolean; data?: { flat?: SlotData[] } }>('/timetable/my');
-      const flat = res.data?.data?.flat ?? [];
-      if (user.role === 'STUDENT') {
-        const { nextLecture, todayCount } = computeNextLectureAndTodayCount(flat);
-        setCards(
-          base.map((c) => {
-            if (c.title === 'Next Lecture') return { ...c, desc: nextLecture };
-            if (c.title === 'My Schedule') return { ...c, desc: `${todayCount} class${todayCount !== 1 ? 'es' : ''} today` };
-            return c;
-          })
-        );
-      } else if (user.role === 'LECTURER') {
-        const todayCount = computeLecturerTodayCount(flat);
-        setCards(applyLecturerCardUpdates(base, todayCount, pendingAppointmentCount));
-      } else {
-        setCards(base);
-      }
-    } catch {
-      if (user.role === 'LECTURER') {
-        setCards(applyLecturerCardUpdates(base, 0, pendingAppointmentCount));
-      } else {
-        setCards(base);
-      }
-    }
-  }, [user?.id, user?.role, studentGroupId, pendingAppointmentCount]);
-
-  useEffect(() => {
+  const fetchDashboard = useCallback(async () => {
     if (!user) {
       setCards([]);
+      setLoading(false);
       return;
     }
-    const base = roleCardsBase[user.role] || [];
-    if (user.role === 'ADMIN') {
-      setCards(base);
-      return;
-    }
+
+    const base = buildRoleCards(user.role, true);
     setCards(base);
-    if (user.role === 'STUDENT' || user.role === 'LECTURER') {
-      fetchTimetable();
+    setLoading(true);
+
+    if (user.role === 'ADMIN') {
+      try {
+        const res = await api.get<{ success: boolean; data?: AdminStats }>('/admin/stats');
+        const stats = res.data?.data;
+        setCards(
+          buildRoleCards('ADMIN', false).map((c) => {
+            if (c.title === 'Total Users') {
+              return { ...c, desc: `${stats?.users.total ?? 0} registered` };
+            }
+            if (c.title === 'Timetable Entries') {
+              return { ...c, desc: `${stats?.operations.timetableEntries ?? 0} scheduled` };
+            }
+            if (c.title === 'Lecture Halls') {
+              return { ...c, desc: `${stats?.facilities.halls ?? 0} configured` };
+            }
+            if (c.title === 'Pending Approvals') {
+              return { ...c, desc: formatPendingCount(pendingApprovalsCount, 'approval') };
+            }
+            return c;
+          }),
+        );
+      } catch {
+        setCards(buildRoleCards('ADMIN', false));
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
-  }, [user, fetchTimetable]);
+
+    if (user.role === 'STUDENT' || user.role === 'LECTURER') {
+      try {
+        const res = await api.get<{
+          success: boolean;
+          data?: { flat?: SlotData[]; scheduleSlots?: ScheduleSlotData[] };
+        }>('/timetable/my');
+        const flat = res.data?.data?.flat ?? [];
+        const scheduleSlots = res.data?.data?.scheduleSlots ?? [];
+
+        if (user.role === 'STUDENT') {
+          const { nextLecture, todayCount } = computeNextLectureAndTodayCount(flat);
+          const weeklyOverview = computeStudentWeeklyOverview(flat);
+          setCards(
+            buildRoleCards('STUDENT', false).map((c) => {
+              if (c.title === 'Next Lecture') return { ...c, desc: nextLecture };
+              if (c.title === 'My Schedule') {
+                return { ...c, desc: `${todayCount} class${todayCount !== 1 ? 'es' : ''} today` };
+              }
+              if (c.title === 'My Courses') return { ...c, desc: weeklyOverview };
+              return c;
+            }),
+          );
+        } else {
+          const todayCount = computeLecturerTodayCount(flat);
+          const officeHours = computeOfficeHoursDesc(scheduleSlots);
+          setCards(
+            buildRoleCards('LECTURER', false).map((c) => {
+              if (c.title === 'My Classes Today') {
+                return { ...c, desc: `${todayCount} lecture${todayCount !== 1 ? 's' : ''}` };
+              }
+              if (c.title === 'Appointments') {
+                return { ...c, desc: formatPendingCount(pendingAppointmentCount, 'appointment') };
+              }
+              if (c.title === 'Office Hours') return { ...c, desc: officeHours };
+              return c;
+            }),
+          );
+        }
+      } catch {
+        if (user.role === 'LECTURER') {
+          setCards(
+            buildRoleCards('LECTURER', false).map((c) => {
+              if (c.title === 'Appointments') {
+                return { ...c, desc: formatPendingCount(pendingAppointmentCount, 'appointment') };
+              }
+              return c;
+            }),
+          );
+        } else {
+          setCards(buildRoleCards('STUDENT', false));
+        }
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setCards(buildRoleCards(user.role, false));
+    setLoading(false);
+  }, [user, pendingAppointmentCount, pendingApprovalsCount]);
 
   useEffect(() => {
-    if (user?.role !== 'LECTURER') return;
-    setCards((prev) =>
-      prev.map((c) =>
-        c.title === 'Appointments'
-          ? { ...c, desc: formatPendingAppointments(pendingAppointmentCount) }
-          : c,
-      ),
-    );
-  }, [pendingAppointmentCount, user?.role]);
+    fetchDashboard();
+  }, [fetchDashboard]);
 
   useEffect(() => {
-    const onTimetableUpdated = () => fetchTimetable();
+    if (user?.role === 'LECTURER') {
+      setCards((prev) =>
+        prev.map((c) =>
+          c.title === 'Appointments'
+            ? { ...c, desc: formatPendingCount(pendingAppointmentCount, 'appointment') }
+            : c,
+        ),
+      );
+    }
+    if (user?.role === 'ADMIN') {
+      setCards((prev) =>
+        prev.map((c) =>
+          c.title === 'Pending Approvals'
+            ? { ...c, desc: formatPendingCount(pendingApprovalsCount, 'approval') }
+            : c,
+        ),
+      );
+    }
+  }, [pendingAppointmentCount, pendingApprovalsCount, user?.role]);
+
+  useEffect(() => {
+    const onTimetableUpdated = () => fetchDashboard();
     window.addEventListener('timetable-updated', onTimetableUpdated);
     return () => window.removeEventListener('timetable-updated', onTimetableUpdated);
-  }, [fetchTimetable]);
+  }, [fetchDashboard]);
+
+  const studentGroup = user?.studentGroupMemberships?.[0]?.group;
+  const studentBatch = user?.studentGroupMemberships?.[0]?.selectedBatchYearLabel;
 
   return (
     <div>
@@ -240,15 +361,17 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">{card.title}</h3>
-                <p className="mt-0.5 text-xs text-slate-500">{card.desc}</p>
+                <p className={`mt-0.5 text-xs text-slate-500 ${loading && card.desc === 'Loading…' ? 'animate-pulse' : ''}`}>
+                  {card.desc}
+                </p>
               </div>
             </>
           );
           const className =
             'flex items-center gap-4 rounded-lg bg-white p-5 shadow-sm transition-shadow hover:shadow-md no-underline text-inherit';
-          if (user?.role === 'LECTURER' && card.title === 'Appointments') {
+          if (card.href) {
             return (
-              <Link key={card.title} to="/appointments" className={className}>
+              <Link key={card.title} to={card.href} className={className}>
                 {cardBody}
               </Link>
             );
@@ -289,6 +412,32 @@ export default function Dashboard() {
                   </span>
                 </td>
               </tr>
+              {user?.role === 'STUDENT' && (
+                <tr>
+                  <td className="border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Group</td>
+                  <td className="border-b border-slate-100 py-2 text-sm">
+                    {studentGroup?.name || '-'}
+                    {studentBatch ? ` · ${studentBatch}` : ''}
+                  </td>
+                </tr>
+              )}
+              {user?.role === 'LECTURER' && (
+                <>
+                  <tr>
+                    <td className="border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Timetable code</td>
+                    <td className="border-b border-slate-100 py-2 text-sm">{user?.timetableCode || '-'}</td>
+                  </tr>
+                  {user?.lecturerOffice && (
+                    <tr>
+                      <td className="border-b border-slate-100 py-2 text-sm font-medium text-slate-500">Office</td>
+                      <td className="border-b border-slate-100 py-2 text-sm">
+                        {user.lecturerOffice.roomNumber}, {user.lecturerOffice.building}
+                        {user.lecturerOffice.floor > 0 ? ` (Floor ${user.lecturerOffice.floor})` : ' (Ground)'}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )}
               <tr>
                 <td className="py-2 text-sm font-medium text-slate-500">Department</td>
                 <td className="py-2 text-sm">{user?.department?.name || '-'}</td>

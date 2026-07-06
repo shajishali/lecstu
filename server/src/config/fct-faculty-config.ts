@@ -163,6 +163,13 @@ export function resolveCanonicalGroupName(rawName: string): string | null {
     }
   }
 
+  /** Legacy FET export labels: Y1-CT-23, Y1-ET-24 (trailing admission-year suffix) */
+  const legacyHyphen = trimmed.match(/^Y([1-4])[-\s]+(CS|ET|CT|BS|BST)(?:[-\s]+(?:\d{2}|20\d{2}))?$/i);
+  if (legacyHyphen) {
+    const code = legacyHyphen[2].toUpperCase() === 'BST' ? 'BS' : legacyHyphen[2].toUpperCase();
+    return buildGroupName(code, `Y${legacyHyphen[1]}` as StudyYear);
+  }
+
   return null;
 }
 
@@ -174,6 +181,67 @@ export function resolveCanonicalGroupNames(rawName: string): string[] {
     if (canonical) names.add(canonical);
   }
   return [...names];
+}
+
+const PROGRAM_SORT_ORDER = ['BS', 'CS', 'CT', 'ET'] as const;
+
+/** Human-readable batch button label from canonical code (BS-Y1 → "Y1 BST Group", CS-Y3-AINT → "Y3 AINT"). */
+export function formatBatchTableTitle(canonicalGroupName: string): string {
+  const canonical = resolveCanonicalGroupName(canonicalGroupName) ?? canonicalGroupName.trim();
+  const m = canonical.match(/^(CS|ET|CT|BS)-Y([1-4])(?:-([A-Z0-9]+))?$/i);
+  if (!m) return canonicalGroupName.trim() || canonical;
+
+  const prog = m[1].toUpperCase();
+  const year = `Y${m[2]}`;
+  const pathway = m[3]?.toUpperCase();
+
+  if (prog === 'BS') return `${year} BST Group`;
+  if (pathway && (year === 'Y3' || year === 'Y4')) return `${year} ${pathway}`;
+  return `${year} ${prog}`;
+}
+
+/** Normalize admin batch table title + group code to FCT conventions. */
+export function normalizeBatchTableMeta(
+  tableTitle: string,
+  groupName: string,
+): { tableTitle: string; groupName: string } {
+  const rawGroup = groupName.trim();
+  const rawTitle = tableTitle.trim();
+  const canonical =
+    resolveCanonicalGroupName(rawGroup) ??
+    resolveCanonicalGroupName(rawTitle) ??
+    (rawGroup || null);
+
+  if (canonical) {
+    return {
+      groupName: canonical,
+      tableTitle: formatBatchTableTitle(canonical),
+    };
+  }
+
+  return {
+    groupName: rawGroup || rawTitle,
+    tableTitle: rawTitle || rawGroup,
+  };
+}
+
+/** Sort batches: year ascending, then program (BS, CS, CT, ET), then pathway. */
+export function compareBatchTableOrder(a: string, b: string): number {
+  const parse = (name: string) => {
+    const canonical = resolveCanonicalGroupName(name) ?? name;
+    const m = canonical.match(/^(CS|ET|CT|BS)-Y([1-4])(?:-([A-Z0-9]+))?$/i);
+    if (!m) return { year: 99, program: 99, pathway: name };
+    return {
+      year: Number(m[2]),
+      program: PROGRAM_SORT_ORDER.indexOf(m[1].toUpperCase() as (typeof PROGRAM_SORT_ORDER)[number]),
+      pathway: (m[3] ?? '').toUpperCase(),
+    };
+  };
+  const ka = parse(a);
+  const kb = parse(b);
+  if (ka.year !== kb.year) return ka.year - kb.year;
+  if (ka.program !== kb.program) return ka.program - kb.program;
+  return ka.pathway.localeCompare(kb.pathway);
 }
 
 /** Raw hall names from faculty (deduplicated; spaces normalized where noted) */

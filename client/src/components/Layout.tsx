@@ -3,7 +3,7 @@ import { useAuthStore } from '@store/authStore';
 import NotificationCenter from '@components/NotificationCenter';
 import ChatWidget from '@components/ChatWidget';
 import LanguageSwitcher from '@components/LanguageSwitcher';
-import AppointmentNotificationPopover from '@components/AppointmentNotificationPopover';
+import SidebarNotificationPopover from '@components/SidebarNotificationPopover';
 import {
   LayoutDashboard,
   LogOut,
@@ -24,15 +24,15 @@ import {
   DoorClosed,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { useAppointmentUnreadCount } from '@hooks/useAppointmentUnreadCount';
-import { usePendingApprovalsCount } from '@hooks/usePendingApprovalsCount';
+import { useSidebarBadgeCounts } from '@hooks/useSidebarBadgeCounts';
 import { useNotificationStore } from '@store/notificationStore';
+import { getSidebarSectionConfig } from '@config/sidebarNotifications';
 
 const navByRole: Record<string, { label: string; path: string; icon: React.ReactNode }[]> = {
   ADMIN: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'Admin Panel', path: '/admin', icon: <ShieldCheck size={18} /> },
-    { label: 'Approvals', path: '/admin/approvals', icon: <Bell size={18} /> },
+    { label: 'Approvals', path: '/approvals', icon: <Bell size={18} /> },
     { label: 'Users', path: '/admin/users', icon: <Users size={18} /> },
     { label: 'Timetable', path: '/admin/timetable', icon: <Calendar size={18} /> },
     { label: 'Groups', path: '/admin/groups', icon: <Layers size={18} /> },
@@ -48,6 +48,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
   LECTURER: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'My Schedule', path: '/lecturer/schedule', icon: <Calendar size={18} /> },
+    { label: 'Approvals', path: '/approvals', icon: <Bell size={18} /> },
     { label: 'Hall Availability', path: '/halls/availability', icon: <DoorClosed size={18} /> },
     { label: 'Lecturers', path: '/lecturers', icon: <GraduationCap size={18} /> },
     { label: 'Appointments', path: '/appointments', icon: <Users size={18} /> },
@@ -58,6 +59,7 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
   STUDENT: [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'My Timetable', path: '/timetable', icon: <Calendar size={18} /> },
+    { label: 'Approvals', path: '/approvals', icon: <Bell size={18} /> },
     { label: 'Hall Availability', path: '/halls/availability', icon: <DoorClosed size={18} /> },
     { label: 'Lecturers', path: '/lecturers', icon: <GraduationCap size={18} /> },
     { label: 'Book Appointment', path: '/appointments', icon: <GraduationCap size={18} /> },
@@ -67,20 +69,88 @@ const navByRole: Record<string, { label: string; path: string; icon: React.React
   ],
 };
 
+function isPathActive(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+function SidebarNavItemWithPopover({
+  item,
+  sectionConfig,
+  badgeCount,
+  showBadge,
+  popoverOpen,
+  onOpen,
+  onScheduleClose,
+  onCancelClose,
+  onClosePopover,
+  onSidebarClose,
+}: {
+  item: { label: string; path: string; icon: React.ReactNode };
+  sectionConfig: NonNullable<ReturnType<typeof getSidebarSectionConfig>>;
+  badgeCount: number;
+  showBadge: boolean;
+  popoverOpen: boolean;
+  onOpen: () => void;
+  onScheduleClose: () => void;
+  onCancelClose: () => void;
+  onClosePopover: () => void;
+  onSidebarClose: () => void;
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div
+      ref={anchorRef}
+      className="relative"
+      onMouseEnter={onOpen}
+      onMouseLeave={onScheduleClose}
+    >
+      <NavLink
+        to={item.path}
+        className={({ isActive }) =>
+          `flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-slate-400 no-underline transition-colors hover:bg-white/5 hover:text-white ${
+            isActive ? 'border-l-2 border-white bg-white/15 text-white' : 'border-l-2 border-transparent'
+          }`
+        }
+        onClick={() => {
+          onSidebarClose();
+          onClosePopover();
+        }}
+      >
+        <span className="relative flex items-center justify-center">
+          {item.icon}
+          {showBadge && (
+            <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white ring-2 ring-[var(--color-primary)]">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
+        </span>
+        <span>{item.label}</span>
+      </NavLink>
+      <SidebarNotificationPopover
+        open={popoverOpen}
+        onClose={onClosePopover}
+        anchorRef={anchorRef}
+        config={sectionConfig}
+        onNavigate={onSidebarClose}
+        onMouseEnter={onCancelClose}
+      />
+    </div>
+  );
+}
+
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [appointmentPopoverOpen, setAppointmentPopoverOpen] = useState(false);
-  const appointmentPopoverAnchorRef = useRef<HTMLDivElement | null>(null);
-  const appointmentPopoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const appointmentUnreadCount = useAppointmentUnreadCount();
-  const pendingApprovalsCount = usePendingApprovalsCount();
-
   const location = useLocation();
-  const links = user ? navByRole[user.role] || [] : [];
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [popoverPath, setPopoverPath] = useState<string | null>(null);
+  const popoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarBadges = useSidebarBadgeCounts();
   const unreadNotificationCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
+
+  const links = user ? navByRole[user.role] || [] : [];
 
   useEffect(() => {
     if (user) fetchUnreadCount();
@@ -91,9 +161,27 @@ export default function Layout() {
     navigate('/login');
   };
 
+  const openPopover = (path: string) => {
+    if (popoverCloseTimerRef.current) {
+      clearTimeout(popoverCloseTimerRef.current);
+      popoverCloseTimerRef.current = null;
+    }
+    setPopoverPath(path);
+  };
+
+  const scheduleClosePopover = () => {
+    popoverCloseTimerRef.current = setTimeout(() => setPopoverPath(null), 150);
+  };
+
+  const cancelClosePopover = () => {
+    if (popoverCloseTimerRef.current) {
+      clearTimeout(popoverCloseTimerRef.current);
+      popoverCloseTimerRef.current = null;
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -102,7 +190,6 @@ export default function Layout() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         style={{ backgroundColor: 'var(--color-primary)' }}
         className={`fixed inset-y-0 left-0 z-50 flex w-[250px] flex-col text-white transition-transform duration-250 ease-out md:translate-x-0 ${
@@ -124,26 +211,24 @@ export default function Layout() {
 
         <nav className="flex-1 overflow-y-auto py-3">
           {links.map((item) => {
-            const isOnAppointmentsPage = location.pathname === '/appointments' || location.pathname.startsWith('/appointments/');
-            const isOnApprovalsPage = location.pathname === '/admin/approvals';
-            const showAppointmentBadge = item.path === '/appointments' && appointmentUnreadCount > 0 && !isOnAppointmentsPage;
-            const showApprovalsBadge = item.path === '/admin/approvals' && pendingApprovalsCount > 0 && !isOnApprovalsPage;
-            const showNotificationBadge = item.path === '/notifications' && unreadNotificationCount > 0;
-            const badgeCount = showAppointmentBadge
-              ? appointmentUnreadCount
-              : showApprovalsBadge
-                ? pendingApprovalsCount
-                : showNotificationBadge
-                  ? unreadNotificationCount
-                  : 0;
-            const isBookAppointment = item.path === '/appointments' && user?.role === 'STUDENT';
+            const sectionConfig = getSidebarSectionConfig(user?.role, item.path);
+            const onSectionPage = isPathActive(location.pathname, item.path);
+            const sectionBadge =
+              sectionConfig && !onSectionPage ? (sidebarBadges[item.path] ?? 0) : 0;
+            const showGlobalNotificationBadge =
+              item.path === '/notifications' &&
+              unreadNotificationCount > 0 &&
+              !isPathActive(location.pathname, '/notifications');
+            const badgeCount = sectionBadge > 0 ? sectionBadge : showGlobalNotificationBadge ? unreadNotificationCount : 0;
+            const showBadge = badgeCount > 0;
+            const hasPopover = Boolean(sectionConfig);
 
             const navLinkContent = (
               <>
                 <span className="relative flex items-center justify-center">
                   {item.icon}
-                  {(showAppointmentBadge || showApprovalsBadge || showNotificationBadge) && badgeCount > 0 && (
-                    <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                  {showBadge && (
+                    <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white ring-2 ring-[var(--color-primary)]">
                       {badgeCount > 99 ? '99+' : badgeCount}
                     </span>
                   )}
@@ -152,69 +237,41 @@ export default function Layout() {
               </>
             );
 
-            if (isBookAppointment) {
-              return (
-                <div
-                  key={item.path}
-                  ref={appointmentPopoverAnchorRef}
-                  className="relative"
-                  onMouseEnter={() => {
-                    if (appointmentPopoverCloseTimerRef.current) {
-                      clearTimeout(appointmentPopoverCloseTimerRef.current);
-                      appointmentPopoverCloseTimerRef.current = null;
-                    }
-                    setAppointmentPopoverOpen(true);
-                  }}
-                  onMouseLeave={() => {
-                    appointmentPopoverCloseTimerRef.current = setTimeout(
-                      () => setAppointmentPopoverOpen(false),
-                      150
-                    );
-                  }}
-                >
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-slate-400 no-underline transition-colors hover:bg-white/5 hover:text-white ${
-                        isActive ? 'border-l-2 border-white bg-white/15 text-white' : 'border-l-2 border-transparent'
-                      }`
-                    }
-                    onClick={() => {
-                      setSidebarOpen(false);
-                      setAppointmentPopoverOpen(false);
-                    }}
-                  >
-                    {navLinkContent}
-                  </NavLink>
-                  <AppointmentNotificationPopover
-                    open={appointmentPopoverOpen}
-                    onClose={() => setAppointmentPopoverOpen(false)}
-                    anchorRef={appointmentPopoverAnchorRef}
-                    onNavigate={() => setSidebarOpen(false)}
-                    onMouseEnter={() => {
-                      if (appointmentPopoverCloseTimerRef.current) {
-                        clearTimeout(appointmentPopoverCloseTimerRef.current);
-                        appointmentPopoverCloseTimerRef.current = null;
-                      }
-                    }}
-                  />
-                </div>
-              );
-            }
-
-            return (
+            const navLink = (
               <NavLink
-                key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-slate-400 no-underline transition-colors hover:bg-white/5 hover:text-white ${
                     isActive ? 'border-l-2 border-white bg-white/15 text-white' : 'border-l-2 border-transparent'
                   }`
                 }
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => {
+                  setSidebarOpen(false);
+                  setPopoverPath(null);
+                }}
               >
                 {navLinkContent}
               </NavLink>
+            );
+
+            if (!hasPopover) {
+              return <div key={item.path}>{navLink}</div>;
+            }
+
+            return (
+              <SidebarNavItemWithPopover
+                key={item.path}
+                item={item}
+                sectionConfig={sectionConfig!}
+                badgeCount={badgeCount}
+                showBadge={showBadge}
+                popoverOpen={popoverPath === item.path}
+                onOpen={() => openPopover(item.path)}
+                onScheduleClose={scheduleClosePopover}
+                onCancelClose={cancelClosePopover}
+                onClosePopover={() => setPopoverPath(null)}
+                onSidebarClose={() => setSidebarOpen(false)}
+              />
             );
           })}
         </nav>
@@ -224,7 +281,6 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex min-h-screen flex-1 flex-col md:ml-[250px]">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--color-primary)] px-6 shadow-sm [background-color:var(--color-primary)]">
           <button

@@ -11,7 +11,7 @@ import ResetPassword from '@pages/ResetPassword';
 import Dashboard from '@pages/Dashboard';
 import Profile from '@pages/Profile';
 import AdminDashboard from '@pages/admin/AdminDashboard';
-import AdminApprovals from '@pages/admin/AdminApprovals';
+import Approvals from '@pages/Approvals';
 import UserManagement from '@pages/admin/UserManagement';
 import TimetableManagement from '@pages/admin/TimetableManagement';
 import GroupManagement from '@pages/admin/GroupManagement';
@@ -123,11 +123,12 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/approvals" element={<Approvals />} />
         <Route
           path="/admin/approvals"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <AdminApprovals />
+              <Navigate to="/approvals" replace />
             </ProtectedRoute>
           }
         />

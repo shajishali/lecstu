@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@store/authStore';
-import { useNotificationStore } from '@store/notificationStore';
 import { showToast } from '@components/Toast';
 import api, { showApiErrorToast } from '@services/api';
 import Modal from '@components/Modal';
+import { useMarkSectionReadOnVisit } from '@hooks/useMarkSectionReadOnVisit';
 import {
   Calendar,
   Plus,
@@ -89,7 +89,7 @@ export default function Appointments() {
 
   const isStudent = user?.role === 'STUDENT';
   const isLecturer = user?.role === 'LECTURER';
-  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
+  useMarkSectionReadOnVisit(user?.role, '/appointments');
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -117,16 +117,6 @@ export default function Appointments() {
 
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
   useEffect(() => { fetchHallBookings(); }, [fetchHallBookings]);
-
-  // Mark appointment-related notifications as read when student visits the page
-  useEffect(() => {
-    if (isStudent) {
-      api.post('/notifications/mark-appointment-read').then(() => {
-        window.dispatchEvent(new CustomEvent('appointment-notifications-read'));
-        fetchUnreadCount();
-      }).catch(() => {});
-    }
-  }, [isStudent, fetchUnreadCount]);
 
   const handleAccept = async (a: Appointment) => {
     try {

@@ -6,6 +6,7 @@ import {
   markAsRead,
   markAllAsRead,
   markAppointmentNotificationsRead,
+  markTypesRead,
   streamNotifications,
   deleteNotification,
 } from '../controllers/notificationController';
@@ -17,6 +18,7 @@ router.use(authenticate);
 router.get('/', listNotifications);
 router.get('/unread-count', getUnreadCount);
 router.post('/mark-appointment-read', markAppointmentNotificationsRead);
+router.post('/mark-types-read', markTypesRead);
 router.get('/stream', streamNotifications);
 router.patch('/:id/read', markAsRead);
 router.post('/mark-all-read', markAllAsRead);

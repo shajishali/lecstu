@@ -5,6 +5,7 @@ import { parseGroupName } from '@components/StudentEnrollmentForm';
 import { showToast } from '@components/Toast';
 import TranslatableText from '@components/TranslatableText';
 import api from '@services/api';
+import { useMarkSectionReadOnVisit } from '@hooks/useMarkSectionReadOnVisit';
 import { formatCourseLabel } from '@utils/courseDisplay';
 import { formatTimetableLecturer } from '@utils/timetableLecturerDisplay';
 import { Printer, Download, RefreshCw } from 'lucide-react';
@@ -158,6 +159,7 @@ function formatMembershipGroupName(
 
 export default function MyTimetable() {
   const { user } = useAuthStore();
+  useMarkSectionReadOnVisit(user?.role, '/timetable');
   const location = useLocation();
   const [, setWeekly] = useState<WeeklyTimetable>({});
   const [flat, setFlat] = useState<SlotData[]>([]);

@@ -5,6 +5,7 @@ import api from '@services/api';
 import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@store/authStore';
 import { useNotificationStore } from '@store/notificationStore';
+import { getNotificationNavigatePath } from '@config/sidebarNotifications';
 import { useNotificationStream } from '@hooks/useNotificationStream';
 
 interface NotificationItem {
@@ -55,15 +56,7 @@ export default function Notifications() {
 
   const handleClick = (n: NotificationItem) => {
     if (!n.isRead) handleMarkRead(n.id);
-    if (user?.role === 'ADMIN' && n.type === 'HALL_BOOKING_REQUEST') {
-      navigate('/admin/approvals');
-    } else if (n.type === 'LECTURE_REMINDER' || n.type === 'TIMETABLE_CHANGE') {
-      navigate('/timetable');
-    } else if (n.metadata?.appointmentId) {
-      navigate('/appointments');
-    } else if (n.metadata?.hallBookingId) {
-      navigate('/notifications');
-    }
+    navigate(getNotificationNavigatePath(n, user?.role));
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -71,7 +64,8 @@ export default function Notifications() {
     try {
       await api.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-      fetchUnreadCount();
+      await fetchUnreadCount();
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
       showToast('success', 'Notification deleted');
     } catch {
       showToast('error', 'Failed to delete notification');
@@ -83,7 +77,7 @@ export default function Notifications() {
     return date.toLocaleString();
   };
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   return (
     <div>

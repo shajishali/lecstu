@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { useAuthStore } from '@store/authStore';
 import api from '@services/api';
+import { useMarkSectionReadOnVisit } from '@hooks/useMarkSectionReadOnVisit';
 import { showToast } from '@components/Toast';
 import { formatCourseLabel } from '@utils/courseDisplay';
 import { Calendar, Clock, Pencil, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
@@ -243,6 +244,7 @@ const emptyPersonalSlot = (): PersonalSlot => ({
 
 export default function LecturerMySchedule() {
   const { user } = useAuthStore();
+  useMarkSectionReadOnVisit(user?.role, '/lecturer/schedule');
   const [flat, setFlat] = useState<TimetableSlot[]>([]);
   const [timetableCodes, setTimetableCodes] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
