@@ -51,8 +51,39 @@ function minutesToTime(m: number): string {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function mergeOccupiedSlots(
+  slots: { startTime: string; endTime: string }[]
+): { startTime: string; endTime: string }[] {
+  if (slots.length === 0) return [];
+  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const merged: { startTime: string; endTime: string }[] = [];
+  let current = { ...sorted[0] };
+
+  for (let i = 1; i < sorted.length; i++) {
+    const next = sorted[i];
+    if (timeToMinutes(next.startTime) <= timeToMinutes(current.endTime)) {
+      if (timeToMinutes(next.endTime) > timeToMinutes(current.endTime)) {
+        current.endTime = next.endTime;
+      }
+    } else {
+      merged.push(current);
+      current = { ...next };
+    }
+  }
+  merged.push(current);
+  return merged;
+}
+
 function computeFreeSlots(occupied: { startTime: string; endTime: string }[], dayStart = DAY_START, dayEnd = DAY_END): FreeSlot[] {
-  const sorted = [...occupied].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const merged = mergeOccupiedSlots(occupied);
+  const sorted = [...merged].sort((a, b) => a.startTime.localeCompare(b.startTime));
   const free: FreeSlot[] = [];
   let cursor = timeToMinutes(dayStart);
   const end = timeToMinutes(dayEnd);
@@ -60,11 +91,14 @@ function computeFreeSlots(occupied: { startTime: string; endTime: string }[], da
   for (const slot of sorted) {
     const slotStart = timeToMinutes(slot.startTime);
     if (slotStart > cursor) {
-      free.push({
-        startTime: minutesToTime(cursor),
-        endTime: slot.startTime,
-        durationMinutes: slotStart - cursor,
-      });
+      const durationMinutes = slotStart - cursor;
+      if (durationMinutes > 0) {
+        free.push({
+          startTime: minutesToTime(cursor),
+          endTime: slot.startTime,
+          durationMinutes,
+        });
+      }
     }
     const slotEnd = timeToMinutes(slot.endTime);
     if (slotEnd > cursor) cursor = slotEnd;
@@ -103,18 +137,86 @@ function getNextDateForDay(dayOfWeek: string): string {
   if (daysAhead <= 0) daysAhead += 7;
   const d = new Date(today);
   d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
+  return toLocalDateString(d);
 }
 
-export async function getHallDaySchedule(hallId: string, day: string): Promise<HallSchedule> {
-  const hall = await prisma.lectureHall.findUnique({ where: { id: hallId } });
-  if (!hall) throw new Error('Hall not found');
+function parseDateOnly(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 
+function getUpcomingWeekdays(count = 5): { day: string; date: string }[] {
+  const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  const result: { day: string; date: string }[] = [];
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  while (result.length < count) {
+    const dow = cursor.getDay();
+    if (dow >= 1 && dow <= 5) {
+      result.push({
+        day: dayNames[dow],
+        date: toLocalDateString(cursor),
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return result;
+}
+
+async function getOccupiedSlotsForHallDay(
+  hallId: string,
+  day: string,
+  date?: string
+): Promise<OccupiedSlot[]> {
   const entries = await prisma.masterTimetable.findMany({
     where: { hallId, dayOfWeek: day as any, isActive: true },
     select: TIMETABLE_SELECT,
     orderBy: { startTime: 'asc' },
   });
+
+  const occupied: OccupiedSlot[] = [...(entries as unknown as OccupiedSlot[])];
+
+  if (date) {
+    const dateStart = parseDateOnly(date);
+    const dateEnd = new Date(dateStart);
+    dateEnd.setDate(dateEnd.getDate() + 1);
+
+    const bookings = await prisma.hallBooking.findMany({
+      where: {
+        hallId,
+        date: { gte: dateStart, lt: dateEnd },
+        status: 'APPROVED',
+      },
+      select: { id: true, startTime: true, endTime: true, reason: true },
+      orderBy: { startTime: 'asc' },
+    });
+
+    for (const b of bookings) {
+      occupied.push({
+        id: b.id,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        course: { id: 'booking', name: 'Hall Booking', code: 'BOOKED' },
+        lecturer: { id: '', firstName: 'Student', lastName: 'Booking' },
+        group: { id: '', name: b.reason || 'Reserved' },
+      });
+    }
+  }
+
+  return occupied.sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+export async function getHallDaySchedule(
+  hallId: string,
+  day: string,
+  date?: string
+): Promise<HallSchedule> {
+  const hall = await prisma.lectureHall.findUnique({ where: { id: hallId } });
+  if (!hall) throw new Error('Hall not found');
+
+  const occupied = await getOccupiedSlotsForHallDay(hallId, day, date);
 
   return {
     hall: {
@@ -125,9 +227,67 @@ export async function getHallDaySchedule(hallId: string, day: string): Promise<H
       capacity: hall.capacity,
       equipment: hall.equipment,
     },
-    occupied: entries as unknown as OccupiedSlot[],
-    freeSlots: computeFreeSlots(entries),
+    occupied,
+    freeSlots: computeFreeSlots(occupied),
   };
+}
+
+export interface DaySchedule {
+  day: string;
+  date: string;
+  occupied: OccupiedSlot[];
+  freeSlots: FreeSlot[];
+}
+
+export interface WeeklySchedule {
+  hall: HallSchedule['hall'];
+  days: DaySchedule[];
+}
+
+export async function getHallWeeklySchedule(hallId: string): Promise<WeeklySchedule> {
+  const hall = await prisma.lectureHall.findUnique({ where: { id: hallId } });
+  if (!hall) throw new Error('Hall not found');
+
+  const weekdays = getUpcomingWeekdays(5);
+  const days: DaySchedule[] = [];
+
+  for (const { day, date } of weekdays) {
+    const occupied = await getOccupiedSlotsForHallDay(hallId, day, date);
+    days.push({
+      day,
+      date,
+      occupied,
+      freeSlots: computeFreeSlots(occupied),
+    });
+  }
+
+  return {
+    hall: {
+      id: hall.id,
+      name: hall.name,
+      building: hall.building,
+      floor: hall.floor,
+      capacity: hall.capacity,
+      equipment: hall.equipment,
+    },
+    days,
+  };
+}
+
+export async function listActiveHalls(): Promise<HallSchedule['hall'][]> {
+  const halls = await prisma.lectureHall.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      building: true,
+      floor: true,
+      capacity: true,
+      equipment: true,
+    },
+  });
+  return halls;
 }
 
 interface AvailableQuery {
@@ -209,8 +369,6 @@ export async function findAvailableHalls(query: AvailableQuery): Promise<Availab
 
   for (const hall of halls) {
     const occupied = occupancyMap.get(hall.id) || [];
-    if (occupied.length > 0) continue;
-
     const freeSlots = computeFreeSlots(occupied);
 
     let matchingFreeSlots = freeSlots;
@@ -322,10 +480,10 @@ export async function findAvailableNow(): Promise<AvailableHallResult[]> {
 
   for (const hall of halls) {
     const occupied = occupancyMap.get(hall.id) || [];
-    if (occupied.length > 0) continue;
-
     const freeSlots = computeFreeSlots(occupied);
     const currentSlot = freeSlots.find((fs) => fs.startTime <= now && fs.endTime > now);
+    if (!currentSlot) continue;
+
     results.push({
       hall: {
         id: hall.id,
@@ -336,7 +494,7 @@ export async function findAvailableNow(): Promise<AvailableHallResult[]> {
         equipment: hall.equipment,
       },
       freeSlots,
-      matchingFreeSlots: currentSlot ? [currentSlot] : freeSlots,
+      matchingFreeSlots: [currentSlot],
     });
   }
 

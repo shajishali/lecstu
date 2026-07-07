@@ -3,6 +3,8 @@ import {
   findAvailableHalls,
   findAvailableNow,
   getHallDaySchedule,
+  getHallWeeklySchedule,
+  listActiveHalls,
   getFilterOptions,
 } from '../services/hallAvailabilityService';
 import { AppError } from '../middleware/errorHandler';
@@ -55,14 +57,37 @@ export async function getHallSchedule(req: Request, res: Response, next: NextFun
   try {
     const id = req.params.id as string;
     const day = (req.query.day as string) || getCurrentDayName();
+    const date = req.query.date as string | undefined;
 
-    const schedule = await getHallDaySchedule(id, day.toUpperCase());
+    const schedule = await getHallDaySchedule(id, day.toUpperCase(), date);
 
     res.json({ success: true, data: schedule });
   } catch (err) {
     if ((err as Error).message === 'Hall not found') {
       return next(new AppError('Hall not found', 404));
     }
+    next(err);
+  }
+}
+
+export async function getWeeklySchedule(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string;
+    const schedule = await getHallWeeklySchedule(id);
+    res.json({ success: true, data: schedule });
+  } catch (err) {
+    if ((err as Error).message === 'Hall not found') {
+      return next(new AppError('Hall not found', 404));
+    }
+    next(err);
+  }
+}
+
+export async function getAllHalls(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const halls = await listActiveHalls();
+    res.json({ success: true, data: halls, meta: { total: halls.length } });
+  } catch (err) {
     next(err);
   }
 }

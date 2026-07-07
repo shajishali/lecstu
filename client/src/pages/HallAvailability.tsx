@@ -1,8 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { showToast } from '@components/Toast';
 import api, { showApiErrorToast } from '@services/api';
 import { useAuthStore } from '@store/authStore';
-import { Search, Zap, Clock, Building, Users, ChevronDown, ChevronUp, RefreshCw, CalendarPlus, X } from 'lucide-react';
+import {
+  Search, Zap, Clock, Building, Users, ChevronDown, ChevronUp,
+  RefreshCw, CalendarPlus, X, CalendarSearch,
+} from 'lucide-react';
 
 interface FreeSlot {
   startTime: string;
@@ -40,6 +43,18 @@ interface ScheduleData {
   freeSlots: FreeSlot[];
 }
 
+interface DaySchedule {
+  day: string;
+  date: string;
+  occupied: OccupiedSlot[];
+  freeSlots: FreeSlot[];
+}
+
+interface WeeklySchedule {
+  hall: HallInfo;
+  days: DaySchedule[];
+}
+
 const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday',
@@ -61,30 +76,54 @@ function formatTime(t: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatShortDate(dateStr: string): string {
+  return parseLocalDate(dateStr).toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric',
+  });
+}
+
+function formatFreeTimeRanges(slots: FreeSlot[]): string {
+  if (slots.length === 0) return 'Fully occupied';
+  return slots
+    .map((s) => `${formatTime(s.startTime)} – ${formatTime(s.endTime)}`)
+    .join(', ');
+}
+
 function getCurrentDay(): string {
   const jsDay = new Date().getDay();
   return jsDay >= 1 && jsDay <= 5 ? DAYS[jsDay - 1] : 'MONDAY';
 }
 
-/** Get next date for a day of week (MONDAY=1, etc.) */
 function getNextDateForDay(dayName: string): string {
   const dayMap: Record<string, number> = {
     MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5,
   };
   const target = dayMap[dayName] ?? 1;
   const today = new Date();
-  const todayNum = today.getDay() || 7; // Sun=7 for calc
+  const todayNum = today.getDay() || 7;
   let daysAhead = target - (todayNum === 7 ? 0 : todayNum);
   if (daysAhead <= 0) daysAhead += 7;
   const d = new Date(today);
   d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
+  return toLocalDateString(d);
 }
 
 function timeToPercent(time: string): number {
   const [h, m] = time.split(':').map(Number);
   const min = (h - 8) * 60 + m;
-  return (min / 600) * 100; // 08:00-18:00 = 600 min
+  return (min / 600) * 100;
 }
 
 function timeToMinutes(t: string): number {
@@ -92,7 +131,6 @@ function timeToMinutes(t: string): number {
   return h * 60 + m;
 }
 
-/** Generate 30-min time options within a slot */
 function getTimeOptionsInSlot(slotStart: string, slotEnd: string): string[] {
   const startMin = timeToMinutes(slotStart);
   const endMin = timeToMinutes(slotEnd);
@@ -105,10 +143,19 @@ function getTimeOptionsInSlot(slotStart: string, slotEnd: string): string[] {
   return options;
 }
 
+function canBookRole(role?: string): boolean {
+  return role === 'STUDENT' || role === 'LECTURER';
+}
+
 export default function HallAvailability() {
   const { user } = useAuthStore();
+  const canBook = canBookRole(user?.role);
+
   const [tab, setTab] = useState<'search' | 'now'>('now');
   const [loading, setLoading] = useState(false);
+  const [allHalls, setAllHalls] = useState<HallInfo[]>([]);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailableResult>>({});
+
   const [bookModal, setBookModal] = useState<{
     hall: HallInfo;
     slot: FreeSlot;
@@ -119,25 +166,28 @@ export default function HallAvailability() {
   const [bookEndTime, setBookEndTime] = useState('');
   const [bookSubmitting, setBookSubmitting] = useState(false);
 
-  // Filter state
+  const [weeklyModal, setWeeklyModal] = useState<HallInfo | null>(null);
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyExpandedDay, setWeeklyExpandedDay] = useState<string | null>(null);
+
   const [day, setDay] = useState(getCurrentDay());
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [minCapacity, setMinCapacity] = useState('');
   const [building, setBuilding] = useState('');
   const [equipment, setEquipment] = useState('');
+  const [searchApplied, setSearchApplied] = useState(false);
 
-  // Filter options from server
   const [buildings, setBuildings] = useState<string[]>([]);
   const [equipmentOptions, setEquipmentOptions] = useState<string[]>([]);
 
-  // Results
-  const [results, setResults] = useState<AvailableResult[]>([]);
   const [emptyStateDismissed, setEmptyStateDismissed] = useState(false);
   const [expandedHall, setExpandedHall] = useState<string | null>(null);
   const [hallSchedule, setHallSchedule] = useState<ScheduleData | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleDay, setScheduleDay] = useState(getCurrentDay());
+  const [scheduleDate, setScheduleDate] = useState('');
 
   const fetchFilters = useCallback(async () => {
     try {
@@ -147,7 +197,19 @@ export default function HallAvailability() {
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { fetchFilters(); }, [fetchFilters]);
+  const fetchAllHalls = useCallback(async () => {
+    try {
+      const res = await api.get('/halls/list');
+      setAllHalls(res.data.data || []);
+    } catch {
+      showToast('error', 'Failed to load halls');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFilters();
+    fetchAllHalls();
+  }, [fetchFilters, fetchAllHalls]);
 
   const searchAvailable = useCallback(async () => {
     setLoading(true);
@@ -160,7 +222,11 @@ export default function HallAvailability() {
       if (equipment) params.equipment = equipment;
 
       const res = await api.get('/halls/available', { params });
-      setResults(res.data.data || []);
+      const results: AvailableResult[] = res.data.data || [];
+      const map: Record<string, AvailableResult> = {};
+      for (const r of results) map[r.hall.id] = r;
+      setAvailabilityMap(map);
+      setSearchApplied(true);
       setExpandedHall(null);
       setHallSchedule(null);
       setEmptyStateDismissed(false);
@@ -175,7 +241,11 @@ export default function HallAvailability() {
     setLoading(true);
     try {
       const res = await api.get('/halls/available-now');
-      setResults(res.data.data || []);
+      const results: AvailableResult[] = res.data.data || [];
+      const map: Record<string, AvailableResult> = {};
+      for (const r of results) map[r.hall.id] = r;
+      setAvailabilityMap(map);
+      setSearchApplied(false);
       setExpandedHall(null);
       setHallSchedule(null);
       setEmptyStateDismissed(false);
@@ -187,8 +257,38 @@ export default function HallAvailability() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'now') fetchAvailableNow();
+    if (tab === 'now') {
+      fetchAvailableNow();
+    } else {
+      setAvailabilityMap({});
+      setSearchApplied(false);
+    }
   }, [tab, fetchAvailableNow]);
+
+  const displayedHalls = useMemo(() => {
+    let halls = [...allHalls];
+
+    if (tab === 'search' && searchApplied) {
+      if (building) {
+        halls = halls.filter((h) => h.building.toLowerCase() === building.toLowerCase());
+      }
+      if (minCapacity) {
+        const cap = parseInt(minCapacity, 10);
+        if (!Number.isNaN(cap)) halls = halls.filter((h) => h.capacity >= cap);
+      }
+      if (equipment) {
+        const req = equipment.toLowerCase();
+        halls = halls.filter((h) => h.equipment.some((eq) => eq.toLowerCase().includes(req)));
+      }
+    }
+
+    return halls.sort((a, b) => {
+      const aAvail = availabilityMap[a.id] ? 1 : 0;
+      const bAvail = availabilityMap[b.id] ? 1 : 0;
+      if (aAvail !== bAvail) return bAvail - aAvail;
+      return a.name.localeCompare(b.name);
+    });
+  }, [allHalls, tab, searchApplied, building, minCapacity, equipment, availabilityMap]);
 
   const fetchSchedule = async (hallId: string) => {
     if (expandedHall === hallId) {
@@ -198,10 +298,17 @@ export default function HallAvailability() {
     }
     setExpandedHall(hallId);
     setScheduleLoading(true);
+    const scheduleDayVal = tab === 'now' ? getCurrentDay() : day;
+    const scheduleDateVal = tab === 'now'
+      ? toLocalDateString(new Date())
+      : getNextDateForDay(day);
     try {
-      const res = await api.get(`/halls/${hallId}/schedule`, { params: { day: tab === 'now' ? getCurrentDay() : day } });
+      const res = await api.get(`/halls/${hallId}/schedule`, {
+        params: { day: scheduleDayVal, date: scheduleDateVal },
+      });
       setHallSchedule(res.data.data);
-      setScheduleDay(tab === 'now' ? getCurrentDay() : day);
+      setScheduleDay(scheduleDayVal);
+      setScheduleDate(scheduleDateVal);
     } catch {
       showToast('error', 'Failed to load schedule');
     } finally {
@@ -209,17 +316,37 @@ export default function HallAvailability() {
     }
   };
 
+  const openWeeklyCheck = async (hall: HallInfo) => {
+    setWeeklyModal(hall);
+    setWeeklySchedule(null);
+    setWeeklyExpandedDay(null);
+    setWeeklyLoading(true);
+    try {
+      const res = await api.get(`/halls/${hall.id}/weekly-schedule`);
+      setWeeklySchedule(res.data.data);
+    } catch {
+      showToast('error', 'Failed to load weekly availability');
+      setWeeklyModal(null);
+    } finally {
+      setWeeklyLoading(false);
+    }
+  };
+
+  const closeWeeklyModal = () => {
+    setWeeklyModal(null);
+    setWeeklySchedule(null);
+    setWeeklyExpandedDay(null);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     searchAvailable();
   };
 
-  const openBookModal = (hall: HallInfo, slot: FreeSlot) => {
-    const date = tab === 'now' ? new Date().toISOString().split('T')[0] : getNextDateForDay(day);
+  const openBookModal = (hall: HallInfo, slot: FreeSlot, date: string) => {
     setBookModal({ hall, slot, date });
     setBookReason('');
     setBookStartTime(slot.startTime);
-    // Default end: 1 hour from start, or slot end if slot is shorter
     const slotStartMin = timeToMinutes(slot.startTime);
     const slotEndMin = timeToMinutes(slot.endTime);
     const oneHourLater = Math.min(slotStartMin + 60, slotEndMin);
@@ -254,25 +381,58 @@ export default function HallAvailability() {
         `Booking request sent for ${new Date(bookModal.date).toLocaleDateString()} • ${formatTime(bookStartTime)}–${formatTime(bookEndTime)}. Admin will review and notify you.`
       );
       closeBookModal();
+      closeWeeklyModal();
       window.dispatchEvent(new CustomEvent('notifications-updated'));
       window.dispatchEvent(new CustomEvent('approvals-updated'));
-    } catch (err: any) {
+      if (tab === 'now') fetchAvailableNow();
+      else if (searchApplied) searchAvailable();
+    } catch (err: unknown) {
       showApiErrorToast(err, 'Failed to submit booking');
     } finally {
       setBookSubmitting(false);
     }
   };
 
+  const getHallSlots = (hallId: string): FreeSlot[] => {
+    return availabilityMap[hallId]?.matchingFreeSlots ?? [];
+  };
+
+  const isSlotBookable = (dateStr: string, slot: FreeSlot): boolean => {
+    if (slot.durationMinutes < 30) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const slotDate = parseLocalDate(dateStr);
+    slotDate.setHours(0, 0, 0, 0);
+    if (slotDate < today) return false;
+    if (slotDate.getTime() === today.getTime()) {
+      const now = `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`;
+      return slot.endTime > now;
+    }
+    return true;
+  };
+
+  const modalOpen = Boolean(weeklyModal || bookModal);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [modalOpen]);
+
   return (
     <div className="hall-avail-page">
       <div className="ha-header">
         <div>
           <h1>Hall Availability</h1>
-          <p className="ha-subtitle">Find available lecture halls across campus</p>
+          <p className="ha-subtitle">
+            Browse all lecture halls and check weekly free slots for booking
+          </p>
         </div>
       </div>
 
-      {/* Tab bar */}
       <div className="ha-tabs">
         <button
           className={`ha-tab ${tab === 'now' ? 'active' : ''}`}
@@ -288,7 +448,6 @@ export default function HallAvailability() {
         </button>
       </div>
 
-      {/* Search filters */}
       {tab === 'search' && (
         <form className="ha-filters" onSubmit={handleSearch}>
           <div className="ha-filter-row">
@@ -360,21 +519,19 @@ export default function HallAvailability() {
       {tab === 'now' && (
         <div className="ha-now-bar">
           <span className="ha-now-indicator" />
-          <span>Showing halls available right now</span>
+          <span>All halls listed — {Object.keys(availabilityMap).length} available right now</span>
           <button className="btn btn-secondary btn-sm" onClick={fetchAvailableNow} title="Refresh">
             <RefreshCw size={14} />
           </button>
         </div>
       )}
 
-      {/* Results count */}
       {!loading && (
         <p className="ha-result-count">
-          {results.length} hall{results.length !== 1 ? 's' : ''} found
+          {displayedHalls.length} hall{displayedHalls.length !== 1 ? 's' : ''} found
         </p>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="ha-loading">
           <div className="spinner" />
@@ -382,8 +539,7 @@ export default function HallAvailability() {
         </div>
       )}
 
-      {/* Results grid */}
-      {!loading && results.length === 0 && !emptyStateDismissed && (
+      {!loading && displayedHalls.length === 0 && !emptyStateDismissed && (
         <div className="ha-empty" style={{ position: 'relative' }}>
           <button
             type="button"
@@ -395,129 +551,279 @@ export default function HallAvailability() {
             <X size={16} /> Close
           </button>
           <Building size={48} strokeWidth={1} />
-          <h3>No available halls found</h3>
-          <p>{tab === 'search' ? 'Try adjusting your filters.' : 'All halls are currently occupied.'}</p>
+          <h3>No halls found</h3>
+          <p>{tab === 'search' ? 'Try adjusting your filters.' : 'No lecture halls are registered.'}</p>
         </div>
       )}
 
-      {!loading && results.length > 0 && (
+      {!loading && displayedHalls.length > 0 && (
         <div className="ha-results">
-          {results.map((r) => (
-            <div key={r.hall.id} className={`ha-card ${expandedHall === r.hall.id ? 'expanded' : ''}`}>
-              <div className="ha-card-header" onClick={() => fetchSchedule(r.hall.id)}>
-                <div className="ha-card-info">
-                  <h3>{r.hall.name}</h3>
-                  <div className="ha-card-meta">
-                    <span><Building size={14} /> {r.hall.building}, Floor {r.hall.floor}</span>
-                    <span><Users size={14} /> {r.hall.capacity} seats</span>
-                    {r.hall.equipment.length > 0 && (
-                      <span className="ha-equip">{r.hall.equipment.join(', ')}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="ha-card-right">
-                  <div className="ha-free-count">
-                    <Clock size={14} />
-                    {r.matchingFreeSlots.length} free slot{r.matchingFreeSlots.length !== 1 ? 's' : ''}
-                  </div>
-                  {expandedHall === r.hall.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </div>
-              </div>
+          {displayedHalls.map((hall) => {
+            const slots = getHallSlots(hall.id);
+            const isAvailableNow = tab === 'now' && slots.length > 0;
 
-              {/* Free slots summary - lecturer appointment style */}
-              <div className="ha-free-slots">
-                {r.matchingFreeSlots.map((fs, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 shadow-sm"
-                  >
-                    <span className="text-sm font-medium text-slate-700">
-                      {formatTime(fs.startTime)} - {formatTime(fs.endTime)}
-                      <span className="ml-2 text-slate-500">({fs.durationMinutes} min)</span>
-                    </span>
-                    {user?.role === 'STUDENT' && (
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
-                        onClick={(e) => { e.stopPropagation(); openBookModal(r.hall, fs); }}
-                        title="Book this slot"
-                      >
-                        <CalendarPlus size={16} /> Book
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Expanded timeline */}
-              {expandedHall === r.hall.id && (
-                <div className="ha-expanded">
-                  {scheduleLoading ? (
-                    <div className="ha-loading-sm"><div className="spinner" /></div>
-                  ) : hallSchedule ? (
-                    <div className="ha-timeline-section">
-                      <h4>{DAY_LABELS[scheduleDay] || scheduleDay} Schedule</h4>
-                      <div className="ha-timeline">
-                        <div className="ha-timeline-labels">
-                          {['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((t) => (
-                            <span key={t} className="ha-tl-label">{formatTime(t)}</span>
-                          ))}
-                        </div>
-                        <div className="ha-timeline-bar">
-                          {hallSchedule.occupied.map((occ) => (
-                            <div
-                              key={occ.id}
-                              className="ha-tl-occupied"
-                              style={{
-                                left: `${timeToPercent(occ.startTime)}%`,
-                                width: `${timeToPercent(occ.endTime) - timeToPercent(occ.startTime)}%`,
-                              }}
-                              title={`${occ.course.code} - ${formatTime(occ.startTime)}-${formatTime(occ.endTime)}`}
-                            >
-                              <span>{occ.course.code}</span>
-                            </div>
-                          ))}
-                          {hallSchedule.freeSlots.map((fs, i) => (
-                            <div
-                              key={`free-${i}`}
-                              className="ha-tl-free"
-                              style={{
-                                left: `${timeToPercent(fs.startTime)}%`,
-                                width: `${timeToPercent(fs.endTime) - timeToPercent(fs.startTime)}%`,
-                              }}
-                              title={`Free: ${formatTime(fs.startTime)}-${formatTime(fs.endTime)}`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {hallSchedule.occupied.length > 0 && (
-                        <div className="ha-schedule-detail">
-                          {hallSchedule.occupied.map((occ) => (
-                            <div key={occ.id} className="ha-occ-row">
-                              <span className="ha-occ-time">
-                                {formatTime(occ.startTime)} - {formatTime(occ.endTime)}
-                              </span>
-                              <span className="ha-occ-course">{occ.course.code} - {occ.course.name}</span>
-                              <span className="ha-occ-lec">{occ.lecturer.firstName} {occ.lecturer.lastName}</span>
-                              <span className="ha-occ-grp">{occ.group.name}</span>
-                            </div>
-                          ))}
-                        </div>
+            return (
+              <div key={hall.id} className={`ha-card ${expandedHall === hall.id ? 'expanded' : ''}`}>
+                <div className="ha-card-header" onClick={() => fetchSchedule(hall.id)}>
+                  <div className="ha-card-info">
+                    <h3>{hall.name}</h3>
+                    <div className="ha-card-meta">
+                      <span><Building size={14} /> {hall.building}, Floor {hall.floor}</span>
+                      <span><Users size={14} /> {hall.capacity} seats</span>
+                      {hall.equipment.length > 0 && (
+                        <span className="ha-equip">{hall.equipment.join(', ')}</span>
                       )}
                     </div>
-                  ) : null}
+                  </div>
+                  <div className="ha-card-right">
+                    {isAvailableNow ? (
+                      <div className="ha-free-count ha-free-count-ranges">
+                        <Clock size={14} className="shrink-0" />
+                        <span>{formatFreeTimeRanges(slots)}</span>
+                      </div>
+                    ) : tab === 'search' && searchApplied && slots.length > 0 ? (
+                      <div className="ha-free-count ha-free-count-ranges">
+                        <Clock size={14} className="shrink-0" />
+                        <span>{formatFreeTimeRanges(slots)}</span>
+                      </div>
+                    ) : (
+                      <div className="ha-status-occupied">Check weekly schedule</div>
+                    )}
+                    <span className="ha-card-chevron" aria-hidden>
+                      {expandedHall === hall.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </span>
+                  </div>
                 </div>
-              )}
+
+                <div className="ha-card-body">
+                  <button
+                    type="button"
+                    className="ha-avail-check-btn"
+                    onClick={(e) => { e.stopPropagation(); openWeeklyCheck(hall); }}
+                  >
+                    <CalendarSearch size={16} /> Availability Check
+                  </button>
+
+                  {slots.length > 0 && (
+                    <div className="ha-free-slots">
+                      {slots.map((fs, i) => (
+                        <div key={i} className="ha-slot-row">
+                          <span className="ha-slot-time">
+                            {formatTime(fs.startTime)} - {formatTime(fs.endTime)}
+                            <span className="ha-slot-duration">({fs.durationMinutes} min)</span>
+                          </span>
+                          {canBook && (
+                            <button
+                              type="button"
+                              className="ha-book-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const date = tab === 'now'
+                                  ? toLocalDateString(new Date())
+                                  : getNextDateForDay(day);
+                                openBookModal(hall, fs, date);
+                              }}
+                              title="Book this slot"
+                            >
+                              <CalendarPlus size={16} /> Book
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {expandedHall === hall.id && (
+                    <div className="ha-expanded">
+                    {scheduleLoading ? (
+                      <div className="ha-loading-sm"><div className="spinner" /></div>
+                    ) : hallSchedule ? (
+                      <div className="ha-timeline-section">
+                        <h4>
+                          {DAY_LABELS[scheduleDay] || scheduleDay}
+                          {scheduleDate && (
+                            <span className="ml-2 text-sm font-normal text-slate-500">
+                              ({formatShortDate(scheduleDate)})
+                            </span>
+                          )}
+                          {' '}Schedule
+                        </h4>
+                        <div className="ha-timeline">
+                          <div className="ha-timeline-labels">
+                            {['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((t) => (
+                              <span key={t} className="ha-tl-label">{formatTime(t)}</span>
+                            ))}
+                          </div>
+                          <div className="ha-timeline-bar">
+                            {hallSchedule.occupied.map((occ) => (
+                              <div
+                                key={occ.id}
+                                className="ha-tl-occupied"
+                                style={{
+                                  left: `${timeToPercent(occ.startTime)}%`,
+                                  width: `${timeToPercent(occ.endTime) - timeToPercent(occ.startTime)}%`,
+                                }}
+                                title={`${occ.course.code} - ${formatTime(occ.startTime)}-${formatTime(occ.endTime)}`}
+                              >
+                                <span>{occ.course.code}</span>
+                              </div>
+                            ))}
+                            {hallSchedule.freeSlots.map((fs, i) => (
+                              <div
+                                key={`free-${i}`}
+                                className="ha-tl-free"
+                                style={{
+                                  left: `${timeToPercent(fs.startTime)}%`,
+                                  width: `${timeToPercent(fs.endTime) - timeToPercent(fs.startTime)}%`,
+                                }}
+                                title={`Free: ${formatTime(fs.startTime)}-${formatTime(fs.endTime)}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {hallSchedule.occupied.length > 0 && (
+                          <div className="ha-schedule-detail">
+                            {hallSchedule.occupied.map((occ) => (
+                              <div key={occ.id} className="ha-occ-row">
+                                <span className="ha-occ-time">
+                                  {formatTime(occ.startTime)} - {formatTime(occ.endTime)}
+                                </span>
+                                <span className="ha-occ-course">{occ.course.code} - {occ.course.name}</span>
+                                <span className="ha-occ-lec">{occ.lecturer.firstName} {occ.lecturer.lastName}</span>
+                                <span className="ha-occ-grp">{occ.group.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Weekly Availability Check Modal */}
+      {weeklyModal && (
+        <div className="ha-modal-overlay" onClick={closeWeeklyModal}>
+          <div
+            className="ha-weekly-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="weekly-avail-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="ha-weekly-header">
+              <div className="min-w-0 flex-1">
+                <h3 id="weekly-avail-title" className="text-lg font-semibold text-slate-800">
+                  Weekly Availability
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  <strong>{weeklyModal.name}</strong> — {weeklyModal.building}, Floor {weeklyModal.floor}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeWeeklyModal}
+                className="ha-modal-close-btn shrink-0"
+              >
+                <X size={16} /> Close
+              </button>
             </div>
-          ))}
+
+            <div className="ha-weekly-body">
+              {weeklyLoading ? (
+                <div className="ha-loading-sm"><div className="spinner" /></div>
+              ) : weeklySchedule ? (
+                <div className="ha-weekly-days">
+                  {weeklySchedule.days.map((daySchedule) => {
+                    const bookableSlots = daySchedule.freeSlots.filter(
+                      (fs) => isSlotBookable(daySchedule.date, fs)
+                    );
+                    const isExpanded = weeklyExpandedDay === daySchedule.date;
+
+                    return (
+                      <div key={daySchedule.date} className="ha-weekly-day">
+                        <button
+                          type="button"
+                          className="ha-weekly-day-header"
+                          onClick={() => setWeeklyExpandedDay(isExpanded ? null : daySchedule.date)}
+                        >
+                          <div className="min-w-0">
+                            <span className="ha-weekly-day-name">{DAY_LABELS[daySchedule.day]}</span>
+                            <span className="ha-weekly-day-date">{formatShortDate(daySchedule.date)}</span>
+                          </div>
+                          <div className="ha-weekly-day-summary">
+                            <span className={bookableSlots.length > 0 ? 'ha-weekly-avail-summary' : 'ha-weekly-busy'}>
+                              {formatFreeTimeRanges(bookableSlots)}
+                            </span>
+                            {isExpanded ? <ChevronUp size={16} className="shrink-0" /> : <ChevronDown size={16} className="shrink-0" />}
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="ha-weekly-day-detail">
+                            {daySchedule.occupied.length > 0 && (
+                              <div className="ha-weekly-occupied">
+                                <p className="ha-weekly-section-label">Occupied (timetable & bookings)</p>
+                                {daySchedule.occupied.map((occ) => (
+                                  <div key={occ.id} className="ha-weekly-occ-row">
+                                    <span className="ha-occ-time">
+                                      {formatTime(occ.startTime)} - {formatTime(occ.endTime)}
+                                    </span>
+                                    <span>{occ.course.code} — {occ.course.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {bookableSlots.length > 0 ? (
+                              <div className="ha-weekly-slots">
+                                <p className="ha-weekly-section-label">
+                                  Available time ranges — pick any period within each range
+                                </p>
+                                {bookableSlots.map((fs, i) => (
+                                  <div key={i} className="ha-weekly-slot-row">
+                                    <span>
+                                      {formatTime(fs.startTime)} - {formatTime(fs.endTime)}
+                                      <span className="ml-2 text-slate-500">({fs.durationMinutes} min)</span>
+                                    </span>
+                                    {canBook && (
+                                      <button
+                                        type="button"
+                                        className="ha-weekly-book-btn"
+                                        onClick={() => openBookModal(weeklySchedule.hall, fs, daySchedule.date)}
+                                      >
+                                        <CalendarPlus size={14} /> Book
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="ha-weekly-no-slots">No bookable free slots on this day.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Book Hall Modal */}
       {bookModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={closeBookModal}>
+        <div className="ha-modal-overlay z-[60]" onClick={closeBookModal}>
           <div
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            className="ha-book-modal"
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -534,7 +840,9 @@ export default function HallAvailability() {
             <div className="mb-4 rounded-lg bg-slate-50 p-3 text-sm">
               <p><strong>{bookModal.hall.name}</strong> - {bookModal.hall.building}, Floor {bookModal.hall.floor}</p>
               <p className="mt-1 text-slate-600">
-                {new Date(bookModal.date).toLocaleDateString()}
+                {parseLocalDate(bookModal.date).toLocaleDateString(undefined, {
+                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                })}
               </p>
             </div>
             <div className="mb-4">
