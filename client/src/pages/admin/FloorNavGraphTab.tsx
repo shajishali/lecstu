@@ -92,7 +92,7 @@ export default function FloorNavGraphTab({
         const disconnected = v.disconnectedDetails?.length ?? v.orphanNodes.length;
         showToast(
           'info',
-          `${floorLabel(floor)}: ${disconnected} disconnected node(s) — see list below`
+          `${floorLabel(floor)}: ${disconnected} disconnected node(s) - see list below`
         );
       }
     } catch (err) {
@@ -154,7 +154,7 @@ export default function FloorNavGraphTab({
       const v = res.data.data?.validation as GraphValidation;
       setValidation(v);
       if (v?.healthy) {
-        showToast('success', 'Auto paths generated — review on the map below');
+        showToast('success', 'Auto paths generated - review on the map below');
       } else {
         const detail = v?.issues?.[0] || 'See the yellow box below';
         showToast('info', `Auto build done. Fix needed: ${detail}`);
@@ -185,16 +185,16 @@ export default function FloorNavGraphTab({
 
   return (
     <div className="space-y-4">
-      {/* TEMP: per-floor connection check — remove when all floors done */}
+      {/* TEMP: per-floor connection check - remove when all floors done */}
       <div className="rounded-xl border-2 border-[var(--color-primary)]/30 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 font-semibold text-slate-800">
               <Network size={18} className="text-[var(--color-primary)]" />
-              Check this floor — connections
+              Check this floor - connections
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Validates <strong>{floorLabel(floor)}</strong> only — every place (red dot) and path
+              Validates <strong>{floorLabel(floor)}</strong> only - every place (red dot) and path
               point must be linked to the walkway graph.
             </p>
           </div>
@@ -228,11 +228,11 @@ export default function FloorNavGraphTab({
               <div>
                 <p className="font-medium">
                   {validation.healthy
-                    ? 'All connected — this floor is ready for routing'
+                    ? 'All connected - this floor is ready for routing'
                     : 'Not fully connected yet'}
                 </p>
                 <p className="mt-0.5 text-xs opacity-90">
-                  {validation.placeNodeCount ?? '—'} places · {validation.pathPointCount ?? '—'} path
+                  {validation.placeNodeCount ?? '-'} places · {validation.pathPointCount ?? '-'} path
                   points · {validation.edgeCount} lines · {validation.entranceCount} entrance(s)
                   {validation.isConnected ? ' · one network' : ` · ${validation.componentCount ?? '?'} separate section(s)`}
                 </p>
@@ -247,7 +247,7 @@ export default function FloorNavGraphTab({
             {disconnected.length > 0 && (
               <div className="rounded-lg border border-red-200 bg-red-50/40 px-3 py-2">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-800">
-                  Disconnected ({disconnected.length}) — connect these
+                  Disconnected ({disconnected.length}) - connect these
                 </p>
                 <ul className="max-h-40 space-y-1 overflow-y-auto text-slate-700">
                   {disconnected.map((d) => (
@@ -287,7 +287,7 @@ export default function FloorNavGraphTab({
         ) : null}
       </div>
 
-      {/* TEMP: navigation suggestions — remove when all floors done */}
+      {/* TEMP: navigation suggestions - remove when all floors done */}
       {validation && (validation.suggestions?.length ?? 0) > 0 && (
         <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4 shadow-sm">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-violet-900">
@@ -295,7 +295,7 @@ export default function FloorNavGraphTab({
             Comments &amp; suggestions (this floor)
           </h2>
           <p className="mb-3 text-xs text-violet-800/80">
-            Optional extras for more efficient navigation — path points, places, or links you could
+            Optional extras for more efficient navigation - path points, places, or links you could
             add. Temporary helper; remove after setup is complete.
           </p>
           <ul className="space-y-2 text-sm text-slate-700">
@@ -344,7 +344,7 @@ export default function FloorNavGraphTab({
               type="button"
               disabled={building}
               onClick={() => void rebuildGraph()}
-              title="Optional shortcut only — blocked when manual paths exist."
+              title="Optional shortcut only - blocked when manual paths exist."
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               {building ? 'Building…' : 'Auto-build (optional shortcut)'}
@@ -371,7 +371,7 @@ export default function FloorNavGraphTab({
       {locationsLocked && (
         <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900">
           <strong>Locked map active:</strong> Places are fixed from when you clicked Lock. Draw paths
-          manually only — add <strong>path points</strong>, then <strong>Connect</strong> them to each
+          manually only - add <strong>path points</strong>, then <strong>Connect</strong> them to each
           other and to places.
         </p>
       )}

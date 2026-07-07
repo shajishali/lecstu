@@ -153,7 +153,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
     setPublishStatus('PUBLISHED');
     setPublishJustSaved(false);
     if (!opts?.silent) {
-      showToast('info', 'Floor updated — save publish status when you are done');
+      showToast('info', 'Floor updated - save publish status when you are done');
     }
   };
 
@@ -223,12 +223,12 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
       showToast('success', `Publish status updated to ${publishStatusLabel(status)}`);
       if (status === 'PUBLISHED' && updated.graphValidation && !updated.graphValidation.healthy) {
         const hint = updated.graphValidation.issues?.[0] || 'Check the Walking paths tab';
-        window.setTimeout(() => showToast('info', `Published — graph note: ${hint}`), 400);
+        window.setTimeout(() => showToast('info', `Published - graph note: ${hint}`), 400);
       }
       onUpdated();
       window.setTimeout(() => setPublishJustSaved(false), 5000);
     } catch (err) {
-      showApiErrorToast(err, 'Cannot publish — resolve pending locations first');
+      showApiErrorToast(err, 'Cannot publish - resolve pending locations first');
     } finally {
       setSavingPublish(false);
     }
@@ -247,7 +247,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
       setLocationsLockedAt(lockedAt ?? new Date().toISOString());
       showToast(
         'success',
-        `Locked ${res.data.data?.markerCount ?? ''} place(s) — Walking paths will use this exact map`
+        `Locked ${res.data.data?.markerCount ?? ''} place(s) - Walking paths will use this exact map`
       );
       await load();
       onUpdated();
@@ -263,7 +263,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
     try {
       await api.post(`/admin/buildings/${buildingId}/floorplan/${floor}/locations/unlock`);
       setLocationsLockedAt(null);
-      showToast('info', 'Locations unlocked — you can move dots again');
+      showToast('info', 'Locations unlocked - you can move dots again');
       await load();
       onUpdated();
     } catch (err) {
@@ -378,7 +378,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
     try {
       await api.patch(`${markerPath(markerId)}/position`, { x, y });
     } catch (err) {
-      showApiErrorToast(err, 'Failed to move location — try signing in again');
+      showApiErrorToast(err, 'Failed to move location - try signing in again');
       await load();
     }
   };
@@ -472,7 +472,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
         y,
         legendNumber: legendNum != null && !Number.isNaN(legendNum) ? legendNum : undefined,
       });
-      showToast('success', 'Place added — drag the dot to fine-tune if needed');
+      showToast('success', 'Place added - drag the dot to fine-tune if needed');
       setShowAddForm(false);
       setPlacingNewPlace(false);
       setNewPlace({ label: '', type: 'AMENITY', legendNumber: '' });
@@ -527,7 +527,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 font-semibold text-slate-800">Calibration — {floorLabel(floor)}</h2>
+        <h2 className="mb-3 font-semibold text-slate-800">Calibration - {floorLabel(floor)}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="text-sm">
             <span className="mb-1 block text-slate-600">Scale (meters per % unit)</span>
@@ -673,7 +673,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
             <button
               key={m.id}
               type="button"
-              title={`${m.legendNumber != null ? `#${m.legendNumber} — ` : ''}${m.label} (drag to move)`}
+              title={`${m.legendNumber != null ? `#${m.legendNumber} - ` : ''}${m.label} (drag to move)`}
               disabled={!!placingConnection || placingNewPlace || locationsLocked}
               className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white shadow transition-[width,height,box-shadow] ${
                 placingConnection
@@ -702,7 +702,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
         className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm scroll-mt-4"
       >
         <p className="mb-3 text-sm text-slate-600">
-          Your floor sign lists <strong>7 numbered places</strong> (1–7). Each row below is one place; the{' '}
+          Your floor sign lists <strong>7 numbered places</strong> (1-7). Each row below is one place; the{' '}
           <strong>#</strong> column matches the number on the map. The red dot on the image is placed where
           that number appears on the drawing. <strong>Drag any red dot</strong> on the map above to
           fix wrong positions. Use <strong>Add place</strong> if AI missed a room. Also add{' '}
@@ -729,7 +729,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
                   min={1}
                   max={99}
                   className="w-20 rounded-lg border border-slate-200 px-3 py-1.5"
-                  placeholder="1–7"
+                  placeholder="1-7"
                   value={newPlace.legendNumber}
                   onChange={(e) => setNewPlace((p) => ({ ...p, legendNumber: e.target.value }))}
                 />
@@ -858,10 +858,10 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
                         onChange={(e) =>
                           setEditForm((f) => ({ ...f, legendNumber: e.target.value }))
                         }
-                        placeholder="—"
+                        placeholder="-"
                       />
                     ) : (
-                      (m.legendNumber ?? '—')
+                      (m.legendNumber ?? '-')
                     )}
                   </td>
                   <td className="py-2 pr-2 font-medium">
@@ -922,7 +922,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
                           else void linkEntity(m.id, v || null, null);
                         }}
                       >
-                        <option value="">— Link entity —</option>
+                        <option value="">Link entity</option>
                         {(markerTypeLinksToOffice(m.type) ? data?.offices : data?.halls)?.map((ent) => (
                           <option
                             key={ent.id}
@@ -933,7 +933,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
                         ))}
                       </select>
                     ) : (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-xs text-slate-400">-</span>
                     )}
                   </td>
                   <td className="py-2">
@@ -1021,7 +1021,7 @@ export default function FloorPlanReviewPanel({ buildingId, floor, imageUrl, onUp
         </p>
         {publishDirty && publishStatus === 'PUBLISHED' && savedPublishStatus !== 'PUBLISHED' && (
           <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            This floor was edited — click <strong>Save publish status</strong> to apply your changes for
+            This floor was edited - click <strong>Save publish status</strong> to apply your changes for
             students.
           </p>
         )}

@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
  * stepIndex changes.
  *
  * Uses getBoundingClientRect() so the position is always relative to the
- * list's VISIBLE area — not to some distant offsetParent which would cause
+ * list's VISIBLE area - not to some distant offsetParent which would cause
  * the list to jump wildly on each Next/Previous click.
  */
 export function useActiveStepScroll(stepIndex: number) {
@@ -28,10 +28,10 @@ export function useActiveStepScroll(stepIndex: number) {
     const pad = 6; // px breathing room above/below
 
     if (relTop - pad < list.scrollTop) {
-      // Item is above the visible area — scroll up to it.
+      // Item is above the visible area - scroll up to it.
       list.scrollTo({ top: Math.max(0, relTop - pad), behavior: 'smooth' });
     } else if (relBottom + pad > list.scrollTop + list.clientHeight) {
-      // Item is below the visible area — scroll down just enough to show it.
+      // Item is below the visible area - scroll down just enough to show it.
       list.scrollTo({
         top: relBottom + pad - list.clientHeight,
         behavior: 'smooth',

@@ -195,7 +195,7 @@ function MapController({
   return null;
 }
 
-/** Leaflet often renders at 0×0 when the map panel is in a grid/flex layout — remeasure when shown. */
+/** Leaflet often renders at 0×0 when the map panel is in a grid/flex layout - remeasure when shown. */
 function MapInvalidateSize({ active }: { active: boolean }) {
   const map = useMap();
   useEffect(() => {
@@ -1200,7 +1200,7 @@ export default function CampusMap() {
                   onChange={(e) => setMarkerForm({ ...markerForm, hallId: e.target.value })}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 >
-                  <option value="">- None -</option>
+                  <option value="">None</option>
                   {dropdowns.halls.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
@@ -1215,7 +1215,7 @@ export default function CampusMap() {
                   onChange={(e) => setMarkerForm({ ...markerForm, officeId: e.target.value })}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 >
-                  <option value="">- None -</option>
+                  <option value="">None</option>
                   {dropdowns.offices.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.roomNumber} ({o.lecturer.firstName} {o.lecturer.lastName})

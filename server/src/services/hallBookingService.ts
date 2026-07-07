@@ -59,7 +59,7 @@ export async function validateHallBooking(
     const slotEnd = timeToMinutes(entry.endTime);
     if (startMin < slotEnd && endMin > slotStart) {
       throw new AppError(
-        `Hall is occupied by timetable at ${entry.startTime}–${entry.endTime} on that day`,
+        `Hall is occupied by timetable at ${entry.startTime}-${entry.endTime} on that day`,
         400
       );
     }
@@ -86,7 +86,7 @@ export async function validateHallBooking(
     const bEnd = timeToMinutes(b.endTime);
     if (startMin < bEnd && endMin > bStart) {
       throw new AppError(
-        `Hall is already booked at ${b.startTime}–${b.endTime} on that date`,
+        `Hall is already booked at ${b.startTime}-${b.endTime} on that date`,
         400
       );
     }

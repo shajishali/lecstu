@@ -22,7 +22,7 @@ export function buildGuideAllTodayUrl(): string {
   return '/navigate?today=1';
 }
 
-/** @deprecated Use buildCampusMapUrl — kept for imports that pass `today` / `leg`. */
+/** @deprecated Use buildCampusMapUrl - kept for imports that pass `today` / `leg`. */
 export function buildGuideUrl(params: {
   buildingId: string;
   floor: number;

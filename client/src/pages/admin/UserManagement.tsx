@@ -333,16 +333,16 @@ export default function UserManagement() {
       render: (u: AdminUser) => {
         if (u.role === 'STUDENT') {
           const g = u.studentGroupMemberships[0]?.group?.name;
-          return g || '—';
+          return g || '-';
         }
         if (u.department) return u.department.code;
-        return '—';
+        return '-';
       },
     },
     {
       key: 'timetableCode',
       label: 'Code',
-      render: (u: AdminUser) => u.timetableCode || '—',
+      render: (u: AdminUser) => u.timetableCode || '-',
     },
     {
       key: 'actions',
@@ -484,7 +484,7 @@ export default function UserManagement() {
                 >
                   <option value="">Select program</option>
                   {programs.map((p) => (
-                    <option key={p.code} value={p.code}>{p.code} — {p.name}</option>
+                    <option key={p.code} value={p.code}>{p.code} - {p.name}</option>
                   ))}
                 </select>
               </label>
@@ -512,7 +512,7 @@ export default function UserManagement() {
                   >
                     <option value="">Select pathway</option>
                     {createEnrollment.pathwayOptions.map((p) => (
-                      <option key={p.code} value={p.code}>{p.code} — {p.name}</option>
+                      <option key={p.code} value={p.code}>{p.code} - {p.name}</option>
                     ))}
                   </select>
                 </label>
@@ -527,7 +527,7 @@ export default function UserManagement() {
                 value={createForm.departmentId}
                 onChange={(e) => setCreateForm({ ...createForm, departmentId: e.target.value })}
               >
-                <option value="">— None —</option>
+                <option value="">None</option>
                 {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
@@ -542,7 +542,7 @@ export default function UserManagement() {
                 <input value={createForm.designation} onChange={(e) => setCreateForm({ ...createForm, designation: e.target.value })} placeholder="Senior Lecturer" />
               </label>
               <label>
-                Timetable code <span className="text-slate-500 text-xs">(optional — auto from name if empty)</span>
+                Timetable code <span className="text-slate-500 text-xs">(optional - auto from name if empty)</span>
                 <input value={createForm.timetableCode} onChange={(e) => setCreateForm({ ...createForm, timetableCode: e.target.value })} placeholder="KP" />
               </label>
             </>
@@ -557,7 +557,7 @@ export default function UserManagement() {
         </form>
       </Modal>
 
-      <Modal open={!!editUser} onClose={() => setEditUser(null)} title={editUser ? `Edit — ${editUser.firstName} ${editUser.lastName}` : 'Edit'} width="520px">
+      <Modal open={!!editUser} onClose={() => setEditUser(null)} title={editUser ? `Edit - ${editUser.firstName} ${editUser.lastName}` : 'Edit'} width="520px">
         {editUser && (
           <form onSubmit={handleSaveEdit} className="entity-form">
             <p className="text-sm text-slate-600 mb-2">{editUser.email} · {ROLE_LABELS[editUser.role]}</p>
@@ -600,7 +600,7 @@ export default function UserManagement() {
                   >
                     <option value="">Select program</option>
                     {programs.map((p) => (
-                      <option key={p.code} value={p.code}>{p.code} — {p.name}</option>
+                      <option key={p.code} value={p.code}>{p.code} - {p.name}</option>
                     ))}
                   </select>
                 </label>
@@ -627,7 +627,7 @@ export default function UserManagement() {
                     >
                       <option value="">Select pathway</option>
                       {editEnrollment.pathwayOptions.map((p) => (
-                        <option key={p.code} value={p.code}>{p.code} — {p.name}</option>
+                        <option key={p.code} value={p.code}>{p.code} - {p.name}</option>
                       ))}
                     </select>
                   </label>
@@ -639,7 +639,7 @@ export default function UserManagement() {
               <label>
                 Department
                 <select value={editForm.departmentId} onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value })}>
-                  <option value="">— None —</option>
+                  <option value="">None</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}

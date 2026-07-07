@@ -1,4 +1,4 @@
-/** Web Speech API (Chrome / Safari) — not in default TypeScript DOM lib. */
+/** Web Speech API (Chrome / Safari) - not in default TypeScript DOM lib. */
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
   message?: string;

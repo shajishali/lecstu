@@ -195,11 +195,11 @@ export default function BuildingConnectorWizard({
 
   const connectionRules =
     buildingCode === 'ADMIN'
-      ? 'Administration can link to Academic or Laboratory on the same floor — manual links only.'
+      ? 'Administration can link to Academic or Laboratory on the same floor - manual links only.'
       : buildingCode === 'ACAD'
-        ? 'Academic can link to Administration only on the same floor — manual links only.'
+        ? 'Academic can link to Administration only on the same floor - manual links only.'
         : buildingCode === 'LAB'
-          ? 'Laboratory can link to Administration only on the same floor — manual links only.'
+          ? 'Laboratory can link to Administration only on the same floor - manual links only.'
           : 'Pick doorway or room markers on the same floor in each building.';
 
   return (
@@ -240,7 +240,7 @@ export default function BuildingConnectorWizard({
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h4 className="mb-1 font-semibold text-slate-900">Create a horizontal link</h4>
         <p className="mb-4 text-sm text-slate-500">
-          Step 1 — pick the building on this floor. Step 2 — pick one doorway or room in each
+          Step 1 - pick the building on this floor. Step 2 - pick one doorway or room in each
           building to connect manually. Path points, stairs, and lifts cannot be used.
         </p>
 
@@ -263,7 +263,7 @@ export default function BuildingConnectorWizard({
                 <option value="">Select connectable building…</option>
                 {connectableNeighbors.map((n) => (
                   <option key={n.code} value={n.code}>
-                    {n.code} — {n.name}
+                    {n.code} - {n.name}
                   </option>
                 ))}
               </select>
@@ -366,7 +366,7 @@ export default function BuildingConnectorWizard({
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
             <h4 className="font-medium text-slate-900">
-              Existing links — {buildingCode} ↔ {selectedNeighbor.code} on {floorLabel(currentFloor)}
+              Existing links - {buildingCode} ↔ {selectedNeighbor.code} on {floorLabel(currentFloor)}
               <span className="ml-2 text-sm font-normal text-slate-500">
                 ({existingLinks.length} linked)
               </span>

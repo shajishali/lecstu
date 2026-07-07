@@ -91,7 +91,7 @@ function cleanPlaceName(raw: string): string {
 function splitNameDescription(raw: string): { name: string; description?: string } {
   const parts = raw.split(/\s*[-–—:|]\s+/);
   const name = cleanPlaceName(parts[0]);
-  const description = parts.slice(1).join(' — ').trim() || undefined;
+  const description = parts.slice(1).join(' - ').trim() || undefined;
   return { name, description };
 }
 
@@ -426,7 +426,7 @@ export async function buildFloorNavigationGuide(
     try {
       await processFloorPlanWithVision(buildingId, floor, options.imagePath);
     } catch {
-      /* vision optional — notes still work */
+      /* vision optional - notes still work */
     }
   }
 
@@ -438,7 +438,7 @@ export async function buildFloorNavigationGuide(
   let places = parsePlacesFromNotes(notes, floor);
   if (places.length === 0) {
     throw new AppError(
-      'Could not find any room names in your notes. Add a numbered list like "1. RECEPTION — at the main entrance" or "3. CAFETERIA — turn left after the lobby".',
+      'Could not find any room names in your notes. Add a numbered list like "1. RECEPTION - at the main entrance" or "3. CAFETERIA - turn left after the lobby".',
       400
     );
   }
@@ -578,7 +578,7 @@ function attachDirectionsToPlaces(places: GuidePlace[], notes: string): void {
   }
 }
 
-/** Short plain-language walking steps — no metadata dumps. */
+/** Short plain-language walking steps - no metadata dumps. */
 export function generateWalkingStory(
   notes: string,
   guide: FloorNavigationGuide,
@@ -628,7 +628,7 @@ export async function getStoryDirections(input: {
     if (alt) {
       return {
         found: false,
-        message: `No navigation guide for ${building.name}. "${alt.destinationLabel}" is available in ${alt.buildingName} — switch building and try again.`,
+        message: `No navigation guide for ${building.name}. "${alt.destinationLabel}" is available in ${alt.buildingName} - switch building and try again.`,
         suggestedBuildingId: alt.buildingId,
         suggestedBuildingName: alt.buildingName,
         building: { id: building.id, name: building.name, code: building.code },

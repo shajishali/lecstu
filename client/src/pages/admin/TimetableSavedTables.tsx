@@ -226,7 +226,7 @@ export default function TimetableSavedTables() {
       const syncWarnings = res.data?.syncWarnings as string | undefined;
       if (syncWarnings) {
         setSaveConflictSummary(syncWarnings);
-        showToast('info', 'Timetable saved with room booking warnings — see message below');
+        showToast('info', 'Timetable saved with room booking warnings - see message below');
       } else {
         setSaveConflictSummary(null);
         showToast('success', res.data?.message || 'Timetable saved');
@@ -365,7 +365,7 @@ export default function TimetableSavedTables() {
         <p className="text-sm text-slate-600 max-w-3xl">
           Manage batch tables here: create a new batch, rename or fix a mixed group code, or delete a wrong table.
           If a room is already used by another batch at the same time, tick <strong>Shared room (admin only)</strong> in the
-          cell editor — students still see only the room code (e.g. AB-LCH-09-1).
+          cell editor - students still see only the room code (e.g. AB-LCH-09-1).
         </p>
         <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={openCreate}>
           <Plus size={14} /> New batch table
@@ -516,7 +516,7 @@ export default function TimetableSavedTables() {
               }}
               className="rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-[var(--color-primary)]"
             >
-              <option value="">— Select year —</option>
+              <option value="">Select year</option>
               {ADMISSION_BATCH_YEARS.map((year) => (
                 <option key={year} value={year}>{year}</option>
               ))}

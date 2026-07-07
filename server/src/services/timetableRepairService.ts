@@ -405,7 +405,7 @@ export async function repairMasterSlotsFromSlotRefs(
       } = {};
 
       const lect = ref.lecturerName?.trim();
-      if (lect && lect !== '—' && lect !== '-' && !entry.lecturerInitials?.trim()) {
+      if (lect && lect !== '-' && lect !== '-' && !entry.lecturerInitials?.trim()) {
         const code = lect.split(/\s+/).find((p) => isFetLecturerCodeToken(p));
         if (code) data.lecturerInitials = code.replace(/\s+/g, '').toUpperCase();
       }

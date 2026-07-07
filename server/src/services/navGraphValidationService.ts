@@ -23,7 +23,7 @@ export type NavGraphValidation = {
   isConnected: boolean;
   issues: string[];
   warnings: string[];
-  /** Temporary admin hints — extra path/place points for efficient routing */
+  /** Temporary admin hints - extra path/place points for efficient routing */
   suggestions: string[];
   healthy: boolean;
 };
@@ -89,19 +89,19 @@ function buildNavigationSuggestions(input: {
 
   if (edgeCount === 0) {
     tips.push(
-      'No walking lines yet — click Add path point, place junctions along hallways, Confirm, then Connect each place to the nearest junction.'
+      'No walking lines yet - click Add path point, place junctions along hallways, Confirm, then Connect each place to the nearest junction.'
     );
   }
 
   if (input.entranceCount === 0) {
     tips.push(
-      'Add an ENTRANCE LOBBY place at the main door — routing always starts from an entrance node.'
+      'Add an ENTRANCE LOBBY place at the main door - routing always starts from an entrance node.'
     );
   }
 
   if (!input.hasStairsAccess && !input.hasLiftAccess) {
     tips.push(
-      'Add a Stairs & lift (same spot) or separate Staircase / Lift place where vertical access exists — connect it to the corridor path for multi-floor routing later.'
+      'Add a Stairs & lift (same spot) or separate Staircase / Lift place where vertical access exists - connect it to the corridor path for multi-floor routing later.'
     );
   }
 
@@ -113,34 +113,34 @@ function buildNavigationSuggestions(input: {
     );
   }
   if (orphanPlaces.length > 8) {
-    tips.push(`…and ${orphanPlaces.length - 8} more disconnected place(s) — connect each to the walkway.`);
+    tips.push(`…and ${orphanPlaces.length - 8} more disconnected place(s) - connect each to the walkway.`);
   }
 
   for (const p of orphanPaths.slice(0, 4)) {
-    tips.push(`Path junction "${p.label}" has no lines — Connect it to the corridor spine or a nearby place.`);
+    tips.push(`Path junction "${p.label}" has no lines - Connect it to the corridor spine or a nearby place.`);
   }
 
   if (componentCount > 1) {
     tips.push(
-      `Graph has ${componentCount} separate sections — add 1–2 path points in the hallway between them, then Connect to merge into one network.`
+      `Graph has ${componentCount} separate sections - add 1-2 path points in the hallway between them, then Connect to merge into one network.`
     );
   }
 
   if (input.corridorCount === 0 && nodes.some((n) => n.mapMarkerId)) {
     tips.push(
-      'No corridor junctions yet — place grey path points every corner/turn along the main walkway so routes follow hallways, not cut through walls.'
+      'No corridor junctions yet - place grey path points every corner/turn along the main walkway so routes follow hallways, not cut through walls.'
     );
   }
 
   if (markersWithoutNode.length > 0) {
     tips.push(
-      `Approved place(s) missing from graph: ${markersWithoutNode.map((m) => m.label).join(', ')} — open Locations & publish and re-lock, or Sync markers.`
+      `Approved place(s) missing from graph: ${markersWithoutNode.map((m) => m.label).join(', ')} - open Locations & publish and re-lock, or Sync markers.`
     );
   }
 
   const hasToilet = input.markerTypes.some((t) => t === 'TOILET');
   if (!hasToilet && nodes.filter((n) => n.mapMarkerId).length >= 8) {
-    tips.push('Consider marking toilet / washroom locations if shown on the floor sign — helps student queries.');
+    tips.push('Consider marking toilet / washroom locations if shown on the floor sign - helps student queries.');
   }
 
   const expectedConnections = getConnectionsForBuilding(input.buildingCode);
@@ -241,10 +241,10 @@ export async function validateFloorNavGraph(
   const warnings: string[] = [];
 
   if (nodes.length === 0) {
-    issues.push('No navigation nodes — approve locations, then draw walking paths manually in this tab.');
+    issues.push('No navigation nodes - approve locations, then draw walking paths manually in this tab.');
   }
   if (entranceCount === 0) {
-    issues.push('Missing entrance — approve an ENTRANCE LOBBY marker or add an ENTRANCE node on the map.');
+    issues.push('Missing entrance - approve an ENTRANCE LOBBY marker or add an ENTRANCE node on the map.');
   }
   if (orphanNodes.length > 0) {
     const names = orphanNodes
@@ -263,7 +263,7 @@ export async function validateFloorNavGraph(
   }
   if (!isConnected && nodes.length > 1) {
     issues.push(
-      `Graph has ${componentCount} separate sections — use Connect to join corridor junctions.`
+      `Graph has ${componentCount} separate sections - use Connect to join corridor junctions.`
     );
   }
   const approvedMarkers = markers.filter((m) => isMarkerVisibleToStudents(m.metadata));

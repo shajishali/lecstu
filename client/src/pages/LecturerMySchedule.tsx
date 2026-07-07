@@ -142,11 +142,11 @@ function formatTime(t: string): string {
 }
 
 function formatTimeRange(startTime: string, endTime: string): string {
-  return `${formatTime(startTime)} – ${formatTime(endTime)}`;
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 }
 
 function formatTimeRange24(startTime: string, endTime: string): string {
-  return `${startTime} – ${endTime}`;
+  return `${startTime} - ${endTime}`;
 }
 
 const COURSE_COLORS = [
@@ -383,7 +383,7 @@ export default function LecturerMySchedule() {
   const lecturerDisplayName = user
     ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'You'
     : 'You';
-  const timetableCodeLabel = timetableCodes.length > 0 ? timetableCodes.join(', ') : '—';
+  const timetableCodeLabel = timetableCodes.length > 0 ? timetableCodes.join(', ') : '-';
 
   const openCreateModal = async () => {
     setShowCreateModal(true);
@@ -585,7 +585,7 @@ export default function LecturerMySchedule() {
     );
   }
 
-  const codeLabel = timetableCodes.length > 0 ? timetableCodes.join(', ') : '—';
+  const codeLabel = timetableCodes.length > 0 ? timetableCodes.join(', ') : '-';
 
   return (
     <div
@@ -611,7 +611,7 @@ export default function LecturerMySchedule() {
           <p className="text-sm text-slate-500 mt-1 max-w-2xl">
             Pathways taught together at the same time appear in one box.{' '}
             <strong>Click a lecture</strong> for full subject details, or use <strong>Edit</strong> to
-            change day, time, place, or notes — students see updates on their timetable. You can also
+            change day, time, place, or notes - students see updates on their timetable. You can also
             add lectures manually for your batches.
           </p>
         </div>
@@ -699,7 +699,7 @@ export default function LecturerMySchedule() {
                                 top: `${topPx}px`,
                                 height: `${heightPx}px`,
                               }}
-                              title={`${cardTitle} — click for details`}
+                              title={`${cardTitle} - click for details`}
                               role="button"
                               tabIndex={0}
                               onClick={() => openDetailModal(block)}
@@ -1187,7 +1187,7 @@ export default function LecturerMySchedule() {
                   <label>Lecturer</label>
                   <span>
                     {lecturerDisplayName}
-                    {timetableCodeLabel !== '—' && (
+                    {timetableCodeLabel !== '-' && (
                       <span className="block text-xs text-slate-500 mt-0.5">
                         Timetable code: {timetableCodeLabel}
                       </span>
@@ -1221,11 +1221,11 @@ export default function LecturerMySchedule() {
                     <div className="tt-detail-grid">
                       <div className="tt-detail-row">
                         <label>Subject code</label>
-                        <span className="font-mono">{session.course.code || '—'}</span>
+                        <span className="font-mono">{session.course.code || '-'}</span>
                       </div>
                       <div className="tt-detail-row">
                         <label>Lecture name</label>
-                        <span>{session.course.name || '—'}</span>
+                        <span>{session.course.name || '-'}</span>
                       </div>
                       <div className="tt-detail-row">
                         <label>Place</label>
@@ -1341,7 +1341,7 @@ export default function LecturerMySchedule() {
                   placeholder="Room access code for students"
                 />
                 <span className="text-xs text-slate-500 mt-1 block">
-                  Saved for this hall — students see it on their timetable.
+                  Saved for this hall - students see it on their timetable.
                 </span>
               </label>
 

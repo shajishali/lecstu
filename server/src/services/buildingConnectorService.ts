@@ -206,7 +206,7 @@ export async function createCrossBuildingNavEdge(fromNodeId: string, toNodeId: s
     throw new AppError('Select place markers on each floor (not path points)', 400);
   }
   if (isRoutingOnlyNavLabel(from.label) || isRoutingOnlyNavLabel(to.label)) {
-    throw new AppError('Cannot link path points or stairs/lifts — pick doorway or room markers only', 400);
+    throw new AppError('Cannot link path points or stairs/lifts - pick doorway or room markers only', 400);
   }
   if (!isSameFloorLinkAllowed(from.building.code, to.building.code, from.floor)) {
     throw new AppError(
@@ -375,7 +375,7 @@ export type FloorLinkSuggestion = {
 };
 
 export async function suggestBuildingFloorPairs(_buildingId: string): Promise<FloorLinkSuggestion[]> {
-  // Manual links only — never auto-suggest corridor/path-point pairings.
+  // Manual links only - never auto-suggest corridor/path-point pairings.
   return [];
 }
 

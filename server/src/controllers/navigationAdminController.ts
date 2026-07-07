@@ -7,7 +7,7 @@ import { isVisionServiceHealthy } from '../services/floorPlanVisionService';
 import { validateFloorNavGraph } from '../services/navGraphValidationService';
 import { PHASE_11_ACTIVE_FLOORS } from '../constants/facultyBuildings';
 
-/** GET /admin/navigation/health — AI services + per-floor graph connectivity */
+/** GET /admin/navigation/health - AI services + per-floor graph connectivity */
 export async function getNavigationHealth(req: Request, res: Response, next: NextFunction) {
   try {
     const [visionHealthy, navHealthy, setup] = await Promise.all([

@@ -888,7 +888,7 @@ async function loadFacultyCampusGraph() {
   return { nodes: routingNodes, edges, buildingById };
 }
 
-/** Admin-configured horizontal links are used as-is — no auto-pair during student routing. */
+/** Admin-configured horizontal links are used as-is - no auto-pair during student routing. */
 async function ensureCampusConnectors(_fromBuildingId: string, _toBuildingId: string) {
   /* no-op */
 }

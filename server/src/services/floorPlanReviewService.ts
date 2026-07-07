@@ -48,7 +48,7 @@ export async function assertFloorPlanNotLocked(buildingId: string, floor: number
   });
   if (plan?.locationsLockedAt) {
     throw new AppError(
-      'Locations are locked for Walking paths — click Unlock on Locations & publish to edit',
+      'Locations are locked for Walking paths - click Unlock on Locations & publish to edit',
       409
     );
   }
@@ -151,7 +151,7 @@ async function deleteNavNodesForMarkers(markerIds: string[]) {
   await prisma.navNode.deleteMany({ where: { id: { in: navIds } } });
 }
 
-/** Remove doors, old text-guide markers, and direction sentences — keep real floor-plan places. */
+/** Remove doors, old text-guide markers, and direction sentences - keep real floor-plan places. */
 export async function purgeFloorPlanJunkMarkers(buildingId: string, floor: number) {
   const markers = await prisma.mapMarker.findMany({ where: { buildingId, floor } });
   const junkIds = markers.filter((m) => isJunkMarker(m.label, m.metadata)).map((m) => m.id);
@@ -301,7 +301,7 @@ export async function placeBuildingConnectionMarker(
     return meta?.buildingConnection?.targetBuildingCode === def.targetBuildingCode;
   });
   if (duplicate) {
-    throw new AppError('Connection point already placed — edit or delete the existing marker', 409);
+    throw new AppError('Connection point already placed - edit or delete the existing marker', 409);
   }
 
   const role = def.markerType === 'ENTRANCE' ? 'entrance' : 'exit';
@@ -385,7 +385,7 @@ export async function updateFloorPlanPublishStatus(
     const blocking = pending.filter((m) => !isMarkerVisibleToStudents(m.metadata));
     if (blocking.length > 0) {
       throw new AppError(
-        `${blocking.length} location(s) still pending review — approve or reject before publishing`,
+        `${blocking.length} location(s) still pending review - approve or reject before publishing`,
         400
       );
     }

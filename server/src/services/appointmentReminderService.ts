@@ -84,5 +84,5 @@ export function startReminderJob(): void {
   if (intervalId) return;
   runReminderCheck();
   intervalId = setInterval(runReminderCheck, CHECK_INTERVAL_MS);
-  console.log('[LECSTU] Reminder job started — appointments + lectures (every 5 min)');
+  console.log('[LECSTU] Reminder job started - appointments + lectures (every 5 min)');
 }

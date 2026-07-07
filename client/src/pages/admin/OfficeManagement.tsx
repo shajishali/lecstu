@@ -138,7 +138,7 @@ export default function OfficeManagement() {
         <form onSubmit={handleSave} className="entity-form">
           <label>Lecturer
             <select value={form.lecturerId} onChange={(e) => setForm({ ...form, lecturerId: e.target.value })} required>
-              <option value="">- Select Lecturer -</option>
+              <option value="">Select lecturer</option>
               {allLecturers.map((l) => (
                 <option key={l.id} value={l.id}>{l.firstName} {l.lastName} ({l.email})</option>
               ))}

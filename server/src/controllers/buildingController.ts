@@ -537,7 +537,7 @@ export async function buildFloorNavigationGuideHandler(req: Request, res: Respon
 
     res.json({
       success: true,
-      data: { guide, message: `Navigation ready — ${guide.places.length} places on ${formatFloorLabel(floor)}` },
+      data: { guide, message: `Navigation ready - ${guide.places.length} places on ${formatFloorLabel(floor)}` },
     });
   } catch (err) {
     next(err);

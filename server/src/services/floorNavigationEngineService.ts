@@ -1,5 +1,5 @@
 /**
- * Floor Navigation AI Engine client — HTTP bridge to Python microservice (port 8004).
+ * Floor Navigation AI Engine client - HTTP bridge to Python microservice (port 8004).
  */
 import fs from 'fs';
 import path from 'path';

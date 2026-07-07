@@ -65,12 +65,12 @@ export function splitRoutePathByStep(
     return { traveled: [], ahead: routePath };
   }
 
-  // All steps on this floor finished — entire segment is completed.
+  // All steps on this floor finished - entire segment is completed.
   if (stepIndex > lastFloorStepIndex) {
     return { traveled: routePath, ahead: [] };
   }
 
-  // Red line ends at the previous step on this floor — current step is dot only until Next.
+  // Red line ends at the previous step on this floor - current step is dot only until Next.
   let prevOnFloorIndex = -1;
   for (let i = stepIndex - 1; i >= 0; i--) {
     if (stepOnView(stepDetails[i], viewFloor, viewBuildingId)) {

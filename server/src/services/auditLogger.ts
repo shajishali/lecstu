@@ -33,7 +33,7 @@ export async function logAction(
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[AuditLog] Failed to log: ${action} on ${entity} — ${msg}`);
+    console.error(`[AuditLog] Failed to log: ${action} on ${entity} - ${msg}`);
   }
 }
 

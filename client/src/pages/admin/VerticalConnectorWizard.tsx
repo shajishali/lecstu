@@ -307,7 +307,7 @@ export default function VerticalConnectorWizard({
 
   const floorHint =
     currentFloor !== undefined
-      ? ` Viewing ${floorLabel(currentFloor)} — links span all floors in this building.`
+      ? ` Viewing ${floorLabel(currentFloor)} - links span all floors in this building.`
       : '';
 
   return (
@@ -320,8 +320,8 @@ export default function VerticalConnectorWizard({
               Vertical links (staircase &amp; lift)
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Connect staircase and lift nodes across floors. Academic: LIFT 1–2 (G–F9) ·
-              Administration: LIFT 3 (G–F9) · Laboratory: LIFT 4–5 (G–F11).
+              Connect staircase and lift nodes across floors. Academic: LIFT 1-2 (G-F9) ·
+              Administration: LIFT 3 (G-F9) · Laboratory: LIFT 4-5 (G-F11).
               {floorHint}
             </p>
           </div>
@@ -350,7 +350,7 @@ export default function VerticalConnectorWizard({
           <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50/80 px-3 py-2 text-sm text-blue-950">
             <p className="font-medium">{buildingGuide.label} ({resolvedBuildingCode})</p>
             <p className="mt-1 text-xs text-blue-900/90">
-              Link <strong>{buildingGuide.shafts}</strong> below — {buildingGuide.floors}.
+              Link <strong>{buildingGuide.shafts}</strong> below - {buildingGuide.floors}.
             </p>
           </div>
         )}
@@ -370,11 +370,11 @@ export default function VerticalConnectorWizard({
               <p className="mt-0.5 text-slate-500">{guide.floors}</p>
               {guide.code === resolvedBuildingCode ? (
                 <p className="mt-1.5 font-medium text-[var(--color-primary)]">
-                  Active — use Stairs &amp; Lift Name below
+                  Active - use Stairs &amp; Lift Name below
                 </p>
               ) : (
                 <p className="mt-1.5 italic text-slate-500">
-                  Guide only — switch building above to link these
+                  Guide only - switch building above to link these
                 </p>
               )}
             </div>
@@ -468,7 +468,7 @@ export default function VerticalConnectorWizard({
               <option value="">Select stairs &amp; lift…</option>
               {shaftsForThisBuilding.length === 0 ? (
                 <option value="" disabled>
-                  No shafts for this building — see guide above
+                  No shafts for this building - see guide above
                 </option>
               ) : (
                 shaftsForThisBuilding.map((def) => {

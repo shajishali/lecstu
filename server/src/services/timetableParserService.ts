@@ -3,7 +3,7 @@
  * Parses CSV, Excel (.xlsx/.xls), and PDF timetable files with flexible column detection.
  * Supports various header formats (dayOfWeek/day/Day, courseCode/course, etc.)
  *
- * TECHNOLOGY NOTE (no ML): PDF parsing uses pdf-parse (PDF.js) — rule-based text/table
+ * TECHNOLOGY NOTE (no ML): PDF parsing uses pdf-parse (PDF.js) - rule-based text/table
  * extraction. No machine learning models are used for timetable import.
  */
 import { Readable } from 'stream';
@@ -131,7 +131,7 @@ function normalizeImportGroupNames(rows: ParsedTimetableRow[]): ParsedTimetableR
   });
 }
 
-/** @deprecated Use normalizeImportGroupNames — kept as alias for callers */
+/** @deprecated Use normalizeImportGroupNames - kept as alias for callers */
 function expandMultiGroupRows(rows: ParsedTimetableRow[]): ParsedTimetableRow[] {
   return normalizeImportGroupNames(rows);
 }
@@ -255,7 +255,7 @@ function normalizeCourseKey(code: string): string {
   return code.replace(/[\s-]+/g, '').toUpperCase();
 }
 
-/** FET PDF cells: initials (K.P.) or 1–2 letter lecturer codes (P, T, KP). */
+/** FET PDF cells: initials (K.P.) or 1-2 letter lecturer codes (P, T, KP). */
 export function isLecturerInitials(name: string | undefined): boolean {
   return isFetLecturerCodeToken(name || '');
 }
@@ -671,7 +671,7 @@ function timeRangeFromMatrixRow(matrix: unknown[][], rowIdx: number): { start: s
 
 /**
  * FET multi-hour blocks: column A has one label per hour (08:00, 09:00, 10:00…).
- * Merged class cells leave column A empty on continuation rows — use earliest start and latest end.
+ * Merged class cells leave column A empty on continuation rows - use earliest start and latest end.
  */
 function timeSpanFromMatrixRows(
   matrix: unknown[][],
@@ -748,7 +748,7 @@ function findFetSectionAnchors(matrix: unknown[][], sheetGroupHint: string): Fet
     }
     if (dayHeaderHits >= 3) continue;
 
-    // Section titles (e.g. "Y4 SWST") sit in the first columns — never in Thu/Fri class cells.
+    // Section titles (e.g. "Y4 SWST") sit in the first columns - never in Thu/Fri class cells.
     for (let c = 0; c <= 2; c++) {
       const s = excelCellToString(rowCells[c] ?? '').trim();
       if (!s) continue;
@@ -889,7 +889,7 @@ function parseFetMatrixSection(
 
 /**
  * Parse FET Excel grids using merged cells for true 2h/3h/4h spans (column A = times).
- * One sheet may contain multiple stacked batch tables — each is parsed with its own group.
+ * One sheet may contain multiple stacked batch tables - each is parsed with its own group.
  */
 function parseExcelFetGridSheet(sheet: XLSX.WorkSheet, sheetName: string, fileHint: string): ParseResult {
   const matrix = sheetToMatrix(sheet);
@@ -1104,7 +1104,7 @@ export async function parseExcel(buffer: Buffer, fileName = ''): Promise<ParseRe
       {
         row: 1,
         message:
-          `No timetable data found in ${workbook.SheetNames.length} sheet(s). Each tab should be one batch FET grid (time in column A, Mon–Sat across), or use the Download Excel template with one row per class.`,
+          `No timetable data found in ${workbook.SheetNames.length} sheet(s). Each tab should be one batch FET grid (time in column A, Mon-Sat across), or use the Download Excel template with one row per class.`,
       },
     ],
     headersDetected: {
@@ -1200,12 +1200,12 @@ function isFetEmptyCell(s: string): boolean {
   return false;
 }
 
-/** Year/batch label inside a cell (e.g. "Y1 CS", "Y1 ET, Y1 CT") — not a course */
+/** Year/batch label inside a cell (e.g. "Y1 CS", "Y1 ET, Y1 CT") - not a course */
 function isFetYearLabel(s: string): boolean {
   const t = (s || '').trim();
   if (!t) return false;
   // Lines that contain a course code (e.g. "Y3 AINT, Y3 SPCS CSCI 32073 VR_LAB MB") are
-  // mixed group-label+course lines, not pure year labels — never filter them out.
+  // mixed group-label+course lines, not pure year labels - never filter them out.
   if (/[A-Z]{2,6}\s*\d{4,5}/.test(t)) return false;
   if (/^Y\d+\s*,\s*Y\d+/i.test(t)) return true;
   if (/^Y\d+(\s*,\s*Y\d+\s+\w+)+$/i.test(t)) return true;
@@ -1746,7 +1746,7 @@ export async function parsePdfBuiltIn(buffer: Buffer, fileName = ''): Promise<Pa
   let rawLines: string[] = [];
 
   try {
-    // 1. Try getTable() first — best for PDFs with clear table structure
+    // 1. Try getTable() first - best for PDFs with clear table structure
     const tableResult = await parser.getTable();
     if (tableResult?.mergedTables?.length) {
       for (const table of tableResult.mergedTables) {

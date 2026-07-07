@@ -1,7 +1,7 @@
 /**
  * Floor plan coordinate helpers.
  *
- * Positions are stored as 0–100 % of the map image element. Admin and Find My Way
+ * Positions are stored as 0-100 % of the map image element. Admin and Find My Way
  * share the same fixed-size fp-map-canvas (see index.css) so coordinates align.
  */
 

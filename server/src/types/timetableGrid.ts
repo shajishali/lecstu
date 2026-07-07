@@ -1,4 +1,4 @@
-/** Faithful FET timetable table — stored and rendered as one unit (not line-by-line edits). */
+/** Faithful FET timetable table - stored and rendered as one unit (not line-by-line edits). */
 
 export interface TimetableGridCell {
   rawText: string;

@@ -8,7 +8,7 @@ export function formatDatabaseError(err: unknown): string {
   if (code === 'ECONNREFUSED') {
     return (
       'PostgreSQL is not running on the host/port in DATABASE_URL. ' +
-      'From repo root run: npm run db:start — or start the postgresql Windows service, then restart the server.'
+      'From repo root run: npm run db:start - or start the postgresql Windows service, then restart the server.'
     );
   }
   if (code === 'ENOTFOUND') {

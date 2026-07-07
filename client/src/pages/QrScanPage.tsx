@@ -104,7 +104,7 @@ export default function QrScanPage() {
           <div>
             <h1 className="text-lg font-semibold text-slate-800">Scan location QR</h1>
             <p className="text-sm text-slate-500">
-              Update your position — your route will recalculate from here
+              Update your position - your route will recalculate from here
             </p>
           </div>
         </div>

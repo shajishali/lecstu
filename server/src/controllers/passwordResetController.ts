@@ -107,7 +107,7 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
       message: emailDelivered
         ? 'Reset code sent. Check your inbox and spam or junk folder.'
         : user
-          ? 'Reset code generated. Email could not be delivered — use the code shown below or fix SMTP settings.'
+          ? 'Reset code generated. Email could not be delivered - use the code shown below or fix SMTP settings.'
           : GENERIC_FORGOT_MESSAGE,
       ...(emailDelivered && sentToMasked ? { sentToMasked, emailDelivered: true } : { emailDelivered: false }),
       ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
@@ -116,16 +116,16 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
         devResetCode,
         accountFound: Boolean(user),
         devHint: !user
-          ? 'No LECSTU account uses this email. Enter your registered login email (e.g. @stu.kln.ac.lk). lecstu.system@gmail.com is the sender only — it does not receive reset codes unless set as recovery email on your account.'
+          ? 'No LECSTU account uses this email. Enter your registered login email (e.g. @stu.kln.ac.lk). lecstu.system@gmail.com is the sender only - it does not receive reset codes unless set as recovery email on your account.'
           : emailMode === 'console'
-            ? 'Console mode is ON — email was not sent. Turn off "Console mode" in Admin → Settings, or use the dev code below.'
+            ? 'Console mode is ON - email was not sent. Turn off "Console mode" in Admin → Settings, or use the dev code below.'
             : emailDelivered
               ? user?.recoveryEmail
                 ? 'Reset code sent to your recovery email inbox.'
                 : deliveryEmail && isUniversityEmail(deliveryEmail)
-                  ? 'Code sent from LECSTU. University Outlook may quarantine external mail — also use the dev code below if needed.'
+                  ? 'Code sent from LECSTU. University Outlook may quarantine external mail - also use the dev code below if needed.'
                   : 'Reset code sent. Check inbox and spam.'
-              : 'Email not sent — use the dev code below or check SMTP settings in server/.env.',
+              : 'Email not sent - use the dev code below or check SMTP settings in server/.env.',
       }),
     });
   } catch (err) {

@@ -6,7 +6,7 @@ interface ZoomableFloorPlanMapProps {
   className?: string;
   minZoom?: number;
   maxZoom?: number;
-  /** When set, "Fit path" zooms toward these 0–100% points. */
+  /** When set, "Fit path" zooms toward these 0-100% points. */
   focusPoints?: Array<{ x: number; y: number }>;
   /** When this value changes, the map auto-fits the path in view. */
   autoFitKey?: string | number;

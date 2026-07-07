@@ -319,8 +319,8 @@ export default function Register() {
           </p>
           <p className="mt-1 text-[11px] text-slate-800">
             {step === 1
-              ? 'Step 1 of 2 — verify your email to continue.'
-              : 'Step 2 of 2 — complete your account details.'}
+              ? 'Step 1 of 2 - verify your email to continue.'
+              : 'Step 2 of 2 - complete your account details.'}
           </p>
         </div>
 
@@ -450,7 +450,7 @@ export default function Register() {
             {devVerificationCode ? (
               <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  Development — use this verification code
+                  Development - use this verification code
                 </p>
                 <p className="mt-0.5 font-mono text-lg font-bold tracking-[0.35em] text-slate-900">
                   {devVerificationCode}
@@ -562,10 +562,10 @@ export default function Register() {
                     disabled={optionsLoading}
                     className={inputClass}
                   >
-                    <option value="">— Select program —</option>
+                    <option value="">Select program</option>
                     {programs.map((p) => (
                       <option key={p.code} value={p.code}>
-                        {p.code} — {p.name}
+                        {p.code} - {p.name}
                       </option>
                     ))}
                   </select>
@@ -583,13 +583,13 @@ export default function Register() {
                     disabled={!form.programCode}
                     className={inputClass}
                   >
-                    <option value="">— Select year —</option>
+                    <option value="">Select year</option>
                     {yearOptions.map((y) => (
                       <option key={y} value={y}>
-                        {y === 'Y1' && 'Y1 — First year'}
-                        {y === 'Y2' && 'Y2 — Second year'}
-                        {y === 'Y3' && 'Y3 — Third year'}
-                        {y === 'Y4' && 'Y4 — Fourth year'}
+                        {y === 'Y1' && 'Y1 - First year'}
+                        {y === 'Y2' && 'Y2 - Second year'}
+                        {y === 'Y3' && 'Y3 - Third year'}
+                        {y === 'Y4' && 'Y4 - Fourth year'}
                         {!['Y1', 'Y2', 'Y3', 'Y4'].includes(y) && y}
                       </option>
                     ))}
@@ -608,10 +608,10 @@ export default function Register() {
                       required
                       className={inputClass}
                     >
-                      <option value="">— Select pathway —</option>
+                      <option value="">Select pathway</option>
                       {pathwayOptions.map((pw) => (
                         <option key={pw.code} value={pw.code}>
-                          {pw.code} — {pw.name}
+                          {pw.code} - {pw.name}
                         </option>
                       ))}
                     </select>
@@ -633,7 +633,7 @@ export default function Register() {
                       required
                       className={inputClass}
                     >
-                      <option value="">- Select batch year -</option>
+                      <option value="">Select batch year</option>
                       {batchYearOptions.map((year) => (
                         <option key={year} value={year}>
                           {year}
@@ -655,7 +655,7 @@ export default function Register() {
                       required
                       className={inputClass}
                     >
-                      <option value="">- Select batch -</option>
+                      <option value="">Select batch</option>
                       {groupOptions.map((group) => (
                         <option key={group.id} value={group.id}>
                           {group.name}

@@ -46,7 +46,7 @@ const CORRIDOR_LABEL = /^corridor\s*(node|hub|\(auto\)|spine)/i;
 const DIRECTION_PHRASE =
   /^(walk|pass|proceed|move\s+toward|enter\s+through|head\s+toward|continue|turn\s+|the\s+next\s+|the\s+cafeteria\s+occupies|the\s+lift\s+is|the\s+staircase\s+is|the\s+electrical\s+room\s+is|the\s+elv\s+room\s+is|the\s+meeting\s+room\s+is|the\s+toilets?\s+are|security\s+room\s+is\s+the\s+first)/i;
 
-/** Old story/notes sync, door heuristics, and direction sentences — not floor-plan places. */
+/** Old story/notes sync, door heuristics, and direction sentences - not floor-plan places. */
 export function isJunkMarker(label: string, metadata: unknown): boolean {
   const meta = parseMarkerMetadata(metadata);
   if (meta.buildingConnection) return false;

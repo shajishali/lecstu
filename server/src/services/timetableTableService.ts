@@ -238,7 +238,7 @@ export async function listTableSnapshots(filters?: {
         if (idx >= 0) repaired[idx] = fresh;
       }
     } catch {
-      /* week slot taken — keep existing week; matching still uses title */
+      /* week slot taken - keep existing week; matching still uses title */
     }
   }
 
@@ -423,7 +423,7 @@ export async function updateTableSnapshotGrid(
       periodWeek = mappedWeek;
       grid = { ...grid, week: mappedWeek };
     } catch {
-      /* week slot taken — keep existing week */
+      /* week slot taken - keep existing week */
     }
   }
 

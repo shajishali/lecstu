@@ -22,7 +22,7 @@ export interface LecturerIdentity {
 
 
 
-/** FET activity type letters on course codes — not lecturer identifiers */
+/** FET activity type letters on course codes - not lecturer identifiers */
 
 const FET_ACTIVITY_SUFFIXES = new Set(['P', 'T', 'PT', 'TP', 'PP', 'TT', 'ONLINE']);
 
@@ -36,7 +36,7 @@ export function isFetActivitySuffix(code: string): boolean {
 
 
 
-/** @deprecated Course suffix P/T are not lecturers — always returns [] */
+/** @deprecated Course suffix P/T are not lecturers - always returns [] */
 
 export function extractFetLecturerCodesFromCourse(_course: string): string[] {
 

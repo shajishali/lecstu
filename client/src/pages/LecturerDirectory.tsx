@@ -495,7 +495,7 @@ export default function LecturerDirectory() {
                 value={createForm.departmentId}
                 onChange={(e) => setCreateForm({ ...createForm, departmentId: e.target.value })}
               >
-                <option value="">— None —</option>
+                <option value="">None</option>
                 {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
@@ -532,7 +532,7 @@ export default function LecturerDirectory() {
       <Modal
         open={!!editLecturer}
         onClose={() => setEditLecturer(null)}
-        title={editLecturer ? `Edit — ${editLecturer.firstName} ${editLecturer.lastName}` : 'Edit Lecturer'}
+        title={editLecturer ? `Edit - ${editLecturer.firstName} ${editLecturer.lastName}` : 'Edit Lecturer'}
         width="480px"
       >
         {editLecturer && (
@@ -572,7 +572,7 @@ export default function LecturerDirectory() {
                   value={editForm.departmentId}
                   onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value })}
                 >
-                  <option value="">— None —</option>
+                  <option value="">None</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}

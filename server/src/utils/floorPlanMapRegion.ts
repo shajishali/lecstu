@@ -29,7 +29,7 @@ export function parseDrawableRegion(raw: unknown): FloorPlanDrawableRegion {
   };
 }
 
-/** Map drawable canvas coords (0–100) back to stored image coords (0–100 full JPG). */
+/** Map drawable canvas coords (0-100) back to stored image coords (0-100 full JPG). */
 export function displayToStorageCoord(
   x: number,
   y: number,
@@ -45,7 +45,7 @@ export function displayToStorageCoord(
 
 /**
  * Numbered directory-board room centers (display coords within drawable region).
- * Layout: open lobby on the right, rooms 1–9 in the centre, #3 cafeteria on the left.
+ * Layout: open lobby on the right, rooms 1-9 in the centre, #3 cafeteria on the left.
  */
 export const LEGEND_NUMBER_DISPLAY_POSITIONS: Record<number, { x: number; y: number }> = {
   1: { x: 58, y: 54 },
@@ -60,7 +60,7 @@ export const LEGEND_NUMBER_DISPLAY_POSITIONS: Record<number, { x: number; y: num
   10: { x: 10, y: 78 },
 };
 
-/** "You are here" — open lobby area on the right of the floor plan. */
+/** "You are here" - open lobby area on the right of the floor plan. */
 export const ENTRANCE_DISPLAY_POSITION = { x: 78, y: 48 };
 
 /** Walkable corridor spine (right → left), matching typical indoor paths. */
@@ -70,7 +70,7 @@ export const CORRIDOR_SPINE_DISPLAY: Array<{ x: number; y: number; label: string
   { x: 32, y: 46, label: 'West corridor' },
 ];
 
-/** Map stored image coords (0–100 full JPG) to drawable canvas coords (0–100). */
+/** Map stored image coords (0-100 full JPG) to drawable canvas coords (0-100). */
 export function storageToDisplayCoord(
   x: number,
   y: number,

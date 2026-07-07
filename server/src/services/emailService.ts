@@ -302,7 +302,7 @@ export function buildPasswordResetEmail(params: PasswordResetEmailParams): SendM
     `This code expires in ${params.expiryMinutes} minutes.`,
     'If you did not request a password reset, you can ignore this email.',
     '',
-    '— LECSTU Academic Platform',
+    '- LECSTU Academic Platform',
   ].join('\n');
 
   const html = `
@@ -313,7 +313,7 @@ export function buildPasswordResetEmail(params: PasswordResetEmailParams): SendM
       <p style="font-size:14px;color:#64748b">Expires in <strong>${params.expiryMinutes} minutes</strong>.</p>
       <p style="font-size:13px;color:#94a3b8;margin-top:24px">If you did not request this, ignore this email.</p>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-      <p style="font-size:12px;color:#94a3b8">LECSTU — AI-Integrated Academic Platform</p>
+      <p style="font-size:12px;color:#94a3b8">LECSTU Academic Platform</p>
     </div>
   `.trim();
 
@@ -330,7 +330,7 @@ export async function sendPasswordResetCodeEmail(
 export function buildProfilePasswordChangeAdminEmail(
   params: ProfilePasswordChangeAdminEmailParams,
 ): SendMailOptions {
-  const subject = `LECSTU password change approval — ${params.userFullName}`;
+  const subject = `LECSTU password change approval - ${params.userFullName}`;
   const text = [
     'Hi Admin,',
     '',
@@ -340,7 +340,7 @@ export function buildProfilePasswordChangeAdminEmail(
     '',
     `Share this code with the user so they can set a new password. Expires in ${params.expiryMinutes} minutes.`,
     '',
-    '— LECSTU Academic Platform',
+    '- LECSTU Academic Platform',
   ].join('\n');
 
   const html = `
@@ -354,7 +354,7 @@ export function buildProfilePasswordChangeAdminEmail(
       <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:24px 0;padding:16px;background:#f1f5f9;border-radius:8px;text-align:center">${params.code}</p>
       <p style="font-size:14px;color:#64748b">Expires in <strong>${params.expiryMinutes} minutes</strong>.</p>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-      <p style="font-size:12px;color:#94a3b8">LECSTU — AI-Integrated Academic Platform</p>
+      <p style="font-size:12px;color:#94a3b8">LECSTU Academic Platform</p>
     </div>
   `.trim();
 
@@ -381,7 +381,7 @@ export function buildRegistrationVerificationEmail(
     `This code expires in ${params.expiryMinutes} minutes.`,
     'If you did not start registration, you can ignore this email.',
     '',
-    '— LECSTU Academic Platform',
+    '- LECSTU Academic Platform',
   ].join('\n');
 
   const html = `
@@ -392,7 +392,7 @@ export function buildRegistrationVerificationEmail(
       <p style="font-size:14px;color:#64748b">Expires in <strong>${params.expiryMinutes} minutes</strong>.</p>
       <p style="font-size:13px;color:#94a3b8;margin-top:24px">If you did not start registration, ignore this email.</p>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-      <p style="font-size:12px;color:#94a3b8">LECSTU — AI-Integrated Academic Platform</p>
+      <p style="font-size:12px;color:#94a3b8">LECSTU Academic Platform</p>
     </div>
   `.trim();
 

@@ -144,7 +144,7 @@ const TOKEN_CONFLICTS: Array<[string, string]> = [
   ['meeting', 'elv'],
 ];
 
-/** Score how well a marker/hall label matches the user's room query (0–100). */
+/** Score how well a marker/hall label matches the user's room query (0-100). */
 export function scoreMapSearchMatch(query: string, label: string): number {
   const variants = [query.toLowerCase().trim()];
   if (/\s+room$/i.test(query)) {
@@ -294,7 +294,7 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
     }
   };
 
-  // 1) Search by parsed room terms — collect all matches, do not stop at first
+  // 1) Search by parsed room terms - collect all matches, do not stop at first
   for (const term of roomTerms) {
     if (term.length < 2) continue;
     const markers = await prisma.mapMarker.findMany({
@@ -308,7 +308,7 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
     pushMarkers(markers);
   }
 
-  // 2) Token search — skip generic "room" alone; require distinctive tokens
+  // 2) Token search - skip generic "room" alone; require distinctive tokens
   if (results.length === 0) {
     const tokens = [
       ...new Set(
@@ -461,7 +461,7 @@ export async function searchMapEntities(q: string): Promise<MapSearchResult[]> {
     }
   }
 
-  // Prefer markers/halls/offices over buildings — rank by match quality
+  // Prefer markers/halls/offices over buildings - rank by match quality
   const roomLike = results.filter((r) => r.kind !== 'building');
   if (roomLike.length > 0) {
     const ranked = [...roomLike].sort(

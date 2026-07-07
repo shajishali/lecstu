@@ -1,6 +1,6 @@
 import type { PositionProvider, ResolvedPosition } from './types';
 
-/** Phase 3 stub — register when UWB positioning is integrated. */
+/** Phase 3 stub - register when UWB positioning is integrated. */
 export class UwbPositionProvider implements PositionProvider {
   readonly source = 'UWB' as const;
 

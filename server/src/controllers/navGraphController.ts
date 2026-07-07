@@ -46,7 +46,7 @@ export async function getPublicNavGraph(req: Request, res: Response, next: NextF
   }
 }
 
-/** @deprecated Prefer GET /api/map/indoor-route — same handler via map routes */
+/** @deprecated Prefer GET /api/map/indoor-route - same handler via map routes */
 export { getIndoorRoute as getNavRoute } from './indoorRouteController';
 
 export async function createNavNodeHandler(req: Request, res: Response, next: NextFunction) {

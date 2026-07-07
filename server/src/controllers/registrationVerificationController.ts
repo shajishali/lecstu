@@ -100,7 +100,7 @@ export async function sendRegistrationCode(req: Request, res: Response, next: Ne
       success: true,
       message: emailDelivered
         ? 'Verification code sent to your personal email. Check your inbox and spam folder.'
-        : 'Verification code generated. Email could not be delivered — use the code shown below or fix SMTP settings.',
+        : 'Verification code generated. Email could not be delivered - use the code shown below or fix SMTP settings.',
       ...(emailDelivered ? { sentToMasked: maskEmail(deliveryEmail), emailDelivered: true } : { emailDelivered: false }),
       ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
       ...(isDev && {
@@ -108,7 +108,7 @@ export async function sendRegistrationCode(req: Request, res: Response, next: Ne
         devVerificationCode,
         devHint: emailDelivered
           ? 'Verification code sent to your personal recovery email.'
-          : 'Email not sent — use the dev code below or check SMTP settings in server/.env.',
+          : 'Email not sent - use the dev code below or check SMTP settings in server/.env.',
       }),
     });
   } catch (err) {

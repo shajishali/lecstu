@@ -250,7 +250,7 @@ export default function IndoorMarkerEditor() {
             <ArrowLeft size={16} /> Buildings
           </Link>
           <h1>Place rooms on floor plan</h1>
-          <p>Phase 6.5 — click the map to add rooms; drag pins to move them.</p>
+          <p>Phase 6.5 - click the map to add rooms; drag pins to move them.</p>
         </div>
       </div>
 
@@ -278,7 +278,7 @@ export default function IndoorMarkerEditor() {
             {floorOptions.map((f) => (
               <option key={f} value={f}>
                 {floorLabel(f)}
-                {floorsWithPlans.includes(f) ? '' : ' — no JPG yet'}
+                {floorsWithPlans.includes(f) ? '' : ' - no JPG yet'}
               </option>
             ))}
           </select>
@@ -403,7 +403,7 @@ export default function IndoorMarkerEditor() {
                       setForm({ ...form, hallId: e.target.value, officeId: '', type: 'HALL' })
                     }
                   >
-                    <option value="">— None —</option>
+                    <option value="">None</option>
                     {ctx.halls.map((h) => (
                       <option key={h.id} value={h.id}>
                         {h.name}
@@ -419,10 +419,10 @@ export default function IndoorMarkerEditor() {
                       setForm({ ...form, officeId: e.target.value, hallId: '', type: 'OFFICE' })
                     }
                   >
-                    <option value="">— None —</option>
+                    <option value="">None</option>
                     {ctx.offices.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.roomNumber} — {o.lecturer.firstName} {o.lecturer.lastName}
+                        {o.roomNumber} - {o.lecturer.firstName} {o.lecturer.lastName}
                       </option>
                     ))}
                   </select>
@@ -471,7 +471,7 @@ export default function IndoorMarkerEditor() {
                       setForm({ ...form, hallId: e.target.value, officeId: '', type: 'HALL' })
                     }
                   >
-                    <option value="">— None —</option>
+                    <option value="">None</option>
                     {ctx.halls.map((h) => (
                       <option key={h.id} value={h.id}>
                         {h.name}
@@ -487,10 +487,10 @@ export default function IndoorMarkerEditor() {
                       setForm({ ...form, officeId: e.target.value, hallId: '', type: 'OFFICE' })
                     }
                   >
-                    <option value="">— None —</option>
+                    <option value="">None</option>
                     {ctx.offices.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.roomNumber} — {o.lecturer.firstName} {o.lecturer.lastName}
+                        {o.roomNumber} - {o.lecturer.firstName} {o.lecturer.lastName}
                       </option>
                     ))}
                   </select>

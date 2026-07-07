@@ -18,7 +18,7 @@ import { executeUnifiedNavigationQuery } from '../../../services/unifiedNavigati
 import { computeRouteRequest } from '../services/route.service';
 import { resolveStepIndexForPathNode } from '../utils/activeNavigation';
 
-/** GET /indoor-nav/buildings-with-guides — buildings that have a built navigation guide */
+/** GET /indoor-nav/buildings-with-guides - buildings that have a built navigation guide */
 export async function getBuildingsWithGuides(_req: Request, res: Response, next: NextFunction) {
   try {
     const { listBuildingsWithGuides } = await import('../../../services/floorNavigationStoryService');
@@ -29,7 +29,7 @@ export async function getBuildingsWithGuides(_req: Request, res: Response, next:
   }
 }
 
-/** GET /indoor-nav/places?buildingId= — story guide places for student picker */
+/** GET /indoor-nav/places?buildingId= - story guide places for student picker */
 export async function getGuidePlaces(req: Request, res: Response, next: NextFunction) {
   try {
     const buildingId = req.query.buildingId as string;
@@ -50,7 +50,7 @@ export async function getGuidePlaces(req: Request, res: Response, next: NextFunc
   }
 }
 
-/** POST /indoor-nav/story — plain-language directions from admin notes */
+/** POST /indoor-nav/story - plain-language directions from admin notes */
 export async function postStoryGuide(req: Request, res: Response, next: NextFunction) {
   try {
     const { buildingId, destination, from, floor, message } = req.body ?? {};
@@ -94,7 +94,7 @@ export async function getNodes(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-/** GET /indoor-nav/floorplans — alias for map buildings with floor plans */
+/** GET /indoor-nav/floorplans - alias for map buildings with floor plans */
 export async function getFloorplans(_req: Request, res: Response, next: NextFunction) {
   try {
     const { listMapBuildings } = await import('../../../controllers/mapController');
@@ -104,7 +104,7 @@ export async function getFloorplans(_req: Request, res: Response, next: NextFunc
   }
 }
 
-/** POST /indoor-nav/route — compute route (+ optional session) */
+/** POST /indoor-nav/route - compute route (+ optional session) */
 export async function postRoute(req: Request, res: Response, next: NextFunction) {
   try {
     const {
@@ -205,7 +205,7 @@ export async function getRouteBySession(req: Request, res: Response, next: NextF
   }
 }
 
-/** POST /indoor-nav/navigation — NL query (shared pipeline with /navigation/query) */
+/** POST /indoor-nav/navigation - NL query (shared pipeline with /navigation/query) */
 export async function postNavigation(req: Request, res: Response, next: NextFunction) {
   try {
     const message = (req.body?.message as string)?.trim();
@@ -226,7 +226,7 @@ export async function postNavigation(req: Request, res: Response, next: NextFunc
   }
 }
 
-/** POST /indoor-nav/position/qr — update position from QR scan; optional reroute */
+/** POST /indoor-nav/position/qr - update position from QR scan; optional reroute */
 export async function postQrPosition(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
@@ -309,7 +309,7 @@ export async function postQrPosition(req: Request, res: Response, next: NextFunc
         route: reroutedRoute,
         stepIndex,
         message: reroutedRoute
-          ? `You are at ${position.label} — route updated from here`
+          ? `You are at ${position.label} - route updated from here`
           : `You are at ${position.label}`,
       },
     });
@@ -318,7 +318,7 @@ export async function postQrPosition(req: Request, res: Response, next: NextFunc
   }
 }
 
-/** PATCH /indoor-nav/session/:id/step — sync step index during active navigation */
+/** PATCH /indoor-nav/session/:id/step - sync step index during active navigation */
 export async function patchSessionStep(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;

@@ -425,7 +425,7 @@ export default function Settings() {
       {emailVerification && (
         <SectionCard
           title="Email verification (password reset)"
-          description="System sender for forgot-password codes — saved on the server (admin only)"
+          description="System sender for forgot-password codes - saved on the server (admin only)"
           icon={<Mail size={20} />}
           action={
             <StatusBadge
@@ -435,7 +435,7 @@ export default function Settings() {
           }
         >
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-medium">Phase 12 — sender mailbox (Gmail or Outlook)</p>
+            <p className="font-medium">Phase 12 - sender mailbox (Gmail or Outlook)</p>
             <p className="mt-1 text-amber-800">
               Users receive codes at their <strong>registered email</strong> (Gmail, Outlook) or at a
               personal <strong>recovery email</strong> when they register with @stu.kln.ac.lk.
@@ -448,11 +448,11 @@ export default function Settings() {
               @kln.ac.lk mailbox from IT.
               {emailVerification.universitySmtpConfigured ? (
                 <span className="mt-1 block font-medium text-emerald-800">
-                  University SMTP is configured — @stu.kln.ac.lk registration codes use Office 365.
+                  University SMTP is configured - @stu.kln.ac.lk registration codes use Office 365.
                 </span>
               ) : (
                 <span className="mt-1 block font-medium">
-                  University SMTP is not configured — students must add a personal recovery email.
+                  University SMTP is not configured - students must add a personal recovery email.
                 </span>
               )}
             </p>
@@ -547,7 +547,7 @@ export default function Settings() {
               <span className="text-sm text-slate-700">
                 <span className="font-medium">Console mode (do not send real email)</span>
                 <span className="mt-0.5 block text-slate-500">
-                  Log emails to the API terminal instead of SMTP — useful for local testing.
+                  Log emails to the API terminal instead of SMTP - useful for local testing.
                 </span>
               </span>
             </label>
@@ -563,9 +563,9 @@ export default function Settings() {
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Forgot-password flow</dt>
                 <dd className="mt-1 text-sm font-medium text-slate-800">
                   {emailVerification.configured
-                    ? 'SMTP ready — Phase 12.2+ will enable user reset'
+                    ? 'SMTP ready - Phase 12.2+ will enable user reset'
                     : emailVerification.mode === 'console'
-                      ? 'Dev mode — codes log to API terminal'
+                      ? 'Dev mode - codes log to API terminal'
                       : 'Add app password and save, or enable console mode'}
                 </dd>
               </div>
@@ -616,7 +616,7 @@ export default function Settings() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-800">{svc.label}</p>
                 <p className="truncate text-xs text-slate-500" title={svc.url}>
-                  {svc.url || '—'}
+                  {svc.url || '-'}
                 </p>
                 {svc.enabled === false && (
                   <p className="mt-1 text-xs text-amber-700">Disabled in server config</p>
@@ -637,7 +637,7 @@ export default function Settings() {
       {settings && (
         <SectionCard
           title="Campus navigation setup"
-          description={`Phase ${settings.facultySetup.phase} — Academic, Administration & Laboratory buildings`}
+          description={`Phase ${settings.facultySetup.phase} - Academic, Administration & Laboratory buildings`}
           icon={<MapPin size={20} />}
           action={
             <StatusBadge
@@ -652,7 +652,7 @@ export default function Settings() {
               <p className="mt-1 text-xl font-bold text-slate-900">
                 {settings.facultySetup.phase11Uploaded}/{settings.facultySetup.phase11Target}
               </p>
-              <p className="text-xs text-slate-500">Active floors (G–F2)</p>
+              <p className="text-xs text-slate-500">Active floors (G-F2)</p>
             </div>
             <div className="rounded-lg border border-slate-200 px-4 py-3">
               <p className="text-xs font-medium uppercase text-slate-500">Published floors</p>
@@ -679,7 +679,7 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   <Building2 size={16} className="text-[var(--color-primary)]" />
                   <span className="text-sm font-medium text-slate-800">
-                    {b.code} — {b.name}
+                    {b.code} - {b.name}
                   </span>
                 </div>
                 <span className="text-xs text-slate-500">
@@ -724,7 +724,7 @@ export default function Settings() {
         >
           <dl className="grid gap-3 sm:grid-cols-2">
             {[
-              ['Platform', `${settings.platform.name} — ${settings.platform.subtitle}`],
+              ['Platform', `${settings.platform.name} - ${settings.platform.subtitle}`],
               ['Environment', settings.platform.environment],
               ['Client URL', settings.platform.clientUrl],
               ['Max upload size', `${settings.platform.uploadMaxMb} MB`],

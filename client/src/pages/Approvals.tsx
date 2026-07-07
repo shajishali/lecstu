@@ -140,7 +140,7 @@ function HallBookingCard({
           )}
           {booking.status === 'PENDING' && isBookingDatePast(booking.date) && (
             <p className="mt-1 text-xs font-medium text-amber-700">
-              Booking date has passed — review only if access is still needed.
+              Booking date has passed - review only if access is still needed.
             </p>
           )}
           {booking.reason && <p className="mt-1 text-sm text-slate-600">Reason: {booking.reason}</p>}
@@ -285,7 +285,7 @@ function AdminApprovalsView() {
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-4 text-lg font-semibold text-slate-800">Approve hall booking</h3>
             <div className="mb-4 rounded-lg bg-slate-50 p-3 text-sm">
-              <p><strong>{approveModal.hall.name}</strong> — {approveModal.hall.building}</p>
+              <p><strong>{approveModal.hall.name}</strong> - {approveModal.hall.building}</p>
               <p className="mt-1 text-slate-600">
                 {new Date(approveModal.date).toLocaleDateString()} • {formatTime(approveModal.startTime)} - {formatTime(approveModal.endTime)}
               </p>
@@ -440,7 +440,7 @@ function StudentApprovalsView() {
                     {a.reason && <p className="mt-2 text-sm text-slate-600">Reason: {a.reason}</p>}
                     {a.rescheduledAt && (
                       <p className="mt-2 flex items-center gap-1 text-sm font-medium text-amber-700">
-                        <AlertCircle size={14} /> Lecturer proposed a new time — confirm on Appointments
+                        <AlertCircle size={14} /> Lecturer proposed a new time - confirm on Appointments
                       </p>
                     )}
                   </div>

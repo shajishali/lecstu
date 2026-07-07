@@ -1,9 +1,9 @@
 /**
- * FCT faculty — three main buildings for indoor navigation (Phase 6.4).
+ * FCT faculty - three main buildings for indoor navigation (Phase 6.4).
  * Each building includes **Ground floor (G)** as floor **0**, then upper floors.
  *
  * Floor plan files: ACAD_floor0.jpg or ACAD_ground.jpg (ground), ACAD_floor1.jpg, …
- * `floors` = total levels **including ground** (e.g. 10 = Ground + Floor 1–9).
+ * `floors` = total levels **including ground** (e.g. 10 = Ground + Floor 1-9).
  */
 export const FACULTY_MAP_BUILDINGS = [
   {
@@ -12,7 +12,7 @@ export const FACULTY_MAP_BUILDINGS = [
     latitude: 6.97025,
     longitude: 79.90512,
     floors: 10,
-    description: 'Ground + 9 upper levels (Floors 1–9) — lecture halls and classrooms',
+    description: 'Ground + 9 upper levels (Floors 1-9) - lecture halls and classrooms',
     roomTypes: ['Lecture halls', 'Classrooms', 'Tutorial rooms', 'Seminar rooms'],
     hallBuildingLabel: 'Academic Building',
   },
@@ -22,7 +22,7 @@ export const FACULTY_MAP_BUILDINGS = [
     latitude: 6.97045,
     longitude: 79.90508,
     floors: 10,
-    description: 'Ground + 9 upper levels (Floors 1–9) — offices and meeting rooms',
+    description: 'Ground + 9 upper levels (Floors 1-9) - offices and meeting rooms',
     roomTypes: [
       'Lecturer offices',
       'Department offices',
@@ -37,7 +37,7 @@ export const FACULTY_MAP_BUILDINGS = [
     latitude: 6.97005,
     longitude: 79.90528,
     floors: 12,
-    description: 'Ground + 11 upper levels (Floors 1–11) — computer and engineering labs (12 levels total)',
+    description: 'Ground + 11 upper levels (Floors 1-11) - computer and engineering labs (12 levels total)',
     roomTypes: [
       'Computer labs',
       'Engineering labs',

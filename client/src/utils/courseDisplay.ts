@@ -16,7 +16,7 @@ export function durationMinutes(startTime: string, endTime: string): number {
 
 export function formatDuration(startTime: string, endTime: string): string {
   const mins = durationMinutes(startTime, endTime);
-  if (mins <= 0) return '—';
+  if (mins <= 0) return '-';
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   if (h === 0) return `${m}m`;

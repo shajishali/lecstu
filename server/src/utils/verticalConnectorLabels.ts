@@ -14,7 +14,7 @@ export function isVerticalConnectorType(type: string | undefined | null): boolea
   return type === 'STAIRS' || type === 'LIFT';
 }
 
-/** Identity key for the same physical shaft / lift bank across floors (label only — type may vary per floor). */
+/** Identity key for the same physical shaft / lift bank across floors (label only - type may vary per floor). */
 export function verticalConnectorKey(
   type: string | undefined | null,
   label: string | undefined | null

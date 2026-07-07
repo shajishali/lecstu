@@ -97,7 +97,7 @@ function formatShortDate(dateStr: string): string {
 function formatFreeTimeRanges(slots: FreeSlot[]): string {
   if (slots.length === 0) return 'Fully occupied';
   return slots
-    .map((s) => `${formatTime(s.startTime)} – ${formatTime(s.endTime)}`)
+    .map((s) => `${formatTime(s.startTime)} - ${formatTime(s.endTime)}`)
     .join(', ');
 }
 
@@ -378,7 +378,7 @@ export default function HallAvailability() {
       });
       showToast(
         'success',
-        `Booking request sent for ${new Date(bookModal.date).toLocaleDateString()} • ${formatTime(bookStartTime)}–${formatTime(bookEndTime)}. Admin will review and notify you.`
+        `Booking request sent for ${new Date(bookModal.date).toLocaleDateString()} • ${formatTime(bookStartTime)}-${formatTime(bookEndTime)}. Admin will review and notify you.`
       );
       closeBookModal();
       closeWeeklyModal();
@@ -427,9 +427,7 @@ export default function HallAvailability() {
       <div className="ha-header">
         <div>
           <h1>Hall Availability</h1>
-          <p className="ha-subtitle">
-            Browse all lecture halls and check weekly free slots for booking
-          </p>
+          <p className="ha-subtitle">Find lecture halls and check free times for the week</p>
         </div>
       </div>
 
@@ -519,7 +517,7 @@ export default function HallAvailability() {
       {tab === 'now' && (
         <div className="ha-now-bar">
           <span className="ha-now-indicator" />
-          <span>All halls listed — {Object.keys(availabilityMap).length} available right now</span>
+          <span>All halls listed. {Object.keys(availabilityMap).length} available right now</span>
           <button className="btn btn-secondary btn-sm" onClick={fetchAvailableNow} title="Refresh">
             <RefreshCw size={14} />
           </button>
@@ -722,7 +720,7 @@ export default function HallAvailability() {
                   Weekly Availability
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  <strong>{weeklyModal.name}</strong> — {weeklyModal.building}, Floor {weeklyModal.floor}
+                  <strong>{weeklyModal.name}</strong>, {weeklyModal.building}, Floor {weeklyModal.floor}
                 </p>
               </div>
               <button
@@ -774,7 +772,7 @@ export default function HallAvailability() {
                                     <span className="ha-occ-time">
                                       {formatTime(occ.startTime)} - {formatTime(occ.endTime)}
                                     </span>
-                                    <span>{occ.course.code} — {occ.course.name}</span>
+                                    <span>{occ.course.code}: {occ.course.name}</span>
                                   </div>
                                 ))}
                               </div>
@@ -782,7 +780,7 @@ export default function HallAvailability() {
                             {bookableSlots.length > 0 ? (
                               <div className="ha-weekly-slots">
                                 <p className="ha-weekly-section-label">
-                                  Available time ranges — pick any period within each range
+                                  Free times (book any part of each range)
                                 </p>
                                 {bookableSlots.map((fs, i) => (
                                   <div key={i} className="ha-weekly-slot-row">

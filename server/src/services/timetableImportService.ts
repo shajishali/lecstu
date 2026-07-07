@@ -246,7 +246,7 @@ function slugifyLecturerLabel(label: string): string {
 
 function isAutoCreatableLecturerLabel(label: string): boolean {
   const cleaned = label.trim();
-  if (!cleaned || cleaned === '-' || cleaned === '—') return false;
+  if (!cleaned || cleaned === '-' || cleaned === '-') return false;
   if (isFetLecturerCodeToken(cleaned)) return false;
   if (/^(T|P|TD|PR|RR|DEMO|LECTURE|PRACTICAL)$/i.test(cleaned)) return false;
   return /[A-Za-z]/.test(cleaned);
@@ -595,7 +595,7 @@ export async function resolveAndImport(
         const batchConflicts: { type: string; message: string }[] = [
           {
             type: 'GROUP',
-            message: `Duplicate slot for this group on ${entry.dayOfWeek} ${entry.startTime}–${entry.endTime}`,
+            message: `Duplicate slot for this group on ${entry.dayOfWeek} ${entry.startTime}-${entry.endTime}`,
           },
         ];
 
@@ -611,7 +611,7 @@ export async function resolveAndImport(
         ) {
           batchConflicts.push({
             type: 'HALL',
-            message: `Hall "${entry._hallName}" is double-booked for this group on ${entry.dayOfWeek} ${entry.startTime}–${entry.endTime}`,
+            message: `Hall "${entry._hallName}" is double-booked for this group on ${entry.dayOfWeek} ${entry.startTime}-${entry.endTime}`,
           });
         }
 
@@ -620,7 +620,7 @@ export async function resolveAndImport(
         if (lectIsReal && prev.lecturerId === entry.lecturerId) {
           batchConflicts.push({
             type: 'LECTURER',
-            message: `Same lecturer is double-booked for this group on ${entry.dayOfWeek} ${entry.startTime}–${entry.endTime}`,
+            message: `Same lecturer is double-booked for this group on ${entry.dayOfWeek} ${entry.startTime}-${entry.endTime}`,
           });
         }
 

@@ -118,7 +118,7 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
         if (hourOverlapsRange(h, slot.startTime, slot.endTime)) {
           grid[dayData.day][h] = {
             type: 'free',
-            detail: `Available: ${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`,
+            detail: `Available: ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
           };
         }
       }
@@ -133,7 +133,7 @@ function buildGrid(weekly: DayAvailability[]): Record<string, Record<number, Cel
             detail: [
               slot.label,
               slot.location,
-              `${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`,
+              `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
             ]
               .filter(Boolean)
               .join('\n'),
@@ -344,7 +344,7 @@ export default function LecturerProfile() {
 
       {/* Daily detail */}
       <div className="lecprof-daily-detail">
-        <h3>Bookable Times (Mon–Fri)</h3>
+        <h3>Bookable Times (Mon-Fri)</h3>
         {weekly.map((dayData) => (
           <div key={dayData.day} className="lecprof-day-row">
             <div className="lecprof-day-label">{DAY_SHORT[dayData.day]}</div>

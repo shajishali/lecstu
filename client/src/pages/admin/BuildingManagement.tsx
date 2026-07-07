@@ -220,7 +220,7 @@ export default function BuildingManagement() {
           'success',
           count > 0
             ? `${fpBuilding.name}: ${count} floor map(s) confirmed`
-            : `${fpBuilding.name}: no floor maps yet — upload then confirm`
+            : `${fpBuilding.name}: no floor maps yet - upload then confirm`
         );
       } catch {
         showToast('success', `${fpBuilding.name}: floor plans updated`);
@@ -251,7 +251,7 @@ export default function BuildingManagement() {
       if (vision) {
         showToast(
           'success',
-          `${floorLabel(fpFloor)} uploaded — AI found ${vision.roomsDetected} room(s): ${(vision.sampleLabels || []).join(', ')}`
+          `${floorLabel(fpFloor)} uploaded - AI found ${vision.roomsDetected} room(s): ${(vision.sampleLabels || []).join(', ')}`
         );
       } else if (visionError) {
         showToast(
@@ -315,7 +315,7 @@ export default function BuildingManagement() {
     } catch (err: unknown) {
       showApiErrorToast(
         err,
-        'AI analysis failed — run: npm run floorplan-vision (port 8003), then retry'
+        'AI analysis failed - run: npm run floorplan-vision (port 8003), then retry'
       );
     } finally {
       setFpAnalyzing(false);
@@ -453,7 +453,7 @@ export default function BuildingManagement() {
         <div>
           <h1>Buildings &amp; Floor Plans</h1>
           <p>
-            {buildings.length} buildings — ACAD (Ground + 11, lectures), ADMIN (Ground + 10,
+            {buildings.length} buildings - ACAD (Ground + 11, lectures), ADMIN (Ground + 10,
             offices), LAB (Ground + 9, labs)
           </p>
         </div>
@@ -487,7 +487,7 @@ export default function BuildingManagement() {
       </div>
 
       <div className="fp-setup-card">
-        <h3>Phase 6.4 — Faculty buildings &amp; floor maps</h3>
+        <h3>Phase 6.4 - Faculty buildings &amp; floor maps</h3>
         <p className="fp-setup-intro">
           Every building has a <strong>Ground floor (G)</strong> plus upper floors. Upload one JPG
           per level (e.g. <code>ACAD_ground.jpg</code> or <code>ACAD_floor0.jpg</code>, then{' '}
@@ -497,7 +497,7 @@ export default function BuildingManagement() {
           <ul className="fp-setup-list">
             {setupStatus.buildings.map((b) => (
               <li key={b.code}>
-                <strong>{b.code}</strong> — {b.name} ({b.floors} floors):{' '}
+                <strong>{b.code}</strong> - {b.name} ({b.floors} floors):{' '}
                 {b.exists ? (
                   <>
                     <strong>
@@ -507,19 +507,19 @@ export default function BuildingManagement() {
                     {b.missingFloors.length > 0 && b.missingFloors.length <= 6 && (
                       <span className="fp-missing">
                         {' '}
-                        — still need:{' '}
+                        - still need:{' '}
                         {b.missingFloors.map((f) => floorFileName(b.code, f)).join(', ')}
                       </span>
                     )}
                     {b.missingFloors.length > 6 && (
                       <span className="fp-missing">
                         {' '}
-                        — {b.missingFloors.length} floors still without JPG
+                        - {b.missingFloors.length} floors still without JPG
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="fp-missing"> not created — click button below</span>
+                  <span className="fp-missing"> not created - click button below</span>
                 )}
                 {b.roomTypes && b.roomTypes.length > 0 && (
                   <div className="fp-room-types">Rooms: {b.roomTypes.join(' · ')}</div>
@@ -541,12 +541,12 @@ export default function BuildingManagement() {
           )}
           {setupStatus?.allBuildingsExist && setupStatus.totalUploaded === 0 && (
             <span className="fp-setup-hint">
-              Buildings ready — upload JPGs (Bulk upload or per-building Floor Plans icon).
+              Buildings ready - upload JPGs (Bulk upload or per-building Floor Plans icon).
             </span>
           )}
           {setupStatus && setupStatus.totalUploaded > 0 && (
             <span className="fp-setup-ok">
-              {setupStatus.totalUploaded} floor map(s) on disk — open Campus Map to preview overlays.
+              {setupStatus.totalUploaded} floor map(s) on disk - open Campus Map to preview overlays.
             </span>
           )}
         </div>
@@ -567,7 +567,7 @@ export default function BuildingManagement() {
         data={buildings}
         pageSize={15}
         searchPlaceholder="Search buildings..."
-        emptyMessage="No buildings — run: npm run db:seed-faculty-buildings (in server folder)"
+        emptyMessage="No buildings - run: npm run db:seed-faculty-buildings (in server folder)"
       />
 
       <Modal
@@ -643,7 +643,7 @@ export default function BuildingManagement() {
       <Modal
         open={floorPlanOpen}
         onClose={closeFloorPlanModal}
-        title={`Floor Plans — ${fpBuilding?.name || ''} (${fpBuilding?.code})`}
+        title={`Floor Plans - ${fpBuilding?.name || ''} (${fpBuilding?.code})`}
         width="720px"
       >
         <div className="fp-upload-row">
@@ -703,7 +703,7 @@ export default function BuildingManagement() {
             {fpBuilding ? floorFileName(fpBuilding.code, fpFloor).split(' ')[0] : ''}
           </code>
           . With <strong>Floor plan AI</strong> running (port 8003), upload or click <strong>AI</strong> to
-          read room labels from the JPG (may take 1–3 min). Walking paths are drawn manually in Indoor Navigation.
+          read room labels from the JPG (may take 1-3 min). Walking paths are drawn manually in Indoor Navigation.
         </p>
 
         <div className="fp-list">
@@ -712,7 +712,7 @@ export default function BuildingManagement() {
               <div key={fp.id} className="fp-item">
                 <div className="fp-info">
                   <strong>
-                    {floorLabel(fp.floor)} — {floorFileName(fpBuilding.code, fp.floor)}
+                    {floorLabel(fp.floor)} - {floorFileName(fpBuilding.code, fp.floor)}
                   </strong>
                   <img
                     src={fp.imagePath}
@@ -755,13 +755,13 @@ export default function BuildingManagement() {
               </div>
             ))
           ) : (
-            <p className="empty-text">No floor plans yet — upload JPG for each floor.</p>
+            <p className="empty-text">No floor plans yet - upload JPG for each floor.</p>
           )}
         </div>
 
         {boundsPlan && fpBuilding && (
           <div className="fp-bounds-panel">
-            <h4>Map overlay bounds — {floorLabel(boundsPlan.floor)}</h4>
+            <h4>Map overlay bounds - {floorLabel(boundsPlan.floor)}</h4>
             <p className="fp-hint">
               Corners for Leaflet: south/west and north/east (lat/lng). Tune on Campus Map if needed.
             </p>

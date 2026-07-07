@@ -110,7 +110,7 @@ function normalizeDisplayLine(line: string): string {
   return stripActivitySuffixFromCourseLine(withoutLabel);
 }
 
-/** Excel repeats merged cell text on every row — keep only top-left cell value. */
+/** Excel repeats merged cell text on every row - keep only top-left cell value. */
 function mergedCellText(matrix: Matrix, merges: XLSX.Range[], r: number, c: number): string {
   let r0 = r;
   let c0 = c;
@@ -197,7 +197,7 @@ function isContinuationOnly(cell: TimetableGridCell): boolean {
   return cell.displayLines.every((l) => isLecturerOrMetaLine(l));
 }
 
-/** After lunch break (-X-), lecturer/hall lines continue the same class — merge into block above. */
+/** After lunch break (-X-), lecturer/hall lines continue the same class - merge into block above. */
 function stitchPostBreakContinuations(cells: TimetableGridCell[][], timeRowCount: number): void {
   const dayCount = cells[0]?.length ?? 0;
   for (let di = 0; di < dayCount; di++) {
@@ -723,7 +723,7 @@ function lineHasHall(line: string): boolean {
 function lineHasLecturer(line: string): boolean {
   const t = line.trim();
   if (isFetActivitySuffix(t)) return false;
-  if (t === '—' || t === '-') return true;
+  if (t === '-' || t === '-') return true;
   if (isLecturerOrMetaLine(line) || /^VL_/i.test(t)) return true;
   if (/^[A-Za-z][A-Za-z\s.'-]{2,60}$/.test(t) && t.includes(' ')) return true;
   return false;
@@ -799,7 +799,7 @@ export function mergeFetDisplayLines(
       lineHasLecturer(l) &&
       !lineHasHall(l) &&
       !COURSE_CODE_RE.test(l) &&
-      l !== '—' &&
+      l !== '-' &&
       l !== '-' &&
       !/^unassigned$/i.test(l),
   );
@@ -808,7 +808,7 @@ export function mergeFetDisplayLines(
       lineHasLecturer(l) &&
       !lineHasHall(l) &&
       !COURSE_CODE_RE.test(l) &&
-      l !== '—' &&
+      l !== '-' &&
       l !== '-',
   );
   for (const line of existingLecturers) add(line);
@@ -825,16 +825,16 @@ export function mergeFetDisplayLines(
     const hasLect = out.some(
       (l) =>
         lineHasLecturer(l) &&
-        l !== '—' &&
+        l !== '-' &&
         l !== '-' &&
         !/^unassigned$/i.test(l),
     );
     if (!hasHall) out.push('TBD');
-    if (!hasLect) out.push('—');
+    if (!hasLect) out.push('-');
   }
 
   const lectLines = out.filter(
-    (l) => lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-',
+    (l) => lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '-' && l !== '-',
   );
   if (lectLines.length > 1) {
     const resolved = lectLines.map(
@@ -843,7 +843,7 @@ export function mergeFetDisplayLines(
     const keep = resolved.reduce((a, b) => (a.length >= b.length ? a : b));
     for (let i = out.length - 1; i >= 0; i--) {
       const l = out[i]!;
-      if (lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '—' && l !== '-' && l !== keep) {
+      if (lineHasLecturer(l) && !lineHasHall(l) && !COURSE_CODE_RE.test(l) && l !== '-' && l !== '-' && l !== keep) {
         out.splice(i, 1);
       }
     }
@@ -854,19 +854,19 @@ export function mergeFetDisplayLines(
   }
 
   const hasRealLecturer = out.some(
-    (l) => lineHasLecturer(l) && l !== '—' && l !== '-' && !/^unassigned$/i.test(l),
+    (l) => lineHasLecturer(l) && l !== '-' && l !== '-' && !/^unassigned$/i.test(l),
   );
   if (hasRealLecturer) {
     for (let i = out.length - 1; i >= 0; i--) {
       const l = out[i]!;
-      if (l === '—' || l === '-' || /^unassigned$/i.test(l)) out.splice(i, 1);
+      if (l === '-' || l === '-' || /^unassigned$/i.test(l)) out.splice(i, 1);
     }
   }
 
   return out.length > 0 ? out : normalizeCellLines([...existing, ...fromSlot].join('\n'));
 }
 
-/** Build display lines — always includes a hall line (TBD when unknown) and lecturer when known. */
+/** Build display lines - always includes a hall line (TBD when unknown) and lecturer when known. */
 export function slotToFetDisplayLines(
   slot: GridSlotRef,
   lecturerDisplay?: LecturerDisplayIndex,
@@ -881,7 +881,7 @@ export function slotToFetDisplayLines(
         .join(' ')
         .trim()
     : '';
-  if (lectClean && lectClean !== '—') {
+  if (lectClean && lectClean !== '-') {
     const lect =
       lecturerDisplay != null
         ? resolveLecturerDisplayName(lectClean, lecturerDisplay) ?? lectClean

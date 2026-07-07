@@ -192,7 +192,7 @@ export default function StudentEnrollmentForm({
           disabled={loading}
           className={selectClass}
         >
-          <option value="">- Select -</option>
+          <option value="">Select</option>
           {programs.map((p) => (
             <option key={p.code} value={p.code}>
               {p.code} - {p.name}
@@ -215,7 +215,7 @@ export default function StudentEnrollmentForm({
           disabled={!programCode}
           className={selectClass}
         >
-          <option value="">- Select -</option>
+          <option value="">Select</option>
           {yearOptions.map((y) => (
             <option key={y} value={y}>
               {y}
@@ -236,7 +236,7 @@ export default function StudentEnrollmentForm({
             required
             className={selectClass}
           >
-            <option value="">- Select -</option>
+            <option value="">Select</option>
             {pathwayOptions.map((pw) => (
               <option key={pw.code} value={pw.code}>
                 {pw.code} - {pw.name}
@@ -258,7 +258,7 @@ export default function StudentEnrollmentForm({
             required
             className={selectClass}
           >
-            <option value="">- Select batch year -</option>
+            <option value="">Select batch year</option>
             {batchYearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}

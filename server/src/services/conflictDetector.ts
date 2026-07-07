@@ -52,7 +52,7 @@ function isReplacingGroupEntry(
     ? resolveCanonicalGroupName(replacingGroupName)?.toUpperCase()
     : undefined;
   if (entryCanonical && replacingCanonical && entryCanonical === replacingCanonical) {
-    // Y1 CS / ET / CT share one group code across 2023 & 2024 — replacing one batch table.
+    // Y1 CS / ET / CT share one group code across 2023 & 2024 - replacing one batch table.
     if (isY1GroupWithAdmissionYear(entryCanonical)) return true;
   }
   return false;
@@ -67,7 +67,7 @@ function isPlaceholderHall(name: string | undefined): boolean {
   return !n || n === PLACEHOLDER_HALL_NAME || n === 'ONLINE' || n === '---';
 }
 
-/** Shared venue — append "COMMON" to the room (e.g. AB-LCH-09-1 COMMON) to allow another class at the same time. */
+/** Shared venue - append "COMMON" to the room (e.g. AB-LCH-09-1 COMMON) to allow another class at the same time. */
 export function isCommonHall(name: string | undefined): boolean {
   const n = (name || '').trim().toUpperCase();
   if (!n || isPlaceholderHall(n)) return false;
@@ -138,7 +138,7 @@ function formatHallConflictMessage(
 ): string {
   const hall = entry.hall.name;
   const day = formatDayLabel(dayOfWeek);
-  const timeStr = `${entry.startTime}–${entry.endTime}`;
+  const timeStr = `${entry.startTime}-${entry.endTime}`;
   const batch = entry.group.name;
   const course = entry.course.code;
   const lecturer = formatLecturerLabel(entry.lecturer, unassignedLecturerId, entry.lecturerId);
@@ -198,7 +198,7 @@ export async function detectConflicts(params: SlotParams): Promise<ConflictInfo[
     // Replacing a batch table: ignore clashes with that group's own existing slots.
     if (isReplacingGroupEntry(entry, replacingGroupId, replacingGroupName)) continue;
 
-    const timeStr = `${entry.startTime}–${entry.endTime}`;
+    const timeStr = `${entry.startTime}-${entry.endTime}`;
     const existingHallIsShared = entry.hallIsShared === true;
     let reportedHallForEntry = false;
 

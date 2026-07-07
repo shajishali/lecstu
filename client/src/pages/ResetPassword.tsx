@@ -67,7 +67,7 @@ export default function ResetPassword() {
     setIsLoading(true);
     try {
       const message = await resetPassword(email.trim(), code, newPassword);
-      showToast('success', message || 'Password updated — sign in with your new password');
+      showToast('success', message || 'Password updated - sign in with your new password');
       navigate('/login', { replace: true });
     } catch (err) {
       showApiErrorToast(err, 'Failed to reset password');

@@ -114,7 +114,7 @@ export default function HallManagement() {
     {
       key: 'doorPassword',
       label: 'Door code',
-      render: (r: Hall) => r.doorPassword ? <code>{r.doorPassword}</code> : '—',
+      render: (r: Hall) => r.doorPassword ? <code>{r.doorPassword}</code> : '-',
     },
     {
       key: 'equipment', label: 'Equipment',

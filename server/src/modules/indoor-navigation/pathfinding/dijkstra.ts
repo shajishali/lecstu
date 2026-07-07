@@ -2,7 +2,7 @@ import { buildAdjacency, reconstructPath } from './graph-utils';
 import type { PathfindingEdge, PathfindingNode } from './types';
 
 /**
- * Dijkstra shortest-path — fallback when A* returns no path
+ * Dijkstra shortest-path - fallback when A* returns no path
  * (e.g. heuristic issues on disconnected subgraphs) or for validation.
  */
 export function dijkstra(

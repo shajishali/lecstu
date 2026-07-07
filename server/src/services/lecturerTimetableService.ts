@@ -252,7 +252,7 @@ function slotRefMatchesLecturer(
   index: LecturerDisplayIndex,
 ): boolean {
   const raw = ref.lecturerName?.trim();
-  if (!raw || raw === '—' || raw === '-' || /^tbd$/i.test(raw) || /^unassigned$/i.test(raw)) {
+  if (!raw || raw === '-' || raw === '-' || /^tbd$/i.test(raw) || /^unassigned$/i.test(raw)) {
     return false;
   }
 

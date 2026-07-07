@@ -142,7 +142,7 @@ export interface SelectablePlace {
   markerId?: string;
 }
 
-/** Guide places + approved map markers — same source as Find My Way. */
+/** Guide places + approved map markers - same source as Find My Way. */
 export async function loadBuildingPlaces(buildingId: string): Promise<SelectablePlace[]> {
   const [guidePlaces, markersRes] = await Promise.all([
     getGuidePlaces(buildingId).catch(() => []),

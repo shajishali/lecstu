@@ -337,7 +337,7 @@ export default function Profile() {
                 />
                 <p className="text-xs text-slate-500">
                   Leave blank to auto-generate: first letter of first name + first letter of last name
-                  (e.g. Lahiru Kumara → LK, Nimal Perera → NP). Shown on your directory card only — your
+                  (e.g. Lahiru Kumara → LK, Nimal Perera → NP). Shown on your directory card only - your
                   weekly availability is edited under My Schedule.
                 </p>
                 <Link
@@ -408,7 +408,7 @@ export default function Profile() {
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="pDept" className="text-sm font-semibold text-slate-700">Department</label>
                 <select id="pDept" value={form.departmentId} onChange={(e) => update('departmentId', e.target.value)} className={inputCls}>
-                  <option value="">- None -</option>
+                  <option value="">None</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
                   ))}

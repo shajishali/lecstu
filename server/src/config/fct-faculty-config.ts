@@ -1,5 +1,5 @@
 /**
- * FCT — Faculty of Computing and Technology (University of Kelaniya)
+ * FCT - Faculty of Computing and Technology (University of Kelaniya)
  * Master reference for programs, study years, pathways, and lecture halls.
  * Timetable PDF import expects group names like: CS-Y3-AINT, CT-Y1, BS-Y1
  */
@@ -8,7 +8,7 @@ export const FACULTY = {
   name: 'Faculty of Computing and Technology',
   code: 'FCT',
   description:
-    'FCT degree programs: CS, ET, CT, BS. Study years Y1–Y4. Pathways from Y3 (except BS: Y1 only).',
+    'FCT degree programs: CS, ET, CT, BS. Study years Y1-Y4. Pathways from Y3 (except BS: Y1 only).',
 } as const;
 
 /** Study year labels used on timetables */
@@ -79,7 +79,7 @@ export const PROGRAMS: ProgramConfig[] = [
   {
     name: 'Biological System',
     code: 'BS',
-    description: 'B.Sc. Biological System (new program — Y1 only)',
+    description: 'B.Sc. Biological System (new program - Y1 only)',
     departmentCode: 'BS',
     departmentName: 'Biological System',
     years: ['Y1'],

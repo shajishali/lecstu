@@ -74,7 +74,7 @@ export function parseCellToEditable(
     }
     const text = line.replace(/^lecturer:\s*/i, '').trim();
     if (/^[TP]$/i.test(text)) continue;
-    if (!text || text === ',' || text === '—' || text === '-') continue;
+    if (!text || text === ',' || text === '-' || text === '-') continue;
     contentLines.push(text);
   }
 
@@ -194,7 +194,7 @@ const emptyCell = (): TimetableGridCell => ({
   mergeContinue: false,
 });
 
-/** Standard FET day bands (08:00–17:55). Some imported batch tables only store morning rows. */
+/** Standard FET day bands (08:00-17:55). Some imported batch tables only store morning rows. */
 const STANDARD_FET_TIME_ROWS: TimetableGridSnapshot['timeRows'] = [
   { label: '08:00 - 08:55', start: '08:00', end: '08:55' },
   { label: '09:00 - 09:55', start: '09:00', end: '09:55' },
@@ -476,7 +476,7 @@ export function checkLocalHallOverlap(
     const { startTime: oStart, endTime: oEnd } = getCellSpanTimes(grid, ti, cell);
     if (!slotTimesOverlap(startTime, endTime, oStart, oEnd)) continue;
 
-    return `This batch already uses ${overlap} on ${grid.dayColumns[di]?.label ?? 'that day'} ${oStart}–${oEnd}. Change the time or room.`;
+    return `This batch already uses ${overlap} on ${grid.dayColumns[di]?.label ?? 'that day'} ${oStart}-${oEnd}. Change the time or room.`;
   }
   return null;
 }

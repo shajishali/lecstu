@@ -140,11 +140,11 @@ function computeOfficeHoursDesc(slots: ScheduleSlotData[]): string {
   const todaySlots = officeSlots.filter((s) => s.dayOfWeek === today);
   const activeToday = todaySlots.find((s) => s.endTime > nowStr);
   if (activeToday) {
-    return `Today ${formatTime(activeToday.startTime)} – ${formatTime(activeToday.endTime)}`;
+    return `Today ${formatTime(activeToday.startTime)} - ${formatTime(activeToday.endTime)}`;
   }
   const laterToday = todaySlots.find((s) => s.startTime > nowStr);
   if (laterToday) {
-    return `Today ${formatTime(laterToday.startTime)} – ${formatTime(laterToday.endTime)}`;
+    return `Today ${formatTime(laterToday.startTime)} - ${formatTime(laterToday.endTime)}`;
   }
 
   const dayIdx = today ? ALL_DAYS.indexOf(today) : -1;
@@ -154,12 +154,12 @@ function computeOfficeHoursDesc(slots: ScheduleSlotData[]): string {
     const daySlots = officeSlots.filter((s) => s.dayOfWeek === day);
     if (daySlots.length > 0) {
       const slot = daySlots[0];
-      return `${DAY_LABELS[day]} ${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}`;
+      return `${DAY_LABELS[day]} ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
     }
   }
 
   const first = officeSlots[0];
-  return `${DAY_LABELS[first.dayOfWeek]} ${formatTime(first.startTime)} – ${formatTime(first.endTime)}`;
+  return `${DAY_LABELS[first.dayOfWeek]} ${formatTime(first.startTime)} - ${formatTime(first.endTime)}`;
 }
 
 function formatPendingCount(count: number, noun: string): string {
@@ -168,7 +168,7 @@ function formatPendingCount(count: number, noun: string): string {
 }
 
 function buildRoleCards(role: string, loading: boolean): DashboardCard[] {
-  const placeholder = loading ? 'Loading…' : '—';
+  const placeholder = loading ? 'Loading…' : '-';
   const cards: Record<string, DashboardCard[]> = {
     ADMIN: [
       { title: 'Total Users', desc: placeholder, icon: <Users size={24} />, color: '#3b82f6', href: '/admin/users' },

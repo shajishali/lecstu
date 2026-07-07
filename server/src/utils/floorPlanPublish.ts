@@ -26,7 +26,7 @@ export async function assertStudentFloorAccess(buildingId: string, floor: number
     const floorLabel = floor === 0 ? 'Ground floor' : `Floor ${floor}`;
     const statusHint = plan?.publishStatus ? ` (status: ${plan.publishStatus})` : '';
     throw new AppError(
-      `${buildingLabel} — ${floorLabel} is not published for student navigation yet${statusHint}. Ask an admin to publish it in Indoor Navigation.`,
+      `${buildingLabel} - ${floorLabel} is not published for student navigation yet${statusHint}. Ask an admin to publish it in Indoor Navigation.`,
       404
     );
   }

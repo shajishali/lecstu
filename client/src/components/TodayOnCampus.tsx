@@ -196,7 +196,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
           </p>
           <p className="mt-2 text-sm text-slate-500">
             You completed {data.slots.length} class{data.slots.length !== 1 ? 'es' : ''} today
-            {summary ? ` (${summary})` : ''}. Rest well — see you next time!
+            {summary ? ` (${summary})` : ''}. Rest well - see you next time!
           </p>
         </div>
       ) : (
@@ -211,7 +211,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold text-slate-900">
-                    {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                    {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                   </span>
                   {slot.isOnline && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
@@ -240,7 +240,7 @@ export default function TodayOnCampus({ compact = false, className = '' }: Today
                 {slot.isOnline ? (
                   <p className="flex items-center gap-1 text-xs font-medium text-sky-700">
                     <Monitor size={12} />
-                    Online lecture — join via your course platform or lecturer&apos;s link
+                    Online lecture - join via your course platform or lecturer&apos;s link
                   </p>
                 ) : (
                   <p className="flex items-center gap-1 text-xs text-slate-500">

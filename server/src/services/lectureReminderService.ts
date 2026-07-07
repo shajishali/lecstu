@@ -113,7 +113,7 @@ function buildReminderMessage(entry: TimetableEntry): string {
     ? `${entry.course.code} ${entry.course.name}`.trim()
     : entry.course.name;
   const location = entry.hall.name || entry.hall.building;
-  return `${courseLabel}\nLecturer: ${lecturer}\nRoom: ${location}\nTime: ${entry.startTime}–${entry.endTime}`;
+  return `${courseLabel}\nLecturer: ${lecturer}\nRoom: ${location}\nTime: ${entry.startTime}-${entry.endTime}`;
 }
 
 /**

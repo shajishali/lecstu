@@ -38,7 +38,7 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
       data: {
         platform: {
           name: 'LECSTU',
-          subtitle: 'AI-Integrated Academic Platform',
+          subtitle: 'Academic Platform',
           environment: config.nodeEnv,
           clientUrl: config.clientUrl,
           uploadMaxMb: config.upload.maxFileSize / (1024 * 1024),
@@ -140,7 +140,7 @@ export async function sendAdminTestEmail(req: Request, res: Response, next: Next
       message:
         result.mode === 'smtp'
           ? `Test email sent to ${adminEmail}`
-          : `SMTP disabled — test email logged to server console (check API terminal)`,
+          : `SMTP disabled - test email logged to server console (check API terminal)`,
       data: { mode: result.mode, delivered: result.delivered, to: adminEmail },
     });
   } catch (err) {

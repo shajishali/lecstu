@@ -223,22 +223,22 @@ export default function GroupManagement() {
               }}
               required
             >
-              <option value={1}>Y1 — First year</option>
-              <option value={2}>Y2 — Second year</option>
-              <option value={3}>Y3 — Third year</option>
-              <option value={4}>Y4 — Fourth year</option>
+              <option value={1}>Y1 - First year</option>
+              <option value={2}>Y2 - Second year</option>
+              <option value={3}>Y3 - Third year</option>
+              <option value={4}>Y4 - Fourth year</option>
             </select>
           </label>
           <input type="hidden" value={form.batchLabel} readOnly />
           <label>Department
             <select value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })} required>
-              <option value="">- Select -</option>
+              <option value="">Select</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </label>
-          <label>Pathway <span className="text-slate-500 text-xs">(Y3/Y4 only — leave empty for Y1/Y2)</span>
+          <label>Pathway <span className="text-slate-500 text-xs">(Y3/Y4 only - leave empty for Y1/Y2)</span>
             <select value={form.pathwayId} onChange={(e) => setForm({ ...form, pathwayId: e.target.value })}>
-              <option value="">- None -</option>
+              <option value="">None</option>
               {pathways.map((p) => (
                 <option key={p.id} value={p.id}>{p.code} - {p.name} ({p.program.code})</option>
               ))}

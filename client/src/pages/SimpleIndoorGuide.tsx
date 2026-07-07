@@ -260,7 +260,7 @@ export default function SimpleIndoorGuide() {
           setViewBuildingId(session.buildingId);
           setViewFloor(session.currentFloor ?? payload.startFloor ?? 0);
           if (payload.startLabel) setPositionLabel(payload.startLabel);
-          showToast('success', `Position updated — continuing to ${payload.destinationLabel}`);
+          showToast('success', `Position updated - continuing to ${payload.destinationLabel}`);
         }
       } catch (err) {
         showApiErrorToast(err, 'Could not restore navigation session');
@@ -634,8 +634,8 @@ export default function SimpleIndoorGuide() {
       </h1>
       <p className="mb-4 text-sm text-slate-600">
         {isTodayMode
-          ? 'Step through each class — floor plans and walking directions update as you go.'
-          : 'Pick your start and destination — the floor plan appears when you get directions.'}
+          ? 'Step through each class - floor plans and walking directions update as you go.'
+          : 'Pick your start and destination - the floor plan appears when you get directions.'}
       </p>
 
       {isTodayMode && todayRoutes && todayRoutes.legs.length > 1 && (
@@ -714,7 +714,7 @@ export default function SimpleIndoorGuide() {
       {positionLabel && route?.found && (
         <p className="find-my-way-position-banner mb-4" role="status">
           You are here: <strong>{positionLabel}</strong>
-          <span className="text-slate-500"> — scan again anytime to recalculate your route</span>
+          <span className="text-slate-500"> - scan again anytime to recalculate your route</span>
         </p>
       )}
 
@@ -766,7 +766,7 @@ export default function SimpleIndoorGuide() {
             <span className="mb-1 block font-medium">Where are you? (optional)</span>
             <input
               className={selectClass}
-              placeholder="Search start place — or leave blank for entrance"
+              placeholder="Search start place - or leave blank for entrance"
               value={fromQuery}
               onChange={(e) => {
                 setFromQuery(e.target.value);

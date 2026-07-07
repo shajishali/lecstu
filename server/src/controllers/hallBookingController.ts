@@ -86,7 +86,7 @@ export async function createHallBooking(req: Request, res: Response, next: NextF
     await notifyAdmins({
       type: 'HALL_BOOKING_REQUEST',
       title: 'New hall booking request',
-      message: `${studentName} requested to book ${hallName} on ${dateStr} at ${startTime}–${endTime}${reason ? `: ${reason}` : ''}`,
+      message: `${studentName} requested to book ${hallName} on ${dateStr} at ${startTime}-${endTime}${reason ? `: ${reason}` : ''}`,
       metadata: { hallBookingId: booking.id },
     });
 
@@ -218,12 +218,12 @@ export async function approveHallBooking(req: Request, res: Response, next: Next
     });
 
     const dateStr = booking.date.toLocaleDateString();
-    const timeStr = `${formatTimeForDisplay(booking.startTime)} – ${formatTimeForDisplay(booking.endTime)}`;
+    const timeStr = `${formatTimeForDisplay(booking.startTime)} - ${formatTimeForDisplay(booking.endTime)}`;
     const message = `Your booking of ${booking.hall.name} has been approved.\n\n📅 Date: ${dateStr}\n⏰ Allocated time: ${timeStr}\n🔑 Door password: ${doorPassword.trim()}\n\nUse this password at the automated door during your allocated time.`;
     await createNotification({
       userId: booking.studentId,
       type: 'HALL_BOOKING_APPROVED',
-      title: 'Hall booking approved — door password included',
+      title: 'Hall booking approved - door password included',
       message,
       metadata: {
         hallBookingId: updated.id,
@@ -267,7 +267,7 @@ export async function rejectHallBooking(req: Request, res: Response, next: NextF
       userId: booking.studentId,
       type: 'HALL_BOOKING_REJECTED',
       title: 'Hall booking rejected',
-      message: `Your booking of ${booking.hall.name} on ${dateStr} at ${booking.startTime}–${booking.endTime} was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+      message: `Your booking of ${booking.hall.name} on ${dateStr} at ${booking.startTime}-${booking.endTime} was rejected.${reason ? ` Reason: ${reason}` : ''}`,
       metadata: { hallBookingId: updated.id },
     });
 
@@ -305,7 +305,7 @@ export async function cancelHallBooking(req: Request, res: Response, next: NextF
     await notifyAdmins({
       type: 'HALL_BOOKING_REQUEST',
       title: 'Hall booking cancelled by student',
-      message: `${studentName} cancelled their booking of ${booking.hall.name} on ${dateStr} at ${booking.startTime}–${booking.endTime}.${reason ? ` Reason: ${reason}` : ''}`,
+      message: `${studentName} cancelled their booking of ${booking.hall.name} on ${dateStr} at ${booking.startTime}-${booking.endTime}.${reason ? ` Reason: ${reason}` : ''}`,
       metadata: { hallBookingId: updated.id },
     });
 

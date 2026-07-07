@@ -94,7 +94,7 @@ export async function validateBooking(
     if (startMinutes < slotEnd && endMinutes > slotStart) {
       const hint = slot.label ? ` (${slot.label})` : '';
       throw new AppError(
-        `Lecturer is unavailable at ${slot.startTime}–${slot.endTime} on that day${hint}`,
+        `Lecturer is unavailable at ${slot.startTime}-${slot.endTime} on that day${hint}`,
         400,
       );
     }

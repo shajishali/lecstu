@@ -31,7 +31,7 @@ export function buildAdjacency(
         ? e.weight
         : euclidean(from.x, from.y, to.x, to.y) + floorPenalty;
 
-    // Prefer staying on one stairs/lift shaft — penalize switching banks on the same floor.
+    // Prefer staying on one stairs/lift shaft - penalize switching banks on the same floor.
     if (
       from.floor != null &&
       to.floor != null &&

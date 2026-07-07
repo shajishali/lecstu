@@ -9,7 +9,7 @@ export type VerifyResetCodeResult =
   | { valid: true; tokenId: string; userId: string }
   | { valid: false; reason: 'not_found' | 'expired' | 'used' | 'invalid_code' };
 
-/** Cryptographically secure 6-digit numeric code (100000–999999). */
+/** Cryptographically secure 6-digit numeric code (100000-999999). */
 export function generateResetCode(): string {
   const value = crypto.randomInt(0, 1_000_000);
   return value.toString().padStart(RESET_CODE_LENGTH, '0');
@@ -21,7 +21,7 @@ function expiryDate(): Date {
 
 /**
  * Invalidate prior unused tokens for the user, then store a new hashed code.
- * Returns the plain code (for email only — never persist or log in production API).
+ * Returns the plain code (for email only - never persist or log in production API).
  */
 export async function createResetToken(userId: string): Promise<{ tokenId: string; code: string; expiresAt: Date }> {
   const code = generateResetCode();

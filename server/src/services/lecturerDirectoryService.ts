@@ -5,7 +5,7 @@ import {
   effectiveTimetableCode,
 } from './lecturerInitialsMatch';
 
-/** @deprecated FET-only virtual IDs removed — booking uses registered lecturers only */
+/** @deprecated FET-only virtual IDs removed - booking uses registered lecturers only */
 export const FET_LECTURER_ID_PREFIX = 'fet:';
 
 export function isFetVirtualLecturerId(id: string): boolean {

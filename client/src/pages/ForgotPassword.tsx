@@ -110,7 +110,7 @@ export default function ForgotPassword() {
                 ) : null}
                 <p className="mt-2 text-slate-700/90">
                   Didn&apos;t receive it within a few minutes? Check your spam or junk folder.
-                  University mail (@stu.kln.ac.lk) often quarantines external senders — use a personal
+                  University mail (@stu.kln.ac.lk) often quarantines external senders - use a personal
                   recovery email in Profile if needed.
                 </p>
               </div>
@@ -120,7 +120,7 @@ export default function ForgotPassword() {
             {devResetCode ? (
               <div className="rounded-lg border border-slate-200 bg-white/80 px-4 py-3 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Development — use this reset code
+                  Development - use this reset code
                 </p>
                 <p className="mt-2 font-mono text-2xl font-bold tracking-[0.35em] text-slate-900">
                   {devResetCode}

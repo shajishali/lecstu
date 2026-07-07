@@ -41,7 +41,7 @@ function isFetLecturerLabelLine(t: string): boolean {
   }
   if (t.startsWith('Lecturer:')) {
     const name = t.replace(/^Lecturer:\s*/i, '').trim();
-    return !!name && name !== '—' && name !== '-' && !/^unassigned$/i.test(name);
+    return !!name && name !== '-' && name !== '-' && !/^unassigned$/i.test(name);
   }
   if (!COURSE_LINE_RE.test(t) && !HALL_LINE_RE.test(t) && !/^tbd$/i.test(t)) {
     const words = t.split(/\s+/).filter(Boolean);
@@ -65,7 +65,7 @@ function isFetLecturerLabelLine(t: string): boolean {
 }
 
 function isLecturerPlaceholder(t: string): boolean {
-  return t === '—' || t === '-' || /^unassigned$/i.test(t);
+  return t === '-' || t === '-' || /^unassigned$/i.test(t);
 }
 
 export function formatFetGridLine(line: string, index: number, allLines: string[]): string | null {
@@ -158,7 +158,7 @@ export function fetGridDisplayLines(lines: string[]): string[] {
     uniqueLecturers.length > 0
       ? [`Lecturer: ${uniqueLecturers.reduce((a, b) => (a.length >= b.length ? a : b))}`]
       : hasLecturerPlaceholder
-        ? ['Lecturer: —']
+        ? ['Lecturer: -']
         : [];
 
   return [...dedupe(courses), ...lecturerLine, ...dedupe(extras), ...dedupe(halls)];

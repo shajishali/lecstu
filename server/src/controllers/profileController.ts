@@ -96,7 +96,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
     if (resolvedDepartmentId) {
       const dept = await prisma.department.findUnique({ where: { id: resolvedDepartmentId } });
       if (!dept) {
-        // Orphaned reference (e.g. after seed reset) — clear it instead of failing
+        // Orphaned reference (e.g. after seed reset) - clear it instead of failing
         resolvedDepartmentId = null;
       }
     }
@@ -399,7 +399,7 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
       success: true,
       message: emailDelivered
         ? `Verification code sent to ${sentToMasked}. Enter it below to set your new password.`
-        : 'Verification code created. Email could not be delivered — check SMTP settings or use the dev code below.',
+        : 'Verification code created. Email could not be delivered - check SMTP settings or use the dev code below.',
       sentToMasked,
       emailDelivered,
       ...(combinedWarning ? { deliveryWarning: combinedWarning } : {}),
@@ -407,14 +407,14 @@ export async function requestPasswordChangeCode(req: Request, res: Response, nex
         devDelivery: emailMode,
         devResetCode: code,
         devHint: emailMode === 'console'
-          ? 'Console mode is ON — check the API terminal for the code.'
+          ? 'Console mode is ON - check the API terminal for the code.'
           : emailDelivered
             ? user.recoveryEmail
               ? 'Code sent to your recovery email inbox.'
               : isUniversityEmail(deliveryEmail)
-                ? 'University Outlook may quarantine external mail — also use the dev code below if needed.'
+                ? 'University Outlook may quarantine external mail - also use the dev code below if needed.'
                 : 'Check your inbox and spam folder for the 6-digit code.'
-            : 'Email not sent — use the dev code below or fix SMTP in server/.env.',
+            : 'Email not sent - use the dev code below or fix SMTP in server/.env.',
       }),
     });
   } catch (err) {

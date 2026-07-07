@@ -449,7 +449,7 @@ export async function buildFloorNavigationGraph(
   const manual = await captureWalkingPathsSnapshot(buildingId, floor);
   if (manual && !options?.force) {
     throw new AppError(
-      'This floor already has manual walking paths. Auto-build is blocked — draw paths yourself or click Restore backup.',
+      'This floor already has manual walking paths. Auto-build is blocked - draw paths yourself or click Restore backup.',
       409
     );
   }

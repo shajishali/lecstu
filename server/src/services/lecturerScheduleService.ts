@@ -79,7 +79,7 @@ export async function replaceLecturerSchedule(
     for (let j = i + 1; j < slots.length; j++) {
       if (slotsOverlap(slots[i], slots[j])) {
         throw new AppError(
-          `Overlapping slots on ${slots[i].dayOfWeek}: ${slots[i].startTime}–${slots[i].endTime} and ${slots[j].startTime}–${slots[j].endTime}`,
+          `Overlapping slots on ${slots[i].dayOfWeek}: ${slots[i].startTime}-${slots[i].endTime} and ${slots[j].startTime}-${slots[j].endTime}`,
           400,
         );
       }

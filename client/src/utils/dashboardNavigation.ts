@@ -1,4 +1,4 @@
-/** Default start for dashboard quick navigation — Administration Building ground entrance. */
+/** Default start for dashboard quick navigation - Administration Building ground entrance. */
 export const DASHBOARD_NAV_FROM_BUILDING_CODE = 'ADMIN';
 export const DASHBOARD_NAV_FROM_FLOOR = 0;
 

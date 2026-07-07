@@ -11,7 +11,7 @@ const cache = new Map<string, string>();
 const failedKeys = new Set<string>();
 const inflight = new Map<string, Promise<string>>();
 
-/** Lightweight engines only — mBART is too slow/heavy for routine UI translation. */
+/** Lightweight engines only - mBART is too slow/heavy for routine UI translation. */
 const ENGINES: Array<'google' | 'marian'> = ['google', 'marian'];
 const ENGINE_TIMEOUT_MS = 8000;
 

@@ -171,7 +171,7 @@ interface IndoorNavGraphEditorProps {
   embedded?: boolean;
   buildingId?: string;
   floor?: number;
-  /** Same uploaded JPG as Locations & publish — do not use a different/processed image. */
+  /** Same uploaded JPG as Locations & publish - do not use a different/processed image. */
   floorPlanImageUrl?: string;
   onGraphChange?: () => void;
 }
@@ -484,7 +484,7 @@ export default function IndoorNavGraphEditor({
         setSelectedId(newNode.id);
         if (pathOnlyMode && ctx.edges.length > 0) {
           setPathWorkflowStep('connecting');
-          showToast('info', `${label} placed — click Connect, then join it to the existing walkway`);
+          showToast('info', `${label} placed - click Connect, then join it to the existing walkway`);
         } else if (!pathOnlyMode) {
           showToast('success', `Added ${label}`);
         }
@@ -570,7 +570,7 @@ export default function IndoorNavGraphEditor({
     if (!selectedId) return;
     const node = ctx?.nodes.find((n) => n.id === selectedId);
     if (pathOnlyMode && node && isPlaceNode(node)) {
-      showToast('info', 'Place locations are fixed — edit them in Locations & publish');
+      showToast('info', 'Place locations are fixed - edit them in Locations & publish');
       return;
     }
     setSaving(true);
@@ -797,7 +797,7 @@ export default function IndoorNavGraphEditor({
             {pathWorkflowStep === 'connecting' && (
               <>
                 <strong>Step 2:</strong> Use <strong>Connect</strong> to join path points and places
-                yourself — nothing is linked automatically.
+                yourself - nothing is linked automatically.
               </>
             )}
           </p>
@@ -827,7 +827,7 @@ export default function IndoorNavGraphEditor({
                 {floorOptions.map((f) => (
                   <option key={f} value={f}>
                     {floorLabel(f)}
-                    {floorsWithPlans.includes(f) ? '' : ' — no JPG'}
+                    {floorsWithPlans.includes(f) ? '' : ' - no JPG'}
                   </option>
                 ))}
               </select>
@@ -1062,7 +1062,7 @@ export default function IndoorNavGraphEditor({
                       selectedId === p.navNodeId || connectFrom === p.navNodeId ? 'selected' : ''
                     } ${snapNodeId === p.navNodeId ? 'snap-target' : ''}`}
                     style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                    title={`${p.legendNumber != null ? `#${p.legendNumber} — ` : ''}${p.label} (fixed in Locations tab)`}
+                    title={`${p.legendNumber != null ? `#${p.legendNumber} - ` : ''}${p.label} (fixed in Locations tab)`}
                     onClick={(e) => void handlePlaceClick(p, e)}
                   />
                 ))}
@@ -1124,7 +1124,7 @@ export default function IndoorNavGraphEditor({
               )}
               {tool === 'connect' &&
                 (connectFrom
-                  ? 'Move toward the next point — line snaps when close — then click to join.'
+                  ? 'Move toward the next point - line snaps when close - then click to join.'
                   : 'Click a place or path point, then connect to the next point along the walkway.')}
               {tool === 'delete-line' && 'Click a path line, then confirm delete in the popup.'}
               {tool === 'select' &&
@@ -1184,7 +1184,7 @@ export default function IndoorNavGraphEditor({
                 )}
                 {pathOnlyMode && isPlaceNode(selected) && (
                   <p className="text-xs text-slate-500">
-                    This is a fixed place from Locations &amp; publish — not movable here.
+                    This is a fixed place from Locations &amp; publish - not movable here.
                   </p>
                 )}
                 <ul className="indoor-edge-list">
@@ -1263,7 +1263,7 @@ export default function IndoorNavGraphEditor({
                   value={testFromMarkerId}
                   onChange={(e) => setTestFromMarkerId(e.target.value)}
                 >
-                  <option value="">— Default entrance —</option>
+                  <option value="">Default entrance</option>
                   {testPlaceOptions.map((p) => (
                     <option key={`from-${p.markerId}`} value={p.markerId}>
                       {p.legendNumber != null ? `${p.legendNumber}. ${p.label}` : p.label}
@@ -1286,7 +1286,7 @@ export default function IndoorNavGraphEditor({
                     }
                   }}
                 >
-                  <option value="">— Select place —</option>
+                  <option value="">Select place</option>
                   {testPlaceOptions.length > 0 && (
                     <optgroup label="Floor plan places">
                       {testPlaceOptions.map((p) => (
@@ -1309,7 +1309,7 @@ export default function IndoorNavGraphEditor({
               </label>
               {testPlaceOptions.length === 0 && (
                 <p className="mt-1 text-xs text-amber-700">
-                  No floor plan places loaded — lock locations on Locations &amp; publish first.
+                  No floor plan places loaded - lock locations on Locations &amp; publish first.
                 </p>
               )}
               <button

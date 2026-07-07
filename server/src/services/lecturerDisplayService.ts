@@ -50,7 +50,7 @@ function resolveSingleLecturerDisplayName(
   index: LecturerDisplayIndex,
 ): string | undefined {
   const t = raw.trim();
-  if (!t || t === '—' || t === '-') return undefined;
+  if (!t || t === '-' || t === '-') return undefined;
   if (t.includes(' ') && !isFetLecturerCodeToken(t.split(/\s+/)[0] ?? '')) return t;
 
   const token = t.split(/\s+/).find((p) => isFetLecturerCodeToken(p)) ?? t;
@@ -73,7 +73,7 @@ export function resolveLecturerDisplayName(
   index: LecturerDisplayIndex,
 ): string | undefined {
   const t = raw?.trim();
-  if (!t || t === '—' || t === '-') return undefined;
+  if (!t || t === '-' || t === '-') return undefined;
 
   const multi = splitFetLecturerCodeList(t);
   if (multi.length >= 2) {

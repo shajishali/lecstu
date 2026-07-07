@@ -180,7 +180,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Course
           <select value={form.courseId} onChange={(e) => handleChange('courseId', e.target.value)}>
-            <option value="">- Select Course -</option>
+            <option value="">Select course</option>
             {dropdowns.courses.map((c) => (
               <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
             ))}
@@ -190,7 +190,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Lecturer
           <select value={form.lecturerId} onChange={(e) => handleChange('lecturerId', e.target.value)}>
-            <option value="">- Select Lecturer -</option>
+            <option value="">Select lecturer</option>
             {dropdowns.lecturers.map((l) => (
               <option key={l.id} value={l.id}>{l.firstName} {l.lastName}</option>
             ))}
@@ -200,7 +200,7 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Lecture Hall
           <select value={form.hallId} onChange={(e) => handleChange('hallId', e.target.value)}>
-            <option value="">- Select Hall -</option>
+            <option value="">Select hall</option>
             {dropdowns.halls.map((h) => (
               <option key={h.id} value={h.id}>{h.name} ({h.building}, cap: {h.capacity})</option>
             ))}
@@ -210,10 +210,10 @@ export default function TimetableForm({ entry, dropdowns, onClose, onSuccess }: 
         <label>
           Student Group
           <select value={form.groupId} onChange={(e) => handleChange('groupId', e.target.value)}>
-            <option value="">- Select Group -</option>
+            <option value="">Select group</option>
             {dropdowns.groups.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.name} — {g.entryCount ?? 0} classes, {g.memberCount ?? 0} students
+                {g.name} - {g.entryCount ?? 0} classes, {g.memberCount ?? 0} students
               </option>
             ))}
           </select>

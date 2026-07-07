@@ -398,7 +398,7 @@ export default function EditableFetTimetableGrid({
                       ) : (
                         <div className="group relative px-2 py-1.5 leading-snug text-slate-900">
                           <div className="mb-1 text-[10px] font-semibold text-slate-500">
-                            {startTime} – {endTime}
+                            {startTime} - {endTime}
                           </div>
                           {fetGridDisplayLines(cell.displayLines?.length ? cell.displayLines : cell.lines).map((line, li) => (
                             <div key={li} className={li === 0 ? 'font-semibold' : ''}>
@@ -436,7 +436,7 @@ export default function EditableFetTimetableGrid({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="shrink-0 border-b border-slate-100 px-4 py-3 text-base font-semibold text-slate-800">
-              {editTarget.isNew ? 'Add class' : 'Edit class'} — {editTarget.dayLabel}
+              {editTarget.isNew ? 'Add class' : 'Edit class'} - {editTarget.dayLabel}
             </h3>
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
               <label className="block text-sm font-medium text-slate-700">

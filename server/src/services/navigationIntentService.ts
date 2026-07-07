@@ -1,5 +1,5 @@
 /**
- * Navigation Intent Detector — routes chat messages to the Floor Navigation AI Engine.
+ * Navigation Intent Detector - routes chat messages to the Floor Navigation AI Engine.
  * Mirrors Python engine patterns for offline fallback.
  */
 import { parseNavigationQuery, parseSourceDestinationQuery } from './mapSearchService';
@@ -109,7 +109,7 @@ export function detectNavigationIntentLocal(message: string): NavigationIntentRe
 export async function detectNavigationIntent(message: string): Promise<NavigationIntentResult> {
   const local = detectNavigationIntentLocal(message);
 
-  // Next-class intent is deterministic — do not let the remote engine override it.
+  // Next-class intent is deterministic - do not let the remote engine override it.
   if (local.intent === 'guide_to_next_class' && local.isNavigation) {
     return local;
   }
@@ -136,7 +136,7 @@ export async function detectNavigationIntent(message: string): Promise<Navigatio
       };
     }
   } catch {
-    /* engine optional — use local */
+    /* engine optional - use local */
   }
 
   return local;

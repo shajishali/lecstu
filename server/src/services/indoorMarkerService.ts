@@ -23,7 +23,7 @@ export function clampMarkerPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-/** Accept 0–1 or 0–100 from clients */
+/** Accept 0-1 or 0-100 from clients */
 export function normalizeMarkerCoord(value: number): number {
   const n = Number(value);
   if (Number.isNaN(n)) return 0;

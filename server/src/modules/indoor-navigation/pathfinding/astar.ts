@@ -2,7 +2,7 @@ import { buildAdjacency, euclidean, reconstructPath } from './graph-utils';
 import type { PathfindingEdge, PathfindingNode } from './types';
 
 /**
- * A* pathfinding — primary algorithm for indoor navigation graphs.
+ * A* pathfinding - primary algorithm for indoor navigation graphs.
  * Suitable for 10k+ nodes when graph is sparse (typical corridor networks).
  */
 export function astar(

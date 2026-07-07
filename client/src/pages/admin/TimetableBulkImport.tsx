@@ -220,17 +220,17 @@ export default function TimetableBulkImport({ onSuccess }: Props) {
       <div className="import-info-card">
         <h3><FileText size={18} /> Timetable Import (Excel, CSV, or PDF)</h3>
         <p>
-          <strong>Recommended:</strong> use an Excel sheet with one row per class — day, times, course, lecturer, hall, and group are read clearly.
+          <strong>Recommended:</strong> use an Excel sheet with one row per class - day, times, course, lecturer, hall, and group are read clearly.
         </p>
         <p>
-          <strong>Multi-sheet Excel (29 batches):</strong> each tab is one batch timetable — all subjects on that tab
+          <strong>Multi-sheet Excel (29 batches):</strong> each tab is one batch timetable - all subjects on that tab
           belong to that group only (CS-Y3-AINT, CS-Y2, …). Shared lectures and duplicate lecturer codes across
           courses are kept exactly as in the table.
         </p>
         <p>Students only see the timetable for their enrolled class. Re-import with Replace period after code updates.</p>
         <p>
           Each <strong>batch table</strong> in the file (e.g. Y4 CSEC, ET-Y4-ETIA) is stored and previewed as a
-          whole grid — same layout as your Excel — before slots are saved. Compare each table to your real timetable,
+          whole grid - same layout as your Excel - before slots are saved. Compare each table to your real timetable,
           then import.
         </p>
         <p>Review tables below, then the line list if you need to edit individual slots.</p>
@@ -261,7 +261,7 @@ export default function TimetableBulkImport({ onSuccess }: Props) {
       {tables.length > 0 && !previewLoading && (
         <div className="import-preview import-tables-preview mb-6">
           <h3>
-            Timetable tables — {tables.length} batch{tables.length !== 1 ? 'es' : ''} (compare with your Excel)
+            Timetable tables - {tables.length} batch{tables.length !== 1 ? 'es' : ''} (compare with your Excel)
           </h3>
           <div className="flex flex-wrap gap-2 mb-3">
             {tables.map((t, i) => (
@@ -285,7 +285,7 @@ export default function TimetableBulkImport({ onSuccess }: Props) {
       {entries.length > 0 && !previewLoading && (
         <div className="import-preview">
           <h3>
-            Slot list — {entries.length} entries
+            Slot list - {entries.length} entries
             {file && <span className="text-sm font-normal text-slate-500"> ({file.name})</span>}
           </h3>
           {groupSummary.length > 0 && (
@@ -302,7 +302,7 @@ export default function TimetableBulkImport({ onSuccess }: Props) {
           )}
           {initialsCount > 0 && (
             <p className="text-xs text-amber-700 mb-2">
-              {initialsCount} row(s) use lecturer initials — matching runs on import; unmatched slots need Assign in Timetable.
+              {initialsCount} row(s) use lecturer initials - matching runs on import; unmatched slots need Assign in Timetable.
             </p>
           )}
           <div className="dt-scroll import-preview-scroll">
@@ -357,7 +357,7 @@ export default function TimetableBulkImport({ onSuccess }: Props) {
                     </td>
                     <td
                       className={`text-xs whitespace-nowrap ${shortPeriodWarningIds.has(row.id) ? 'text-amber-700 font-medium' : 'text-slate-600'}`}
-                      title={shortPeriodWarningIds.has(row.id) ? 'May be part of a longer lecture — check end time' : undefined}
+                      title={shortPeriodWarningIds.has(row.id) ? 'May be part of a longer lecture - check end time' : undefined}
                     >
                       {formatDuration(row.startTime, row.endTime)}
                     </td>

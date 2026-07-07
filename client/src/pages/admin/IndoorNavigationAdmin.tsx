@@ -177,8 +177,8 @@ export default function IndoorNavigationAdmin() {
       showToast(
         'success',
         wasPublished
-          ? `${floorLabel(floor)} replaced — re-lock locations and publish when ready`
-          : `${floorLabel(floor)} uploaded — click Run AI analyze to detect rooms`
+          ? `${floorLabel(floor)} replaced - re-lock locations and publish when ready`
+          : `${floorLabel(floor)} uploaded - click Run AI analyze to detect rooms`
       );
     } catch (err) {
       showApiErrorToast(err, 'Upload failed');
@@ -193,7 +193,7 @@ export default function IndoorNavigationAdmin() {
     setAnalyzing(true);
     try {
       await runAnalyzeForFloor(selected, floor);
-      showToast('success', 'AI analysis complete — review and approve locations');
+      showToast('success', 'AI analysis complete - review and approve locations');
       goToLocationsAfterAnalyze();
       await fetchBuildings();
       await fetchSetupStatus();
@@ -401,12 +401,12 @@ export default function IndoorNavigationAdmin() {
             )}
           </div>
           <p className="mt-3 text-sm text-slate-600">
-            Upload saves immediately. Then run <strong>AI analyze</strong> (may take 1–3 min) to
+            Upload saves immediately. Then run <strong>AI analyze</strong> (may take 1-3 min) to
             detect rooms and corridors, and approve locations in the next tab.
           </p>
           {analyzing && (
             <p className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-              AI is reading room labels from your floor plan — you can stay on this page.
+              AI is reading room labels from your floor plan - you can stay on this page.
             </p>
           )}
           <p className="mt-1 text-xs text-slate-500">

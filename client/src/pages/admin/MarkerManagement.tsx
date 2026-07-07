@@ -234,7 +234,7 @@ export default function MarkerManagement() {
           <div className="form-row-2">
             <label>Building
               <select value={form.buildingId} onChange={(e) => setForm({ ...form, buildingId: e.target.value })} required>
-                <option value="">- Select -</option>
+                <option value="">Select</option>
                 {dropdowns?.buildings.map((b) => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
               </select>
             </label>
@@ -264,7 +264,7 @@ export default function MarkerManagement() {
           {markerTypeLinksToHall(form.type) && dropdowns && (
             <label>Linked Hall
               <select value={form.hallId} onChange={(e) => setForm({ ...form, hallId: e.target.value })}>
-                <option value="">- None -</option>
+                <option value="">None</option>
                 {dropdowns.halls.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
               </select>
             </label>
@@ -273,7 +273,7 @@ export default function MarkerManagement() {
           {markerTypeLinksToOffice(form.type) && dropdowns && (
             <label>Linked Office
               <select value={form.officeId} onChange={(e) => setForm({ ...form, officeId: e.target.value })}>
-                <option value="">- None -</option>
+                <option value="">None</option>
                 {dropdowns.offices.map((o) => <option key={o.id} value={o.id}>{o.roomNumber} ({o.lecturer.firstName} {o.lecturer.lastName})</option>)}
               </select>
             </label>

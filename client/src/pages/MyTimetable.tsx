@@ -43,7 +43,7 @@ const DAY_LABELS: Record<string, string> = {
   SUNDAY: 'Sun',
 };
 
-/** FET grids typically run 08:00–20:55 (13 hourly bands) */
+/** FET grids typically run 08:00-20:55 (13 hourly bands) */
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 21;
 const TIME_SLOTS = Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) => {
@@ -269,7 +269,7 @@ export default function MyTimetable() {
     }
   }, [location.pathname, enrolledGroupId, fetchTimetable]);
 
-  // Refetch when timetable is updated (admin import, enrollment change) — keep grid visible
+  // Refetch when timetable is updated (admin import, enrollment change) - keep grid visible
   useEffect(() => {
     const onTimetableUpdated = () => fetchTimetable({ silent: true });
     window.addEventListener('timetable-updated', onTimetableUpdated);
@@ -355,7 +355,7 @@ export default function MyTimetable() {
         <div>
           <h1>My Timetable</h1>
           <p className="tt-subtitle">
-            {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule —{' '}
+            {user?.role === 'STUDENT' ? 'Student' : 'Lecturer'} schedule:{' '}
             {displaySlotCount} slot{displaySlotCount !== 1 ? 's' : ''}
             {displayClassTitle && (
               <> · Class: <strong>{displayClassTitle}</strong></>
@@ -399,7 +399,7 @@ export default function MyTimetable() {
                     : displayEnrollment?.programCode
                       ? ` (${displayEnrollment.programCode}, ${displayEnrollment.studyYear})`
                       : ''}
-                  . There are no classes in the timetable for this group yet — ask admin to import the{' '}
+                  . There are no classes in the timetable for this group yet - ask admin to import the{' '}
                   <strong>{displayEnrollment?.groupName ?? 'your group'}</strong> timetable PDF in Admin → Timetable → Import
                   (use Replace period), then refresh this page. Update enrollment in My Profile if the class is wrong.
                 </>
@@ -407,7 +407,7 @@ export default function MyTimetable() {
                 'You are not assigned to a student group yet. Set your program, study year, and pathway in My Profile → Academic year enrollment.'
               )
             ) : (
-              'No lectures assigned yet. Ask admin to import the faculty timetable — your slots are matched using the two-letter code in the sheet (e.g. SP for Shaji Piraba). Open My Schedule to view and edit your teaching grid.'
+              'No lectures assigned yet. Ask admin to import the faculty timetable - your slots are matched using the two-letter code in the sheet (e.g. SP for Shaji Piraba). Open My Schedule to view and edit your teaching grid.'
             )}
           </p>
         </div>
@@ -454,7 +454,7 @@ export default function MyTimetable() {
                           {slot.hall.name}
                           {slot.hall.building ? ` · ${slot.hall.building}` : ''}
                           {slot.hall.doorPassword ? ` · Door: ${slot.hall.doorPassword}` : ''}
-                          {formatTimetableLecturer(slot) !== '—' && ` · ${formatTimetableLecturer(slot)}`}
+                          {formatTimetableLecturer(slot) !== '-' && ` · ${formatTimetableLecturer(slot)}`}
                         </span>
                       </button>
                     );
@@ -512,7 +512,7 @@ export default function MyTimetable() {
                                   borderLeft: `3px solid ${color}`,
                                 }}
                                 onClick={() => setSelectedSlot(slot)}
-                                title={`${slot.course.code} · ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)} · ${slot.hall.name}${formatTimetableLecturer(slot) !== '—' ? ` · ${formatTimetableLecturer(slot)}` : ''}`}
+                                title={`${slot.course.code} · ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)} · ${slot.hall.name}${formatTimetableLecturer(slot) !== '-' ? ` · ${formatTimetableLecturer(slot)}` : ''}`}
                               >
                                 <span className="tt-slot-code" style={{ color }}>
                                   {formatCourseLabel(slot.course.code, slot.course.name)}
@@ -524,7 +524,7 @@ export default function MyTimetable() {
                                       {slot.hall.name}
                                       {slot.hall.building ? ` · ${slot.hall.building}` : ''}
                                       {slot.hall.doorPassword ? ` · Door: ${slot.hall.doorPassword}` : ''}
-                                      {formatTimetableLecturer(slot) !== '—' && ` · ${formatTimetableLecturer(slot)}`}
+                                      {formatTimetableLecturer(slot) !== '-' && ` · ${formatTimetableLecturer(slot)}`}
                                     </span>
                                   </>
                                 )}

@@ -216,7 +216,7 @@ export default function ProfilePasswordSection({
       {step === 'request' && (
         <div className="space-y-4">
           <p className="text-xs text-slate-600">
-            Step 1 of 3 — Enter your current password. If it is correct, a 6-digit code will be sent to your
+            Step 1 of 3 - Enter your current password. If it is correct, a 6-digit code will be sent to your
             email (personal Gmail or recovery email).
           </p>
           <div className="flex flex-col gap-1.5">
@@ -284,11 +284,11 @@ export default function ProfilePasswordSection({
           >
             {emailDelivered ? (
               <p>
-                Step 2 of 3 — Code sent to <strong>{sentToMasked}</strong>. Check your inbox and spam folder.
+                Step 2 of 3 - Code sent to <strong>{sentToMasked}</strong>. Check your inbox and spam folder.
               </p>
             ) : (
               <p>
-                Step 2 of 3 — Could not deliver email to <strong>{sentToMasked || 'your address'}</strong>.
+                Step 2 of 3 - Could not deliver email to <strong>{sentToMasked || 'your address'}</strong>.
                 {deliveryWarning ? ` ${deliveryWarning}` : ' Check SMTP settings or use the dev code below.'}
               </p>
             )}
@@ -357,7 +357,7 @@ export default function ProfilePasswordSection({
       {step === 'reset' && (
         <div className="space-y-4">
           <p className="text-xs font-medium text-emerald-800">
-            Step 3 of 3 — Code verified. Enter your new password below.
+            Step 3 of 3 - Code verified. Enter your new password below.
           </p>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="pNewPassword" className="text-sm font-semibold text-slate-700">

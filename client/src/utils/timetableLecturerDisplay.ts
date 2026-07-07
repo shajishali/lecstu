@@ -10,7 +10,7 @@ export function formatTimetableLecturer(entry: {
   }
   const code = entry.lecturerInitials?.trim();
   if (code) return code;
-  return '—';
+  return '-';
 }
 
 export function isTimetableLecturerUnassigned(entry: {
