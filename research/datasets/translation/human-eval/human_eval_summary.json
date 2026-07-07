@@ -1,16 +1,9 @@
 {
   "phase": "9.4",
-  "generated_at": "2026-07-07T08:52:13.540129Z",
-  "status": "completed",
-  "num_raters": 6,
-  "raters": [
-    "archchika",
-    "faslan",
-    "kanusan",
-    "sanjeevan",
-    "sanseevan",
-    "shakiththiyan"
-  ],
+  "generated_at": "2026-07-07T08:58:41.911069Z",
+  "status": "pending_data",
+  "num_raters": 0,
+  "raters": [],
   "engines": [
     "marian"
   ],
@@ -23,289 +16,41 @@
     "ta-si"
   ],
   "items_in_instrument": 180,
-  "items_with_ratings": 180,
-  "descriptive_by_engine": {
-    "marian": {
-      "adequacy": {
-        "mean": 3.4444,
-        "median": 4.0,
-        "std": 1.432,
-        "min": 1,
-        "max": 5,
-        "n": 1080
-      },
-      "fluency": {
-        "mean": 3.4509,
-        "median": 4.0,
-        "std": 1.4457,
-        "min": 1,
-        "max": 5,
-        "n": 1080
-      },
-      "overall": {
-        "mean": 3.1444,
-        "median": 4.0,
-        "std": 1.329,
-        "min": 1,
-        "max": 5,
-        "n": 1080
-      }
-    }
-  },
-  "descriptive_by_engine_pair": {
-    "marian|en-si": {
-      "adequacy": {
-        "mean": 4.3889,
-        "median": 5.0,
-        "std": 0.8781,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 4.35,
-        "median": 5.0,
-        "std": 0.9745,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 3.9556,
-        "median": 4.0,
-        "std": 0.8995,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      }
-    },
-    "marian|en-ta": {
-      "adequacy": {
-        "mean": 4.4556,
-        "median": 5.0,
-        "std": 0.7096,
-        "min": 2,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 4.5167,
-        "median": 5.0,
-        "std": 0.6366,
-        "min": 2,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 4.1056,
-        "median": 4.0,
-        "std": 0.7416,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      }
-    },
-    "marian|si-en": {
-      "adequacy": {
-        "mean": 3.1167,
-        "median": 3.0,
-        "std": 1.156,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 3.2444,
-        "median": 3.0,
-        "std": 1.2001,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 2.8611,
-        "median": 3.0,
-        "std": 1.1439,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      }
-    },
-    "marian|si-ta": {
-      "adequacy": {
-        "mean": 1.7222,
-        "median": 1.0,
-        "std": 0.9253,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 1.7222,
-        "median": 1.0,
-        "std": 0.9606,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 1.6389,
-        "median": 1.0,
-        "std": 0.808,
-        "min": 1,
-        "max": 4,
-        "n": 180
-      }
-    },
-    "marian|ta-en": {
-      "adequacy": {
-        "mean": 2.7278,
-        "median": 3.0,
-        "std": 1.3368,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 2.6444,
-        "median": 3.0,
-        "std": 1.2588,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 2.4556,
-        "median": 2.0,
-        "std": 1.2033,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      }
-    },
-    "marian|ta-si": {
-      "adequacy": {
-        "mean": 4.2556,
-        "median": 4.0,
-        "std": 0.9435,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "fluency": {
-        "mean": 4.2278,
-        "median": 5.0,
-        "std": 1.0046,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      },
-      "overall": {
-        "mean": 3.85,
-        "median": 4.0,
-        "std": 0.9631,
-        "min": 1,
-        "max": 5,
-        "n": 180
-      }
-    }
-  },
+  "items_with_ratings": 0,
+  "descriptive_by_engine": {},
+  "descriptive_by_engine_pair": {},
   "inter_rater_reliability": {
     "fluency": {
-      "krippendorff_alpha_ordinal": 0.8529,
-      "alpha_interpretation": "almost perfect",
-      "mean_pairwise_weighted_kappa": 0.8798,
-      "kappa_interpretation": "almost perfect",
-      "kappa_pairs": {
-        "archchika|faslan": 0.8804,
-        "archchika|kanusan": 0.89,
-        "archchika|sanjeevan": 0.8684,
-        "archchika|sanseevan": 0.879,
-        "archchika|shakiththiyan": 0.8689,
-        "faslan|kanusan": 0.8848,
-        "faslan|sanjeevan": 0.8615,
-        "faslan|sanseevan": 0.8847,
-        "faslan|shakiththiyan": 0.8697,
-        "kanusan|sanjeevan": 0.8783,
-        "kanusan|sanseevan": 0.8809,
-        "kanusan|shakiththiyan": 0.8868,
-        "sanjeevan|sanseevan": 0.8727,
-        "sanjeevan|shakiththiyan": 0.9021,
-        "sanseevan|shakiththiyan": 0.8894
-      },
-      "percent_agreement_exact": 0.5874,
-      "percent_agreement_within_1": 0.97,
-      "n_comparisons": 2700
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
     },
     "adequacy": {
-      "krippendorff_alpha_ordinal": 0.8191,
-      "alpha_interpretation": "almost perfect",
-      "mean_pairwise_weighted_kappa": 0.85,
-      "kappa_interpretation": "almost perfect",
-      "kappa_pairs": {
-        "archchika|faslan": 0.8397,
-        "archchika|kanusan": 0.8211,
-        "archchika|sanjeevan": 0.854,
-        "archchika|sanseevan": 0.837,
-        "archchika|shakiththiyan": 0.8713,
-        "faslan|kanusan": 0.8379,
-        "faslan|sanjeevan": 0.8688,
-        "faslan|sanseevan": 0.8373,
-        "faslan|shakiththiyan": 0.865,
-        "kanusan|sanjeevan": 0.8445,
-        "kanusan|sanseevan": 0.8496,
-        "kanusan|shakiththiyan": 0.8458,
-        "sanjeevan|sanseevan": 0.8354,
-        "sanjeevan|shakiththiyan": 0.8642,
-        "sanseevan|shakiththiyan": 0.8781
-      },
-      "percent_agreement_exact": 0.5141,
-      "percent_agreement_within_1": 0.957,
-      "n_comparisons": 2700
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
     },
     "overall": {
-      "krippendorff_alpha_ordinal": 0.7694,
-      "alpha_interpretation": "substantial",
-      "mean_pairwise_weighted_kappa": 0.7959,
-      "kappa_interpretation": "substantial",
-      "kappa_pairs": {
-        "archchika|faslan": 0.813,
-        "archchika|kanusan": 0.7933,
-        "archchika|sanjeevan": 0.8142,
-        "archchika|sanseevan": 0.7885,
-        "archchika|shakiththiyan": 0.7924,
-        "faslan|kanusan": 0.8037,
-        "faslan|sanjeevan": 0.7953,
-        "faslan|sanseevan": 0.7966,
-        "faslan|shakiththiyan": 0.7793,
-        "kanusan|sanjeevan": 0.7979,
-        "kanusan|sanseevan": 0.7638,
-        "kanusan|shakiththiyan": 0.7753,
-        "sanjeevan|sanseevan": 0.8097,
-        "sanjeevan|shakiththiyan": 0.8087,
-        "sanseevan|shakiththiyan": 0.8072
-      },
-      "percent_agreement_exact": 0.4904,
-      "percent_agreement_within_1": 0.93,
-      "n_comparisons": 2700
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
     }
   },
-  "low_agreement_items": [
-    {
-      "item_id": "HE0010",
-      "engine": "marian",
-      "language_pair": "ta-en",
-      "overall_scores": [
-        4,
-        4,
-        2,
-        4,
-        4,
-        5
-      ],
-      "std": 0.8975,
-      "range": 3
-    }
-  ],
+  "low_agreement_items": [],
   "flag_threshold_std": 1.5
 }
