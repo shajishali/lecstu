@@ -574,6 +574,15 @@ def build_report(automated, cvt, corr, human_summary, plot_paths, sources, resul
     s.append("## 4. Human Evaluation Results")
     s.append("")
     if human_summary and human_summary.get("status") == "completed":
+        synthetic_notice = HUMAN_EVAL_DIR / "SYNTHETIC_RATINGS_NOTICE.md"
+        if synthetic_notice.exists():
+            s.append(
+                "> **Note:** Current human scores are **synthetic sample data** "
+                "(see `datasets/translation/human-eval/SYNTHETIC_RATINGS_NOTICE.md`). "
+                "Replace with real evaluator ratings before final thesis submission, "
+                "or disclose simulation in the methodology."
+            )
+            s.append("")
         s.append(f"- **Evaluators**: {human_summary.get('num_raters')} "
                  f"({', '.join(human_summary.get('raters', []))})")
         s.append(f"- **Items rated**: {human_summary.get('items_with_ratings')} / "
