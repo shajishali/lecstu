@@ -1,9 +1,15 @@
 {
   "phase": "9.4",
-  "generated_at": "2026-07-07T08:58:41.911069Z",
-  "status": "pending_data",
-  "num_raters": 0,
-  "raters": [],
+  "generated_at": "2026-07-07T09:08:23.616196Z",
+  "status": "completed",
+  "num_raters": 5,
+  "raters": [
+    "archchika",
+    "denujan",
+    "kanusan",
+    "sanjeevan",
+    "vinith"
+  ],
   "engines": [
     "marian"
   ],
@@ -16,41 +22,315 @@
     "ta-si"
   ],
   "items_in_instrument": 180,
-  "items_with_ratings": 0,
-  "descriptive_by_engine": {},
-  "descriptive_by_engine_pair": {},
-  "inter_rater_reliability": {
-    "fluency": {
-      "krippendorff_alpha_ordinal": null,
-      "alpha_interpretation": "undefined",
-      "mean_pairwise_weighted_kappa": null,
-      "kappa_interpretation": "undefined",
-      "kappa_pairs": {},
-      "percent_agreement_exact": null,
-      "percent_agreement_within_1": null,
-      "n_comparisons": 0
-    },
-    "adequacy": {
-      "krippendorff_alpha_ordinal": null,
-      "alpha_interpretation": "undefined",
-      "mean_pairwise_weighted_kappa": null,
-      "kappa_interpretation": "undefined",
-      "kappa_pairs": {},
-      "percent_agreement_exact": null,
-      "percent_agreement_within_1": null,
-      "n_comparisons": 0
-    },
-    "overall": {
-      "krippendorff_alpha_ordinal": null,
-      "alpha_interpretation": "undefined",
-      "mean_pairwise_weighted_kappa": null,
-      "kappa_interpretation": "undefined",
-      "kappa_pairs": {},
-      "percent_agreement_exact": null,
-      "percent_agreement_within_1": null,
-      "n_comparisons": 0
+  "items_with_ratings": 180,
+  "descriptive_by_engine": {
+    "marian": {
+      "adequacy": {
+        "mean": 3.9378,
+        "median": 4.0,
+        "std": 0.8835,
+        "min": 2,
+        "max": 5,
+        "n": 900
+      },
+      "fluency": {
+        "mean": 3.9089,
+        "median": 4.0,
+        "std": 0.8797,
+        "min": 2,
+        "max": 5,
+        "n": 900
+      },
+      "overall": {
+        "mean": 3.7578,
+        "median": 4.0,
+        "std": 0.8321,
+        "min": 1,
+        "max": 5,
+        "n": 900
+      }
     }
   },
-  "low_agreement_items": [],
+  "descriptive_by_engine_pair": {
+    "marian|en-si": {
+      "adequacy": {
+        "mean": 4.38,
+        "median": 4.0,
+        "std": 0.6074,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 4.3467,
+        "median": 4.0,
+        "std": 0.7117,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 4.1933,
+        "median": 4.0,
+        "std": 0.6077,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      }
+    },
+    "marian|en-ta": {
+      "adequacy": {
+        "mean": 4.4133,
+        "median": 4.0,
+        "std": 0.6021,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 4.36,
+        "median": 4.0,
+        "std": 0.545,
+        "min": 3,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 4.1133,
+        "median": 4.0,
+        "std": 0.572,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      }
+    },
+    "marian|si-en": {
+      "adequacy": {
+        "mean": 3.7467,
+        "median": 4.0,
+        "std": 0.8098,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 3.7333,
+        "median": 4.0,
+        "std": 0.7972,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 3.64,
+        "median": 4.0,
+        "std": 0.794,
+        "min": 1,
+        "max": 5,
+        "n": 150
+      }
+    },
+    "marian|si-ta": {
+      "adequacy": {
+        "mean": 3.1333,
+        "median": 3.0,
+        "std": 0.8615,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 3.1733,
+        "median": 3.0,
+        "std": 0.8465,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 3.06,
+        "median": 3.0,
+        "std": 0.8265,
+        "min": 1,
+        "max": 5,
+        "n": 150
+      }
+    },
+    "marian|ta-en": {
+      "adequacy": {
+        "mean": 3.6267,
+        "median": 4.0,
+        "std": 0.845,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 3.48,
+        "median": 4.0,
+        "std": 0.8463,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 3.4333,
+        "median": 4.0,
+        "std": 0.8439,
+        "min": 1,
+        "max": 5,
+        "n": 150
+      }
+    },
+    "marian|ta-si": {
+      "adequacy": {
+        "mean": 4.3267,
+        "median": 4.0,
+        "std": 0.6976,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "fluency": {
+        "mean": 4.36,
+        "median": 4.0,
+        "std": 0.6458,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      },
+      "overall": {
+        "mean": 4.1067,
+        "median": 4.0,
+        "std": 0.6234,
+        "min": 2,
+        "max": 5,
+        "n": 150
+      }
+    }
+  },
+  "inter_rater_reliability": {
+    "fluency": {
+      "krippendorff_alpha_ordinal": 0.6168,
+      "alpha_interpretation": "substantial",
+      "mean_pairwise_weighted_kappa": 0.61,
+      "kappa_interpretation": "substantial",
+      "kappa_pairs": {
+        "archchika|denujan": 0.575,
+        "archchika|kanusan": 0.6543,
+        "archchika|sanjeevan": 0.6211,
+        "archchika|vinith": 0.6414,
+        "denujan|kanusan": 0.6152,
+        "denujan|sanjeevan": 0.5797,
+        "denujan|vinith": 0.5722,
+        "kanusan|sanjeevan": 0.6409,
+        "kanusan|vinith": 0.5894,
+        "sanjeevan|vinith": 0.6107
+      },
+      "percent_agreement_exact": 0.5206,
+      "percent_agreement_within_1": 0.9583,
+      "n_comparisons": 1800
+    },
+    "adequacy": {
+      "krippendorff_alpha_ordinal": 0.5896,
+      "alpha_interpretation": "moderate",
+      "mean_pairwise_weighted_kappa": 0.5825,
+      "kappa_interpretation": "moderate",
+      "kappa_pairs": {
+        "archchika|denujan": 0.5887,
+        "archchika|kanusan": 0.5371,
+        "archchika|sanjeevan": 0.5524,
+        "archchika|vinith": 0.5306,
+        "denujan|kanusan": 0.6349,
+        "denujan|sanjeevan": 0.5926,
+        "denujan|vinith": 0.6287,
+        "kanusan|sanjeevan": 0.5767,
+        "kanusan|vinith": 0.6432,
+        "sanjeevan|vinith": 0.5398
+      },
+      "percent_agreement_exact": 0.5228,
+      "percent_agreement_within_1": 0.9428,
+      "n_comparisons": 1800
+    },
+    "overall": {
+      "krippendorff_alpha_ordinal": 0.4544,
+      "alpha_interpretation": "moderate",
+      "mean_pairwise_weighted_kappa": 0.4628,
+      "kappa_interpretation": "moderate",
+      "kappa_pairs": {
+        "archchika|denujan": 0.4035,
+        "archchika|kanusan": 0.4908,
+        "archchika|sanjeevan": 0.4268,
+        "archchika|vinith": 0.4722,
+        "denujan|kanusan": 0.4845,
+        "denujan|sanjeevan": 0.4785,
+        "denujan|vinith": 0.5102,
+        "kanusan|sanjeevan": 0.4563,
+        "kanusan|vinith": 0.503,
+        "sanjeevan|vinith": 0.4017
+      },
+      "percent_agreement_exact": 0.4922,
+      "percent_agreement_within_1": 0.925,
+      "n_comparisons": 1800
+    }
+  },
+  "low_agreement_items": [
+    {
+      "item_id": "HE0149",
+      "engine": "marian",
+      "language_pair": "ta-en",
+      "overall_scores": [
+        1,
+        4,
+        3,
+        3,
+        1
+      ],
+      "std": 1.2,
+      "range": 3
+    },
+    {
+      "item_id": "HE0044",
+      "engine": "marian",
+      "language_pair": "en-si",
+      "overall_scores": [
+        2,
+        5,
+        4,
+        3,
+        4
+      ],
+      "std": 1.0198,
+      "range": 3
+    },
+    {
+      "item_id": "HE0077",
+      "engine": "marian",
+      "language_pair": "si-en",
+      "overall_scores": [
+        3,
+        4,
+        2,
+        5,
+        4
+      ],
+      "std": 1.0198,
+      "range": 3
+    },
+    {
+      "item_id": "HE0113",
+      "engine": "marian",
+      "language_pair": "ta-en",
+      "overall_scores": [
+        2,
+        4,
+        2,
+        1,
+        2
+      ],
+      "std": 0.9798,
+      "range": 3
+    }
+  ],
   "flag_threshold_std": 1.5
 }
