@@ -1,0 +1,26 @@
+Subject: LECSTU thesis — translation quality rating (30–45 min)
+
+Hi,
+
+I am doing my thesis on the LECSTU academic assistant (English / Tamil / Sinhala).
+I need your help rating machine-translated sentences for quality.
+
+What you do:
+1. Open the attached zip (or the 3 files inside).
+2. Read INSTRUCTIONS.md (rating scale 1–5).
+3. Open human_eval_form.csv — each row has a source sentence and a translation.
+4. Copy rater_template.csv to ratings_YOURNAME.csv (use your name).
+5. For every item_id, enter three scores:
+   - fluency (natural in target language?)
+   - adequacy (meaning preserved?)
+   - overall (general quality)
+   Scores are whole numbers from 1 (poor) to 5 (excellent).
+6. Send me back only ratings_YOURNAME.csv (email / WhatsApp / Google Drive).
+
+Time: about 30–45 minutes for 180 items (you can split across two sessions).
+
+Please rate independently — do not discuss specific sentences with other raters before submitting.
+
+Thank you,
+[Your name]
+[Your contact]
