@@ -16,6 +16,7 @@ Usage:
 import argparse
 import json
 import sys
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -41,6 +42,15 @@ DATASET_DIR = RESEARCH_DIR / "datasets" / "asr"
 MANIFEST_PATH = DATASET_DIR / "dataset_manifest.json"
 RESULTS_DIR = ASR_BENCHMARK_DIR / "results"
 LOGS_DIR = RESEARCH_DIR / "logs"
+
+
+def _json_safe_number(value):
+    """Convert non-finite floats (NaN/Inf) to None so JSON stays valid."""
+    if value is None:
+        return None
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return None
+    return value
 
 
 def load_config():
@@ -146,8 +156,8 @@ def run_benchmark(
                     "run": run_idx + 1,
                     "reference": ref_text,
                     "hypothesis": hyp_text,
-                    "wer": wer_result.get("wer"),
-                    "cer": wer_result.get("cer"),
+                    "wer": _json_safe_number(wer_result.get("wer")),
+                    "cer": _json_safe_number(wer_result.get("cer")),
                     "latency_ms": latency_ms,
                     "ref_length": wer_result.get("ref_length"),
                     "hyp_length": wer_result.get("hyp_length"),
@@ -213,7 +223,8 @@ def run_benchmark(
 
     out_path = RESULTS_DIR / f"asr_benchmark_{experiment_id}.json"
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
+        # Keep JSON strictly valid (no NaN/Infinity).
+        json.dump(output, f, indent=2, ensure_ascii=False, allow_nan=False)
 
     # Log summary
     log_path = LOGS_DIR / f"asr_benchmark_{experiment_id}.json"
@@ -230,7 +241,7 @@ def run_benchmark(
         "artifact": str(out_path),
     }
     with open(log_path, "w", encoding="utf-8") as f:
-        json.dump(log_entry, f, indent=2)
+        json.dump(log_entry, f, indent=2, allow_nan=False)
 
     print(f"\nDone. Results: {out_path}")
     print(f"Log: {log_path}")
