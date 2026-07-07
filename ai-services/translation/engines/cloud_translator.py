@@ -2,8 +2,12 @@
 Cloud translation engine — Google Translate / Azure Translator.
 Requires API credentials via environment variables.
 """
+import json
 import os
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from typing import Optional
 
 # Supported pairs: en↔ta, en↔si, ta↔si
@@ -20,16 +24,53 @@ def _normalize_lang(code: str) -> str:
     return m.get(code.lower()[:2], "en")
 
 
+def _translate_google_api_key(text: str, src: str, tgt: str, api_key: str) -> dict:
+    """Translate via the Google Translation v2 REST endpoint using an API key."""
+    start = time.perf_counter()
+    url = "https://translation.googleapis.com/language/translate/v2?" + urllib.parse.urlencode({"key": api_key})
+    payload = json.dumps({"q": text, "source": src, "target": tgt, "format": "text"}).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        translations = body.get("data", {}).get("translations", [])
+        translated = translations[0].get("translatedText", "") if translations else ""
+        latency_ms = (time.perf_counter() - start) * 1000
+        return {"translated_text": translated, "latency_ms": round(latency_ms, 2), "engine": "google"}
+    except urllib.error.HTTPError as e:
+        latency_ms = (time.perf_counter() - start) * 1000
+        detail = ""
+        try:
+            detail = e.read().decode("utf-8")[:300]
+        except Exception:
+            pass
+        return {
+            "translated_text": "",
+            "latency_ms": round(latency_ms, 2),
+            "engine": "google",
+            "error": f"{e.code} {e.reason}: {detail}".strip(),
+        }
+    except Exception as e:  # noqa: BLE001
+        latency_ms = (time.perf_counter() - start) * 1000
+        return {"translated_text": "", "latency_ms": round(latency_ms, 2), "engine": "google", "error": str(e)}
+
+
 def translate_google(text: str, src_lang: str, tgt_lang: str) -> dict:
     """
     Translate via Google Cloud Translation API.
     Returns: { translated_text, latency_ms, engine [, error] }
-    Requires: GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_TRANSLATE_API_KEY
+    Requires: GOOGLE_TRANSLATE_API_KEY / GOOGLE_API_KEY (API key), or
+              GOOGLE_APPLICATION_CREDENTIALS (service account JSON).
     """
     src = _normalize_lang(src_lang)
     tgt = _normalize_lang(tgt_lang)
     if (src, tgt) not in SUPPORTED_PAIRS:
         return {"translated_text": "", "latency_ms": 0, "engine": "google", "error": f"Unsupported pair: {src}->{tgt}"}
+
+    # Prefer API key path when a key is provided (no google-cloud-translate needed).
+    api_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if api_key:
+        return _translate_google_api_key(text, src, tgt, api_key)
 
     start = time.perf_counter()
     try:

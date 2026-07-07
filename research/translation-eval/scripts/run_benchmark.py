@@ -21,6 +21,7 @@ import argparse
 import json
 import platform
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -57,6 +58,49 @@ ENGINE_GROUPS = {
     "cloud": "google",
     "transformer": "marian",
 }
+
+# Engines that call rate-limited external APIs (throttle + retry applied).
+RATE_LIMITED_ENGINES = {"google", "azure"}
+
+
+def _is_rate_limit_error(msg: str) -> bool:
+    if not msg:
+        return False
+    low = msg.lower()
+    return (
+        "rate limit" in low
+        or "ratelimit" in low
+        or "429" in low
+        or "quota" in low
+        or "user rate limit exceeded" in low
+        or low.strip().startswith("403")
+    )
+
+
+def translate_with_retry(
+    text: str,
+    src: str,
+    tgt: str,
+    engine_name: str,
+    delay: float,
+    max_retries: int,
+) -> dict:
+    """Call translate() with optional throttle delay and exponential backoff on rate limits."""
+    is_api = engine_name in RATE_LIMITED_ENGINES
+    if is_api and delay > 0:
+        time.sleep(delay)
+
+    attempt = 0
+    while True:
+        result = translate(text=text, src_lang=src, tgt_lang=tgt, engine=engine_name)
+        err = result.get("error", "")
+        if not err or not is_api or not _is_rate_limit_error(err) or attempt >= max_retries:
+            return result
+        # Exponential backoff: base 2s * 2^attempt, capped at 60s.
+        backoff = min(2.0 * (2 ** attempt), 60.0)
+        print(f"    rate-limited (attempt {attempt + 1}/{max_retries}); backing off {backoff:.0f}s", flush=True)
+        time.sleep(backoff)
+        attempt += 1
 
 
 def load_config() -> dict:
@@ -148,6 +192,8 @@ def run_benchmark(
     pair_filter: Optional[str] = None,
     num_runs: int = 3,
     skip_similarity: bool = False,
+    delay: float = 0.0,
+    max_retries: int = 5,
 ):
     config = load_config()
     corpus = load_corpus()
@@ -209,7 +255,14 @@ def run_benchmark(
                     flush=True,
                 )
 
-                result = translate(text=src_text, src_lang=src, tgt_lang=tgt, engine=engine_name)
+                result = translate_with_retry(
+                    text=src_text,
+                    src=src,
+                    tgt=tgt,
+                    engine_name=engine_name,
+                    delay=delay,
+                    max_retries=max_retries,
+                )
                 hyp_text = result.get("translated_text", "") or ""
                 latency_ms = result.get("latency_ms", 0)
                 err_msg = result.get("error", "")
@@ -269,6 +322,8 @@ def run_benchmark(
             "pair_filter": pair_filter,
             "embedding_model": None if skip_similarity else embedding_model,
             "limit": limit,
+            "delay": delay,
+            "max_retries": max_retries,
         },
         "summary": {
             "total_rows": len(all_results),
@@ -324,6 +379,18 @@ def main():
     )
     parser.add_argument("--runs", type=int, default=3, help="Repetitions per config")
     parser.add_argument("--skip-similarity", action="store_true", help="Skip semantic similarity (faster)")
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=0.0,
+        help="Seconds to wait before each cloud API call (throttle to avoid rate limits, e.g. 0.5)",
+    )
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=5,
+        help="Max retries with exponential backoff on rate-limit errors (cloud engines only)",
+    )
     args = parser.parse_args()
 
     if not CORPUS_MANIFEST.exists():
@@ -337,6 +404,8 @@ def main():
         pair_filter=args.pair,
         num_runs=args.runs,
         skip_similarity=args.skip_similarity,
+        delay=args.delay,
+        max_retries=args.max_retries,
     )
 
 

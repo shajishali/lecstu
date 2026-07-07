@@ -10,10 +10,40 @@ pip install -r requirements.txt
 
 # Marian engine (local)
 pip install -r ../../ai-services/translation/requirements.txt
-
-# Google Cloud (optional)
-# Set GOOGLE_APPLICATION_CREDENTIALS to service account JSON
 ```
+
+### Google Cloud Translation credentials
+
+Two options (API key is simplest — no extra package needed):
+
+```bash
+# Option A: API key (uses the v2 REST endpoint via stdlib urllib)
+export GOOGLE_TRANSLATE_API_KEY="your-api-key"      # Linux/macOS
+# PowerShell:  $env:GOOGLE_TRANSLATE_API_KEY="your-api-key"
+
+# Option B: Service account JSON (requires google-cloud-translate)
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+```
+
+Enable the **Cloud Translation API** in your Google Cloud project and make sure
+billing is active, or requests return `403 User Rate Limit Exceeded`.
+
+### Throttling the cloud run
+
+The cloud API is rate-limited. Always pass `--delay` (and optionally
+`--max-retries`) so the run doesn't get throttled:
+
+```bash
+# Smoke test the key first (3 sentences, 1 run)
+python run_benchmark.py --engine google --limit 3 --runs 1 --delay 0.5
+
+# Full cloud run, throttled + auto-retry on rate limits
+python run_benchmark.py --engine google --delay 0.5 --max-retries 6
+```
+
+`--delay` waits N seconds before each cloud call; on a rate-limit error the
+runner backs off exponentially (2s, 4s, 8s, ... capped at 60s) up to
+`--max-retries` times. Delay/retry are ignored for the local `marian` engine.
 
 ## Run
 
