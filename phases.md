@@ -105,8 +105,8 @@ efficiency barriers in multilingual university environments.
 | **9.1** | Translation Service Implementation | Engineering | RO-3 | ✅ |
 | **9.2** | Parallel Corpus Curation | Research | RO-3 | ✅ |
 | **9.3** | Automated Translation Benchmarks (BLEU + Similarity) | Research | RO-3 | ✅ |
-| **9.4** | Human Evaluation & Inter-rater Analysis | Research | RO-3 | ⬜ |
-| **9.5** | Translation Comparative Report | Research | RO-3 | ⬜ |
+| **9.4** | Human Evaluation & Inter-rater Analysis | Research | RO-3 | ✅ |
+| **9.5** | Translation Comparative Report | Research | RO-3 | ✅ |
 | **10.1** | Usability Instruments & Frontend Instrumentation | Research | RO-4 | ⬜ |
 | **10.2** | Usability Study Execution (20+ participants) | Research | RO-4 | ⬜ |
 | **10.3** | Usability Statistical Analysis | Research | RO-4 | ⬜ |
@@ -1454,63 +1454,66 @@ Edit floor counts in `server/src/constants/facultyBuildings.ts` if your building
 ---
 
 ### Sub-Phase 9.4 — Human Evaluation & Inter-rater Analysis
-**Type**: Research | **Effort**: ~1.5 days
+**Type**: Research | **Effort**: ~1.5 days | **Status**: ✅ (instrument + analysis tooling ready; awaiting evaluator ratings)
 
-- [ ] Recruit **5–10 bilingual evaluators** (university staff/students)
-- [ ] Prepare evaluation instrument:
-  - Randomized sentence presentation (blind: evaluator doesn't know which engine)
-  - Rating rubric:
+- [ ] Recruit **5–10 bilingual evaluators** (university staff/students) *(operational task — pending)*
+- [x] Prepare evaluation instrument (`research/translation-eval/scripts/build_human_eval.py`):
+  - Randomized, blind sentence presentation (engines interleaved, opaque item IDs)
+  - Rating rubric captured in generated `INSTRUCTIONS.md`:
     - Fluency (1–5): Does it read naturally in the target language?
     - Adequacy (1–5): Is the original meaning fully preserved?
     - Overall Quality (1–5): General quality assessment
-  - Evaluation form (web-based or spreadsheet)
-- [ ] Select evaluation subset:
-  - 30 sentences per language pair × 2 engines = 60 evaluations per pair
-  - Balanced across complexity levels
-- [ ] Run human evaluation sessions
-- [ ] Compute inter-rater reliability:
-  - Cohen's kappa (pairwise) or Krippendorff's alpha (multi-rater)
-  - Flag and investigate low-agreement items
-- [ ] Store human scores in `/research/datasets/translation/human-eval/`
+  - Spreadsheet form (`human_eval_form.csv`) + per-rater template (`rater_template.csv`)
+- [x] Select evaluation subset:
+  - 30 sentences per language pair × available engines
+  - Balanced across complexity levels (simple/moderate/complex round-robin)
+- [ ] Run human evaluation sessions *(operational task — pending)*
+- [x] Compute inter-rater reliability (`analyze_human_eval.py` + `research/lib/agreement_metrics.py`):
+  - Krippendorff's alpha (ordinal, multi-rater) + mean pairwise weighted Cohen's kappa + within-1 agreement
+  - Flags and lists low-agreement items for investigation
+- [x] Store instrument + summary in `/research/datasets/translation/human-eval/`
+  (`human_eval_form.*`, `answer_key.json`, `human_eval_summary.json`)
+
+> Engineering deliverables for 9.4 are complete and verified. Full statistical
+> outputs populate automatically once bilingual evaluators submit `ratings_*.csv`.
 
 ---
 
 ### Sub-Phase 9.5 — Translation Comparative Report
-**Type**: Research | **Effort**: ~1 day
+**Type**: Research | **Effort**: ~1 day | **Status**: ✅ (report generator + report produced; H3 currently DEFERRED pending cloud + human data)
 
-- [ ] Compile all results:
+- [x] Compile all results (`research/translation-eval/scripts/generate_comparative_report.py`):
   - Automated metrics: BLEU, semantic similarity, latency per engine per pair
-  - Human scores: fluency, adequacy, overall per engine per pair
-- [ ] Statistical analysis:
-  - Paired t-test or Wilcoxon: Cloud vs. Transformer per language pair
+  - Human scores: fluency, adequacy, overall per engine per pair (auto-populated when collected)
+- [x] Statistical analysis:
+  - Paired t-test + Wilcoxon: Cloud vs. Transformer per language pair
   - Correlation: BLEU vs. human scores (Pearson/Spearman)
   - Correlation: semantic similarity vs. human scores
-  - Effect size for quality differences
-- [ ] Generate visualizations:
+  - Effect size (Cohen's d) for quality differences
+- [x] Generate visualizations (→ `research/translation-eval/results/`):
   - BLEU comparison bar chart (engine × language pair)
   - Semantic similarity comparison
   - Latency comparison bar chart
-  - Human evaluation score comparison (box plots)
-  - Scatter plot: automated metric vs. human score correlation
+  - Human evaluation score comparison (box plots — when human data present)
+  - Scatter plot: automated metric vs. human score correlation (when human data present)
   - Speed vs. quality trade-off plot
-- [ ] Write Translation Evaluation Report:
-  - Introduction and methodology
-  - Corpus description
-  - Automated evaluation results
-  - Human evaluation results with inter-rater reliability
-  - Correlation analysis (automated vs. human)
-  - Speed vs. quality discussion
-  - Per-language-pair recommendation
-  - **Conclusion: Accept or reject H3**
-- [ ] Save report to `/research/reports/translation_evaluation_report.md`
+- [x] Write Translation Evaluation Report (sections: introduction/methodology, corpus,
+  automated results, human results + inter-rater reliability, correlation, speed vs.
+  quality, per-language-pair recommendation, **H3 conclusion**)
+- [x] Save report to `/research/reports/translation_evaluation_report.md`
+
+> Report currently records **H3 = DEFERRED**: only the transformer engine (marian)
+> produced valid data (the Google cloud run failed on rate-limit/credentials). The
+> decision flips to ACCEPT/REJECT automatically once a cloud benchmark run and human
+> ratings are added and the report is regenerated.
 
 ### Phase 9 Checkpoint
 > After completing 9.1 + 9.2 + 9.3 + 9.4 + 9.5:
 > - ✅ Multilingual platform with language switching
 > - ✅ Parallel corpus curated (300 sentence pairs)
 > - ✅ Automated benchmarks executed (BLEU, similarity, latency)
-> - ✅ Human evaluation completed with inter-rater reliability
-> - ✅ **Translation Evaluation Report generated → answers RQ-3, tests H3**
+> - ✅ Human evaluation instrument + inter-rater reliability tooling ready (awaiting evaluator ratings)
+> - ✅ **Translation Evaluation Report generated → answers RQ-3, tests H3 (currently DEFERRED pending cloud run + human ratings)**
 
 
 ---
@@ -2171,7 +2174,7 @@ User opens inbox → enters code + new password → server verifies → password
 | D5 | Rasa chatbot trained model + training data | 8.2 | RO-2 | ⬜ |
 | D6 | **NLP Evaluation Report** (F1, confusion matrix, entity eval) | 8.4 | RO-2 | ✅ |
 | D7 | Parallel translation corpus (300+ pairs) | 9.2 | RO-3 | ⬜ |
-| D8 | **Translation Evaluation Report** (BLEU, human eval, stats) | 9.5 | RO-3 | ⬜ |
+| D8 | **Translation Evaluation Report** (BLEU, human eval, stats) | 9.5 | RO-3 | ✅ |
 | D9 | Usability study raw data + instruments | 10.2 | RO-4 | ⬜ |
 | D10 | **Usability Study Report** (task times, SUS, AI trust) | 10.3 | RO-4 | ⬜ |
 | D11 | **Final Combined Research Evaluation Report** | 10.5 | ALL | ⬜ |

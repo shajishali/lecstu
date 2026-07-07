@@ -1,0 +1,1114 @@
+{
+  "schema_version": "1.0",
+  "phase": "9.4",
+  "generated_at": "2026-07-07T06:49:25.801195Z",
+  "source_result": "D:\\Reasearch\\lecstu\\research\\translation-eval\\results\\translation_benchmark_20260617_132336.json",
+  "seed": 42,
+  "per_pair": 30,
+  "rating_dimensions": [
+    "fluency",
+    "adequacy",
+    "overall"
+  ],
+  "rating_scale": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "engines": [
+    "marian"
+  ],
+  "language_pairs": [
+    "en-si",
+    "en-ta",
+    "si-en",
+    "si-ta",
+    "ta-en",
+    "ta-si"
+  ],
+  "item_count": 180,
+  "items": [
+    {
+      "item_id": "HE0001",
+      "language_pair": "si-ta",
+      "source_text": "ඩොක්ටර් පර්නැන්ඩෝ සමඟ මගේ ව්යාපෘතිය සාකච්ඡා කරන්න ඕන",
+      "candidate_translation": "More's discute mo project with Dr.prenado."
+    },
+    {
+      "item_id": "HE0002",
+      "language_pair": "si-ta",
+      "source_text": "ඔබේ ඊළඟ පන්තිය ශාස්ත්‍රීය ගොඩනැගිල්ලේ පළමු මහලේ හෝල් බී හි; ඇස්තමේන්තු ගමනාගමන වේලාව මිනිත්තු හතරයි.",
+      "candidate_translation": "Two next class is f.C.E., in the first hotel building in St."
+    },
+    {
+      "item_id": "HE0003",
+      "language_pair": "ta-en",
+      "source_text": "டாக்டர் பெரேராவுடனான உங்கள் சந்திப்பு உறுதிப்படுத்தப்பட்டது.",
+      "candidate_translation": "Your visit to the doctor was confirmed."
+    },
+    {
+      "item_id": "HE0004",
+      "language_pair": "en-ta",
+      "source_text": "Walk straight along the corridor and turn left at the staircase.",
+      "candidate_translation": "நேர்வழியில் நடந்து இடத்தில் இடது திரும்புங்கள்."
+    },
+    {
+      "item_id": "HE0005",
+      "language_pair": "en-ta",
+      "source_text": "Your weekly timetable shows twelve contact hours across five days this semester.",
+      "candidate_translation": "உங்கள் வார காலம் ஐந்து நாட்களில் பத்து மணிநேரங்கள் ஐந்து நாட்களுக்கு மேலும் காண்பிக்கிறது."
+    },
+    {
+      "item_id": "HE0006",
+      "language_pair": "si-en",
+      "source_text": "සුදු පුවරුව ඇති හෝල් සොයන්න",
+      "candidate_translation": "Search for the white board"
+    },
+    {
+      "item_id": "HE0007",
+      "language_pair": "si-en",
+      "source_text": "සඳුදා ඔබට පන්ති තුනක් තිබේ: ඇල්ගොරිතම, ගණිතය, සහ භෞතික විද්යාව.",
+      "candidate_translation": "On Monday you have three classes: Algore, math, and physics."
+    },
+    {
+      "item_id": "HE0008",
+      "language_pair": "ta-en",
+      "source_text": "உங்கள் கல்வி ஆலோசகருடன் சந்திப்பு கோரும்போது காரணத்தை வழங்க வேண்டும்.",
+      "candidate_translation": "You need to reason with your school counselor."
+    },
+    {
+      "item_id": "HE0009",
+      "language_pair": "ta-si",
+      "source_text": "மண்டபம் சி அடுத்து எப்போது கிடைக்கும்?",
+      "candidate_translation": "ඊළඟට විවාහය සිදු වන්නේ කවදාද?"
+    },
+    {
+      "item_id": "HE0010",
+      "language_pair": "ta-en",
+      "source_text": "நிர்வாக கட்டிடத்திலிருந்து ஆய்வக கட்டிடத்தை அடைய, கல்வி கட்டிடம் வழியாக செல்லவும்.",
+      "candidate_translation": "◯ Directly from the building to the research building, go to the school building."
+    },
+    {
+      "item_id": "HE0011",
+      "language_pair": "si-ta",
+      "source_text": "ඔබේ අධ්යයන උපදේශක සමඟ හමුවීමක් ඉල්ලන විට හේතුවක් සපයන්න.",
+      "candidate_translation": "Donnea un ehemplo quan tolcome consultor de studio."
+    },
+    {
+      "item_id": "HE0012",
+      "language_pair": "ta-si",
+      "source_text": "குழு பிக்கு வழிமுறை வகுப்பு எப்போது?",
+      "candidate_translation": "කවද්ද කණ්ඩායමේ ක්‍රම පන්තිය?"
+    },
+    {
+      "item_id": "HE0013",
+      "language_pair": "en-si",
+      "source_text": "Are any seminar rooms free this afternoon?",
+      "candidate_translation": "අද හවස සාමදාන කාමර නිදහස්ද?"
+    },
+    {
+      "item_id": "HE0014",
+      "language_pair": "si-en",
+      "source_text": "සිකුරාදා උදේ එකොළොස්ට පරිගණක ජාල සඳහා පරීක්ෂණාගාර සැසියක් තිබේ.",
+      "candidate_translation": "Friday morning opens the eve of a lab for computer networks."
+    },
+    {
+      "item_id": "HE0015",
+      "language_pair": "si-en",
+      "source_text": "විසි හතර බැච් සඳහා ප්රධාන වේලාසටිය සියලු දෙපාර්තමේන්තු සඳහා ප්රකාශයට පත් කර ඇත.",
+      "candidate_translation": "The main platform for 20 boxes has been published for all departments."
+    },
+    {
+      "item_id": "HE0016",
+      "language_pair": "ta-si",
+      "source_text": "இயந்திர கற்றல் வகுப்பு எந்த நேரம்?",
+      "candidate_translation": "කවද්ද පුහුණු පන්තිය අවසාන වෙන්නේ?"
+    },
+    {
+      "item_id": "HE0017",
+      "language_pair": "ta-si",
+      "source_text": "நிர்வாக கட்டிடத்திலிருந்து ஆய்வக கட்டிடத்தை அடைய, கல்வி கட்டிடம் வழியாக செல்லவும்.",
+      "candidate_translation": "පරිපාලන ගොඩනැගිල්ලක සිට පර්යේෂණ කිරීමට, පාසල් ගොඩනැගිල්ලට යන්න."
+    },
+    {
+      "item_id": "HE0018",
+      "language_pair": "si-ta",
+      "source_text": "විසි හතර බැච් සඳහා ප්රධාන වේලාසටිය සියලු දෙපාර්තමේන්තු සඳහා ප්රකාශයට පත් කර ඇත.",
+      "candidate_translation": "Principal platform for 20 boxs is publiced for all departments."
+    },
+    {
+      "item_id": "HE0019",
+      "language_pair": "si-ta",
+      "source_text": "හෝල් බී වෙත යන ආකාරය",
+      "candidate_translation": "Light to Holbby."
+    },
+    {
+      "item_id": "HE0020",
+      "language_pair": "en-ta",
+      "source_text": "Find me a hall with a whiteboard",
+      "candidate_translation": "வெள்ளை பட்டியலுடன் ஒரு மன்றத்தை தேடுக"
+    },
+    {
+      "item_id": "HE0021",
+      "language_pair": "en-si",
+      "source_text": "I want to book an appointment with Dr. Dias",
+      "candidate_translation": "මට ඕන ඩොක්ටර් ඩියස් එක්ක හමුවීමක් කරන්න."
+    },
+    {
+      "item_id": "HE0022",
+      "language_pair": "si-en",
+      "source_text": "ඉංජිනේරු බ්ලොක් පෙන්වන්න",
+      "candidate_translation": "Show engineering block"
+    },
+    {
+      "item_id": "HE0023",
+      "language_pair": "en-si",
+      "source_text": "Dr. Chandrasena has rescheduled your appointment to Friday at two pm.",
+      "candidate_translation": "ආචාර්ය චන්ද්‍රසේනා සිකුරාදාට ඔයාගේ පැවරුම නැවත සකස් කරලා තියෙනවා."
+    },
+    {
+      "item_id": "HE0024",
+      "language_pair": "si-en",
+      "source_text": "බ්රහස්පතින්දා උදේ ඩොක්ටර් රාජපක්ෂ මෙහෙයුම් පද්ධති ඉගැන්වේ.",
+      "candidate_translation": "On Thursday morning, the doctor was taught the secret mission system."
+    },
+    {
+      "item_id": "HE0025",
+      "language_pair": "ta-en",
+      "source_text": "வைட்போர்டு உள்ள மண்டபம் தேடுங்கள்",
+      "candidate_translation": "Search for a match with Vitford"
+    },
+    {
+      "item_id": "HE0026",
+      "language_pair": "ta-en",
+      "source_text": "இந்த செமஸ்டரில் ஐந்து நாட்களில் பன்னிரண்டு தொடர்பு மணிநேரங்களை உங்கள் வாராந்திர அட்டவணை காட்டுகிறது.",
+      "candidate_translation": "← Your weekly schedule shows 12 hours of contact during this five - day period."
+    },
+    {
+      "item_id": "HE0027",
+      "language_pair": "en-si",
+      "source_text": "Your weekly timetable shows twelve contact hours across five days this semester.",
+      "candidate_translation": "ඔයාගේ සතිපතා කාලසටහන පැය 12ක් තියෙනවා මේ සන්ධ්‍යා භටයා පස් දිනක් පුරාවට."
+    },
+    {
+      "item_id": "HE0028",
+      "language_pair": "ta-en",
+      "source_text": "நினைவூட்டல்: காலை ஒன்பது மணிக்கு மண்டபம் ஏவில் இயந்திர கற்றல் வகுப்பு உள்ளது.",
+      "candidate_translation": "A reminder: In the morning, there is a nine - hour - long training course in the field."
+    },
+    {
+      "item_id": "HE0029",
+      "language_pair": "ta-si",
+      "source_text": "மண்டபம் பியில் ப்ரொஜெக்டர், வைட்போர்டு மற்றும் அறுபது மாணவர்களுக்கு இருக்கைகள் உள்ளன.",
+      "candidate_translation": "ඒ වගේම ස්ටූඩියෝ 6ක් විතර තියෙනවා."
+    },
+    {
+      "item_id": "HE0030",
+      "language_pair": "en-ta",
+      "source_text": "Take the lift to the first floor and exit towards Hall A.",
+      "candidate_translation": "முதல் நீளத்திற்கு எடுத்து அதனால் ஆண்டு பட்டியலுக்கு வெளியேறுங்கள்."
+    },
+    {
+      "item_id": "HE0031",
+      "language_pair": "si-ta",
+      "source_text": "සිකුරාදා උදේ එකොළොස්ට පරිගණක ජාල සඳහා පරීක්ෂණාගාර සැසියක් තිබේ.",
+      "candidate_translation": "Freenday morgen obert the eve of a laboratorium for computer networks."
+    },
+    {
+      "item_id": "HE0032",
+      "language_pair": "en-si",
+      "source_text": "Reminder: You have a Machine Learning lecture in Hall A at nine am.",
+      "candidate_translation": "මතකයට නඟන්න: ඔයාට යන්ත්‍ර ඉගෙනගැනීමේ දේශනයක් තියෙනවා."
+    },
+    {
+      "item_id": "HE0033",
+      "language_pair": "si-ta",
+      "source_text": "විවරයේ කෙළින්ම ඇවිද ගොස් පඩිපෙළෙහි වමට හැරෙන්න.",
+      "candidate_translation": "Go right to an every to when to walk of the trappes."
+    },
+    {
+      "item_id": "HE0034",
+      "language_pair": "si-en",
+      "source_text": "ගොඩනැගිල්ල සී තුළ කුමන දෙපාර්තමේන්තුවද?",
+      "candidate_translation": "What department in the building?"
+    },
+    {
+      "item_id": "HE0035",
+      "language_pair": "ta-si",
+      "source_text": "உங்கள் அடுத்த வகுப்பு கல்வி கட்டிடத்தின் முதல் மாடியில் மண்டபம் பியில்; மதிப்பிடப்பட்ட நடை நேரம் நான்கு நிமிடங்கள்.",
+      "candidate_translation": "ඔබේ ඊළඟ පංතිය පාසැල් ගොඩනැගිල්ලේ පළමු මට්ටමේ පසු වන අතර, සාමාන්‍ය කාලය විනාඩි හතරයි."
+    },
+    {
+      "item_id": "HE0036",
+      "language_pair": "ta-en",
+      "source_text": "நாளை பத்து மணிக்கு வகுப்பு உள்ளதா?",
+      "candidate_translation": ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
+    },
+    {
+      "item_id": "HE0037",
+      "language_pair": "en-si",
+      "source_text": "You have a new message from the admin office.",
+      "candidate_translation": "ඔයාට ප්‍රධාන කාර්යාලයෙන් අලුත් පණිවිඩයක් ලැබුනා."
+    },
+    {
+      "item_id": "HE0038",
+      "language_pair": "ta-en",
+      "source_text": "மண்டபம் பியில் ப்ரொஜெக்டர், வைட்போர்டு மற்றும் அறுபது மாணவர்களுக்கு இருக்கைகள் உள்ளன.",
+      "candidate_translation": "In the afternoons, there are a projector, a whiteboard, and a six - story studio."
+    },
+    {
+      "item_id": "HE0039",
+      "language_pair": "ta-si",
+      "source_text": "மணி மூன்றுக்கு மண்டபம் ஏ நிரம்பியுள்ளதா?",
+      "candidate_translation": "විවාහයට පැය තුනක පමණ කාලයක් ගත වෙනවාද?"
+    },
+    {
+      "item_id": "HE0040",
+      "language_pair": "en-si",
+      "source_text": "Which building has available halls?",
+      "candidate_translation": "මොන ගොඩනැගිල්ලද තියෙන්නේ?"
+    },
+    {
+      "item_id": "HE0041",
+      "language_pair": "si-ta",
+      "source_text": "මෙම සෙමෙස්ටරයේ දින පහක දොළොස් සම්බන්ධතා පැය ඔබේ සතික වේලාසටිය පෙන්වයි.",
+      "candidate_translation": "Contact entre Simones, cinq days, cinq days, assistent simultane, mostran cinq days per semana."
+    },
+    {
+      "item_id": "HE0042",
+      "language_pair": "ta-si",
+      "source_text": "புதன்கிழமை கால்குலஸ் எந்த குழுவுக்கு?",
+      "candidate_translation": "නව ලොව පරිවර්තනයෙහි සඳහන් වන්නේ කුමන කණ්ඩායමටද?"
+    },
+    {
+      "item_id": "HE0043",
+      "language_pair": "en-ta",
+      "source_text": "Your next class is in Hall B on the first floor of the Academic Building; estimated walking time is four minutes.",
+      "candidate_translation": "உங்களுடைய அடுத்த வகுப்பு ஆகேடிமிக்க கட்டத்தின் முதல் இடத்தில் B மன்றத்தில் இருக்கிறது; நடக்கும் நேரம் நான்கு நிமிடங்களாக இருக்கிறது."
+    },
+    {
+      "item_id": "HE0044",
+      "language_pair": "en-si",
+      "source_text": "Is there a free lecture hall for one hour?",
+      "candidate_translation": "පැයකට නිදහස් දේශන ශාලාවක් තියෙනවද?"
+    },
+    {
+      "item_id": "HE0045",
+      "language_pair": "si-en",
+      "source_text": "පරිපාලනයෙන් පරීක්ෂණාගාර ගොඩනැගිල්ලට යාමට, ශාස්ත්‍රීය ගොඩනැගිල්ල හරහා යන්න.",
+      "candidate_translation": "To get to the lab building, pass through the satellite building."
+    },
+    {
+      "item_id": "HE0046",
+      "language_pair": "en-si",
+      "source_text": "This platform integrates timetable management, appointments, indoor navigation, and multilingual AI assistance.",
+      "candidate_translation": "මෙම වේදිකාව කාලසටහන, නිවේදනය, අභ්‍යන්තර ගමන් බලපත්‍රය, සහ භාෂා ආධාරය සකසා ඇත."
+    },
+    {
+      "item_id": "HE0047",
+      "language_pair": "en-si",
+      "source_text": "You can switch the interface language to Tamil or Sinhala.",
+      "candidate_translation": "ඔයාට පුළුවන් අතුරුමුහුණත භාෂාව දෙමළ හෝ සිංහල වලට මාරු කරන්න."
+    },
+    {
+      "item_id": "HE0048",
+      "language_pair": "si-ta",
+      "source_text": "ප්රොජෙක්ටර් ඇති හෝල් පෙන්වන්න",
+      "candidate_translation": "Show the user-in-laws."
+    },
+    {
+      "item_id": "HE0049",
+      "language_pair": "ta-si",
+      "source_text": "பேராசிரியர் சென்னுடனான உங்கள் சந்திப்பு செவ்வாய் காலை பத்து மணிக்கு திட்டமிடப்பட்டுள்ளது.",
+      "candidate_translation": "ගුරුවරයා සමඟ ඔබේ රැස්වීම උදේ දහයට පැවැත්තුවා."
+    },
+    {
+      "item_id": "HE0050",
+      "language_pair": "en-ta",
+      "source_text": "The master timetable for Batch Twenty Twenty Four has been published for all departments.",
+      "candidate_translation": "அனைத்து பகுதிகளுக்காக இரண்டு கால காலம் பிரசுரிக்கப்பட்டுள்ளது."
+    },
+    {
+      "item_id": "HE0051",
+      "language_pair": "ta-si",
+      "source_text": "முதன்மை நுழைவாயிலுக்கு அருகிலுள்ள படிக்கட்டில் ஒரு மாடி மேலே செல்லவும்.",
+      "candidate_translation": "පලවෙනි ඇතුල්වීමේ පහළට එක මට්ටමක් උඩට යන්න."
+    },
+    {
+      "item_id": "HE0052",
+      "language_pair": "en-ta",
+      "source_text": "Can I meet Dr. Rajapaksha tomorrow?",
+      "candidate_translation": "நான் டாக்டர் ராஜாபாக்ஷாவை நாள் சந்திக்க முடியுமா?"
+    },
+    {
+      "item_id": "HE0053",
+      "language_pair": "en-si",
+      "source_text": "Your next class is in Hall B on the first floor of the Academic Building; estimated walking time is four minutes.",
+      "candidate_translation": "ඔබේ ඊළඟ පංතිය තියෙන්නේ Acadimic ගොඩනැගිල්ලේ පළමු තට්ටුවේ."
+    },
+    {
+      "item_id": "HE0054",
+      "language_pair": "ta-si",
+      "source_text": "நடைபாதையில் நேராக நடந்து படிக்கட்டில் இடதுபுறம் திரும்பவும்.",
+      "candidate_translation": "ඩ්‍රයිව් එකට කෙලින්ම වම් පැත්තට යන්න."
+    },
+    {
+      "item_id": "HE0055",
+      "language_pair": "ta-si",
+      "source_text": "உங்கள் கல்வி ஆலோசகருடன் சந்திப்பு கோரும்போது காரணத்தை வழங்க வேண்டும்.",
+      "candidate_translation": "ඔබේ පාසැලේ උපදේශකයාගෙන් උපදෙස් ඉල්ලන විට ඔබ හේතු ඉදිරිපත් කළ යුතුයි."
+    },
+    {
+      "item_id": "HE0056",
+      "language_pair": "si-ta",
+      "source_text": "සුදු පුවරුව ඇති හෝල් සොයන්න",
+      "candidate_translation": "Search for the white bord"
+    },
+    {
+      "item_id": "HE0057",
+      "language_pair": "ta-en",
+      "source_text": "டாக்டர் டயாஸுடனான உங்கள் சந்திப்பு விரிவுரையாளரால் ரத்து செய்யப்பட்டது.",
+      "candidate_translation": "▸ Your visit, Dr. Diassután, was rejected by the speaker."
+    },
+    {
+      "item_id": "HE0058",
+      "language_pair": "si-en",
+      "source_text": "මෙම වේදිකාව වේලාසටි කළමනාකරණය, හමුවීම්, ගෘහස්ථ සංචාලනය සහ බහුභාෂා කෘතිම බුද්ධි සහාය ඒකාබද්ධ කරයි.",
+      "candidate_translation": "This stage sets the stage stage management, appointments, housing management, and multibillion - related memory support."
+    },
+    {
+      "item_id": "HE0059",
+      "language_pair": "en-si",
+      "source_text": "Welcome to the LECSTU academic platform.",
+      "candidate_translation": "LCSTU අධ්‍යාපනික වේදිකාවට සාදරයෙන් පිලිගන්නවා."
+    },
+    {
+      "item_id": "HE0060",
+      "language_pair": "ta-si",
+      "source_text": "உங்கள் நிலையை புதுப்பிக்க இந்த இடத்தில் க்யூஆர் குறியீட்டை ஸ்கேன் செய்யவும்.",
+      "candidate_translation": "ඔයාගේ තත්වය යාවත්කාලීන කරන්න කුවාර් කේතය පරිලෝකනය කරන්න."
+    },
+    {
+      "item_id": "HE0061",
+      "language_pair": "ta-en",
+      "source_text": "கல்வி கட்டிடம் உங்கள் வலதுபுறம் உள்ளது.",
+      "candidate_translation": "You have your right hand at the school building."
+    },
+    {
+      "item_id": "HE0062",
+      "language_pair": "si-en",
+      "source_text": "මෙම සෙමෙස්ටරයේ දින පහක දොළොස් සම්බන්ධතා පැය ඔබේ සතික වේලාසටිය පෙන්වයි.",
+      "candidate_translation": "The five - day contact between this Simones shows your schedule of five days a week."
+    },
+    {
+      "item_id": "HE0063",
+      "language_pair": "ta-si",
+      "source_text": "இந்த செமஸ்டரில் ஐந்து நாட்களில் பன்னிரண்டு தொடர்பு மணிநேரங்களை உங்கள் வாராந்திர அட்டவணை காட்டுகிறது.",
+      "candidate_translation": "ඔබේ සතිපතා කාලසටහනේදී පැය 12ක් කතා කරනවා."
+    },
+    {
+      "item_id": "HE0064",
+      "language_pair": "en-ta",
+      "source_text": "Where is the Mathematics department?",
+      "candidate_translation": "எங்கே மாத்தாடிக் குடியிருப்பது?"
+    },
+    {
+      "item_id": "HE0065",
+      "language_pair": "ta-en",
+      "source_text": "உங்கள் அடுத்த வகுப்பு கல்வி கட்டிடத்தின் முதல் மாடியில் மண்டபம் பியில்; மதிப்பிடப்பட்ட நடை நேரம் நான்கு நிமிடங்கள்.",
+      "candidate_translation": " Your next class is at the back of the first level of your school building; the estimated average time is four minutes."
+    },
+    {
+      "item_id": "HE0066",
+      "language_pair": "en-ta",
+      "source_text": "You must provide a reason when requesting an appointment with your academic advisor.",
+      "candidate_translation": "நீங்கள் ஒரு காரணத்தைக் கொடுக்க வேண்டும்."
+    },
+    {
+      "item_id": "HE0067",
+      "language_pair": "ta-en",
+      "source_text": "டாக்டர் சந்திரசேனா உங்கள் சந்திப்பை வெள்ளி மதிய இரண்டு மணிக்கு மாற்றியுள்ளார்.",
+      "candidate_translation": "The doctor has changed your meeting by two hours."
+    },
+    {
+      "item_id": "HE0068",
+      "language_pair": "en-ta",
+      "source_text": "When is the Database Systems class?",
+      "candidate_translation": "தரவுத்தள அமைப்புகள் எப்போது?"
+    },
+    {
+      "item_id": "HE0069",
+      "language_pair": "en-si",
+      "source_text": "What lectures do I have on Monday?",
+      "candidate_translation": "මොන දේශනද සඳුදාට තියෙන්නේ?"
+    },
+    {
+      "item_id": "HE0070",
+      "language_pair": "en-si",
+      "source_text": "You must provide a reason when requesting an appointment with your academic advisor.",
+      "candidate_translation": "ඔබ ඔබේ අධ්‍යාපන උපදේශකයාගෙන් යම් පැවරුමක් ඉල්ලන විට ඔබට හේතුවක් ලබා දිය යුතුයි."
+    },
+    {
+      "item_id": "HE0071",
+      "language_pair": "si-en",
+      "source_text": "අත් නොමැතිව විමසීම් සඳහා හඬ ආදානය ඉංග්රීසි, දෙමළ සහ සිංහල සඳහා සහාය දක්වයි.",
+      "candidate_translation": "A voice is used in English, Tamil, and Sinhala for no apparent questions."
+    },
+    {
+      "item_id": "HE0072",
+      "language_pair": "en-si",
+      "source_text": "If the lecturer rejects your request, you will receive a notification with an alternative time.",
+      "candidate_translation": "ඔබේ ඉල්ලීම ප්‍රතික්ෂේප කලොත්, ඔබට විකල්ප කාලයකින් දැනුම් දීමක් ලැබේවි."
+    },
+    {
+      "item_id": "HE0073",
+      "language_pair": "en-ta",
+      "source_text": "Please log in to view your personal timetable.",
+      "candidate_translation": "தயவு செய்து உங்கள் தனிப்பட்ட கால காட்சியை பார்க்க உள்நுழைக்கவும்."
+    },
+    {
+      "item_id": "HE0074",
+      "language_pair": "en-si",
+      "source_text": "Room three zero one is at the end of the corridor on the left.",
+      "candidate_translation": "කාමර තුනේ කාමරේ බිංදුවක් තියෙන්නේ වම් පැත්තේ කොරිඩෝවේ අවසානයේ."
+    },
+    {
+      "item_id": "HE0075",
+      "language_pair": "si-en",
+      "source_text": "අද කණ්ඩායම බී සඳහා පන්ති මොනවාද?",
+      "candidate_translation": "What classes do the team have for Bebe today?"
+    },
+    {
+      "item_id": "HE0076",
+      "language_pair": "si-en",
+      "source_text": "ප්රොජෙක්ටර් ඇති හෝල් පෙන්වන්න",
+      "candidate_translation": "Show the user-in-laws."
+    },
+    {
+      "item_id": "HE0077",
+      "language_pair": "si-en",
+      "source_text": "හෝල් සී ඊළඟට කවදා ලබා ගත හැකිද?",
+      "candidate_translation": "When can Hall seals be found next?"
+    },
+    {
+      "item_id": "HE0078",
+      "language_pair": "en-ta",
+      "source_text": "If the lecturer rejects your request, you will receive a notification with an alternative time.",
+      "candidate_translation": "பேச்சாளர் உங்கள் கேள்வியை மறுத்துவிட்டால், மாற்று நேரத்தில் அறிவிப்பை பெறுவீர்கள்."
+    },
+    {
+      "item_id": "HE0079",
+      "language_pair": "si-en",
+      "source_text": "මට ඩොක්ටර් කුමාර් සමඟ හමුවීමක් කළ යුතුයි",
+      "candidate_translation": "I need to meet Dr. Kumar."
+    },
+    {
+      "item_id": "HE0080",
+      "language_pair": "ta-en",
+      "source_text": "உங்கள் அட்டவணையைக் கேட்க அல்லது மண்டபம் பதிவு செய்ய சாட்பாட் பயன்படுத்தவும்.",
+      "candidate_translation": " Listen to your table or use the Witness to record your marriage."
+    },
+    {
+      "item_id": "HE0081",
+      "language_pair": "si-en",
+      "source_text": "සිකුරාදා දහවල් පන්ති තිබේද?",
+      "candidate_translation": "Is Friday’s evening set aside?"
+    },
+    {
+      "item_id": "HE0082",
+      "language_pair": "en-si",
+      "source_text": "The Database Systems class in Hall C has been moved to Hall B.",
+      "candidate_translation": "C ශාලාවේ දත්ත ගබඩා පද්ධතියේ පංතිය බී."
+    },
+    {
+      "item_id": "HE0083",
+      "language_pair": "si-ta",
+      "source_text": "ශිෂ්යයන්ට සතියකට දේශකයෙකු සඳහා හමුවීමක් එකක් පමණක් වෙන්කර ගත හැක.",
+      "candidate_translation": "The students pueden separar solamente un account per una semana."
+    },
+    {
+      "item_id": "HE0084",
+      "language_pair": "en-si",
+      "source_text": "Is Hall B available at 2pm?",
+      "candidate_translation": "B හෝල් එක උදේ 2ට තියනවද?"
+    },
+    {
+      "item_id": "HE0085",
+      "language_pair": "en-ta",
+      "source_text": "Schedule an appointment with my advisor",
+      "candidate_translation": "என் ஆலோசகருடன் ஒரு நியமிப்பை அமைக்கவும்"
+    },
+    {
+      "item_id": "HE0086",
+      "language_pair": "en-ta",
+      "source_text": "I want to book an appointment with Dr. Dias",
+      "candidate_translation": "நான் டாக்டர் டேயாஸ் உடன் ஒரு சந்திப்பு புத்தகம் செய்ய விரும்புகிறேன்."
+    },
+    {
+      "item_id": "HE0087",
+      "language_pair": "si-ta",
+      "source_text": "හෝල් සී හි දත්ත සමුදාය පන්තිය හෝල් බී වෙත මාරු කර ඇත.",
+      "candidate_translation": "HELL C's data is transfered to class of hotel B."
+    },
+    {
+      "item_id": "HE0088",
+      "language_pair": "en-si",
+      "source_text": "Which group has Calculus on Wednesday?",
+      "candidate_translation": "බදාදා කැල්කූලස් මොන කණ්ඩායමේද?"
+    },
+    {
+      "item_id": "HE0089",
+      "language_pair": "si-ta",
+      "source_text": "දේශකයා ඔබේ ඉල්ලීම ප්රතික්ෂේප කළහොත්, විකල්ප වේලාවක් සමඟ දැනුම්දීමක් ලැබේ.",
+      "candidate_translation": "Si sekretaris refusa vos hasting, illegante has alternativ time."
+    },
+    {
+      "item_id": "HE0090",
+      "language_pair": "en-ta",
+      "source_text": "Hall B has a projector, whiteboard, and seating for sixty students.",
+      "candidate_translation": "ஆறு மாணாக்கர்களுக்கு ஒரு ப்ராஜெயர், வெள்ளைப் பட்டணம், ஆறு மாணாக்கர்களுக்காக உட்கார்ந்திருக்கிறது."
+    },
+    {
+      "item_id": "HE0091",
+      "language_pair": "ta-si",
+      "source_text": "முதல் மாடிக்கு லிப்டில் சென்று மண்டபம் ஏ நோக்கி வெளியேறவும்.",
+      "candidate_translation": "පලවෙනි මේසයට ගිහින් මේසයෙන් පිටවෙන්න."
+    },
+    {
+      "item_id": "HE0092",
+      "language_pair": "si-ta",
+      "source_text": "ගණිත දෙපාර්තමේන්තුව කොහෙද?",
+      "candidate_translation": "Where's the matematic department?"
+    },
+    {
+      "item_id": "HE0093",
+      "language_pair": "ta-si",
+      "source_text": "இரண்டாவது மாடியில் வெளிப்பாடு அறை எங்கே?",
+      "candidate_translation": "කෝ දෙවෙනි තට්ටුවේ පිටවීමේ කාමරය?"
+    },
+    {
+      "item_id": "HE0094",
+      "language_pair": "en-si",
+      "source_text": "Your appointment with Dr. Perera has been confirmed.",
+      "candidate_translation": "ආචාර්ය පෙරෙරා එක්ක ඔයාගෙ සම්මුතිය තහවුරු වෙලා තියෙන්නේ."
+    },
+    {
+      "item_id": "HE0095",
+      "language_pair": "si-en",
+      "source_text": "ඔබේ අධ්යයන උපදේශක සමඟ හමුවීමක් ඉල්ලන විට හේතුවක් සපයන්න.",
+      "candidate_translation": "Give an example when it comes to meeting with your study counselor."
+    },
+    {
+      "item_id": "HE0096",
+      "language_pair": "ta-en",
+      "source_text": "நிர்வாக அலுவலகத்திலிருந்து புதிய செய்தி உள்ளது.",
+      "candidate_translation": "A new message from the branch office is provided."
+    },
+    {
+      "item_id": "HE0097",
+      "language_pair": "si-ta",
+      "source_text": "කාමර තුන බිංදු එක විවරයේ අවසානයේ වම් පැත්තේ ඇත.",
+      "candidate_translation": "Tri kamer existes a lake fin."
+    },
+    {
+      "item_id": "HE0098",
+      "language_pair": "si-ta",
+      "source_text": "පරිපාලනයෙන් පරීක්ෂණාගාර ගොඩනැගිල්ලට යාමට, ශාස්ත්‍රීය ගොඩනැගිල්ල හරහා යන්න.",
+      "candidate_translation": "From the laboratorium building, passe per satelit building."
+    },
+    {
+      "item_id": "HE0099",
+      "language_pair": "si-en",
+      "source_text": "දේශකයා ඔබේ ඉල්ලීම ප්රතික්ෂේප කළහොත්, විකල්ප වේලාවක් සමඟ දැනුම්දීමක් ලැබේ.",
+      "candidate_translation": "If the secretary refuses your request, there will be an alternative time."
+    },
+    {
+      "item_id": "HE0100",
+      "language_pair": "ta-si",
+      "source_text": "உங்கள் தனிப்பட்ட அட்டவணையைப் பார்க்க உள்நுழையவும்.",
+      "candidate_translation": "දෘෂ්‍යමාන කිරීමට කරුණාකර ඔබේ පෞද්ගලික මේසයක් ඇතුළත් කරන්න."
+    },
+    {
+      "item_id": "HE0101",
+      "language_pair": "ta-si",
+      "source_text": "மாணவர்கள் ஒரு வாரத்திற்கு ஒரு விரிவுரையாளரிடம் ஒரு சந்திப்பை மட்டுமே பதிவு செய்யலாம்.",
+      "candidate_translation": "ශිෂ්‍යයන්ට සතියකට එක රැස්වීමක් වාර්තා කරන්න පුළුවන්."
+    },
+    {
+      "item_id": "HE0102",
+      "language_pair": "si-ta",
+      "source_text": "කැෆෙටීරියාවට යන මාර්ගය",
+      "candidate_translation": "The way to California"
+    },
+    {
+      "item_id": "HE0103",
+      "language_pair": "ta-en",
+      "source_text": "டாக்டர் குமாருடனான சந்திப்பை ரத்து செய்ய விரும்புகிறேன்",
+      "candidate_translation": "I want to cancel a doctor's visit."
+    },
+    {
+      "item_id": "HE0104",
+      "language_pair": "ta-si",
+      "source_text": "தரவு கட்டமைப்பை யார் கற்றுத் தருகிறார்கள்?",
+      "candidate_translation": "දත්ත පිළිවෙළට උගන්වන්නේ කවුද?"
+    },
+    {
+      "item_id": "HE0105",
+      "language_pair": "en-si",
+      "source_text": "When is the next exam?",
+      "candidate_translation": "ඊලඟ විභාගය කවද්ද?"
+    },
+    {
+      "item_id": "HE0106",
+      "language_pair": "ta-en",
+      "source_text": "உங்கள் மண்டப முன்பதிவு கோரிக்கை அங்கீகரிக்கப்பட்டது.",
+      "candidate_translation": "Your marriage has been approved."
+    },
+    {
+      "item_id": "HE0107",
+      "language_pair": "en-ta",
+      "source_text": "Your hall booking request was approved.",
+      "candidate_translation": "உங்கள் மன்றத்தைப் புதுப்பிப்பதற்கான கேள்வி அங்கீகரிக்கப்பட்டது."
+    },
+    {
+      "item_id": "HE0108",
+      "language_pair": "ta-en",
+      "source_text": "விரிவுரையாளர் உங்கள் கோரிக்கையை நிராகரித்தால், மாற்று நேரத்துடன் அறிவிப்பைப் பெறுவீர்கள்.",
+      "candidate_translation": "If the speaker rejects your request, you will be notified at a later time."
+    },
+    {
+      "item_id": "HE0109",
+      "language_pair": "si-ta",
+      "source_text": "පළමු මහලට ලිෆ්ට් එකෙන් ගොස් හෝල් ඒ දෙසට පිටවන්න.",
+      "candidate_translation": "Lev off the elevator for the first plant and back the hotel."
+    },
+    {
+      "item_id": "HE0110",
+      "language_pair": "en-si",
+      "source_text": "To reach the Laboratory Building from Administration, go through the Academic Building.",
+      "candidate_translation": "ඒ සඳහා ඇක්ඩැමික් ගොඩනැගිල්ල හරහා ගමන් කරන්න."
+    },
+    {
+      "item_id": "HE0111",
+      "language_pair": "si-en",
+      "source_text": "ප්රධාන පිවිසුම අසල පඩිපෙළෙන් එක් මහලක් ඉහළට යන්න.",
+      "candidate_translation": "Move up one stairs at the top of the main entry."
+    },
+    {
+      "item_id": "HE0112",
+      "language_pair": "si-en",
+      "source_text": "ඔබේ ඊළඟ පන්තිය ශාස්ත්‍රීය ගොඩනැගිල්ලේ පළමු මහලේ හෝල් බී හි; ඇස්තමේන්තු ගමනාගමන වේලාව මිනිත්තු හතරයි.",
+      "candidate_translation": "Your next class is B.C.E. at the first hotel building in St."
+    },
+    {
+      "item_id": "HE0113",
+      "language_pair": "ta-en",
+      "source_text": "இருபது இருபத்து நான்கு தொகுப்பிற்கான முதன்மை அட்டவணை அனைத்து துறைகளுக்கும் வெளியிடப்பட்டது.",
+      "candidate_translation": ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
+    },
+    {
+      "item_id": "HE0114",
+      "language_pair": "en-ta",
+      "source_text": "The Database Systems class in Hall C has been moved to Hall B.",
+      "candidate_translation": "சி மன்றத்தில் உள்ள தரவுத்தள அமைப்புகள் பகுதிகள் B மன்றத்திற்கு அனுப்பப்பட்டுள்ளன."
+    },
+    {
+      "item_id": "HE0115",
+      "language_pair": "ta-si",
+      "source_text": "கல்வி கட்டிடம் உங்கள் வலதுபுறம் உள்ளது.",
+      "candidate_translation": "ඔයා ඉන්නේ පාසල ගොඩනැගිල්ලේ දකුණු පැත්තේ."
+    },
+    {
+      "item_id": "HE0116",
+      "language_pair": "si-ta",
+      "source_text": "ඩොක්ටර් ඩයස් සමඟ ඔබේ හමුවීම දේශකයා විසින් අවලංගු කර ඇත.",
+      "candidate_translation": "Two contact with Dr. Diaz is annullated by the director."
+    },
+    {
+      "item_id": "HE0117",
+      "language_pair": "en-si",
+      "source_text": "What time is the Machine Learning lecture?",
+      "candidate_translation": "මොන වෙලාවද යන්ත්‍රය ඉගෙන ගැනීමේ දේශනය?"
+    },
+    {
+      "item_id": "HE0118",
+      "language_pair": "en-si",
+      "source_text": "Do I have any classes on Friday afternoon?",
+      "candidate_translation": "මට සිකුරාදා හවස පන්ති තියෙනවද?"
+    },
+    {
+      "item_id": "HE0119",
+      "language_pair": "ta-en",
+      "source_text": "வானிலை எப்படி உள்ளது?",
+      "candidate_translation": "How's the clock?"
+    },
+    {
+      "item_id": "HE0120",
+      "language_pair": "ta-si",
+      "source_text": "திங்கள் கிழமை என்ன வகுப்புகள் உள்ளன?",
+      "candidate_translation": "හිරුගේ වර්ග මොනවාද?"
+    },
+    {
+      "item_id": "HE0121",
+      "language_pair": "ta-si",
+      "source_text": "கணினி அறிவியல் மூன்றாம் ஆண்டு செயற்கை நுண்ணறிவு பாதைக்கான உங்கள் குழு அட்டவணை இப்போது கிடைக்கிறது.",
+      "candidate_translation": "ඔයාගේ පරිගණක විද්‍යාවේ තුන්වෙනි අවුරුද්ද දැන් ඔයාගෙ කණ්ඩායමේ මේසයට ප්‍රායෝගික විදිහට හිතන්න."
+    },
+    {
+      "item_id": "HE0122",
+      "language_pair": "en-ta",
+      "source_text": "When does the university open?",
+      "candidate_translation": "பல்கலையம் எப்போது திறக்கிறது?"
+    },
+    {
+      "item_id": "HE0123",
+      "language_pair": "en-ta",
+      "source_text": "Scan the QR code at this location to update your position.",
+      "candidate_translation": "இந்த இடத்தில் உங்கள் நிலையை புதுப்பிக்க QR குறியீடு வருடவும்."
+    },
+    {
+      "item_id": "HE0124",
+      "language_pair": "en-ta",
+      "source_text": "This platform integrates timetable management, appointments, indoor navigation, and multilingual AI assistance.",
+      "candidate_translation": "இந்தப் பட்டணம் கால கால மேலாண்மை, நியமிப்புகள், வீடு மாற்றம், மொழிபெயர்ப்பு AI உதவியை ஒன்று சேர்க்கிறது."
+    },
+    {
+      "item_id": "HE0125",
+      "language_pair": "en-si",
+      "source_text": "Your group timetable for CS Year Three Artificial Intelligence pathway is now available.",
+      "candidate_translation": "CS වසරේ ඔබේ කණ්ඩායමේ කාලසටහන දැන් පවතිනවා."
+    },
+    {
+      "item_id": "HE0126",
+      "language_pair": "ta-si",
+      "source_text": "கஃபேட்டீரியா முதன்மை நூலகத்திற்கு அடுத்து உள்ளது.",
+      "candidate_translation": "බයිබලයේ මුල් පොත බයිබලයයි."
+    },
+    {
+      "item_id": "HE0127",
+      "language_pair": "si-ta",
+      "source_text": "ඩොක්ටර් කුමාර්ගේ කාර්යාලය කොහෙද?",
+      "candidate_translation": "Where's office of Dr. Kumar?"
+    },
+    {
+      "item_id": "HE0128",
+      "language_pair": "en-ta",
+      "source_text": "The cafeteria is next to the main library.",
+      "candidate_translation": "கப்பீரியா முக்கிய நூலகத்துக்கு அருகில் உள்ளது."
+    },
+    {
+      "item_id": "HE0129",
+      "language_pair": "ta-si",
+      "source_text": "வார நாட்களில் காலை ஒன்பது முதல் மாலை நான்கு மணி வரை நேர இடைவெளியைத் தேர்ந்தெடுக்கவும்.",
+      "candidate_translation": "සතියේ පළමු දින නවය සඳහා පැය නවයත් හතරත් අතර කාලය තෝරන්න."
+    },
+    {
+      "item_id": "HE0130",
+      "language_pair": "en-ta",
+      "source_text": "Where is the lecture hall on floor two?",
+      "candidate_translation": "இரண்டு வீட்டில் பேச்சு மன்றம் எங்கே?"
+    },
+    {
+      "item_id": "HE0131",
+      "language_pair": "en-ta",
+      "source_text": "To reach the Laboratory Building from Administration, go through the Academic Building.",
+      "candidate_translation": "கட்டுப்பாட்டிலிருந்து கட்டுப்பாட்டை எடுக்க, அக்கேடிமிக் கட்டளையைச் சேர்ந்து செல்லுங்கள்."
+    },
+    {
+      "item_id": "HE0132",
+      "language_pair": "en-ta",
+      "source_text": "Your group timetable for CS Year Three Artificial Intelligence pathway is now available.",
+      "candidate_translation": "சிஸ் வருடத்தின் மூன்று குழு கால காலம் இப்போது கிடைக்கப்படுகிறது."
+    },
+    {
+      "item_id": "HE0133",
+      "language_pair": "en-si",
+      "source_text": "The master timetable for Batch Twenty Twenty Four has been published for all departments.",
+      "candidate_translation": "හැම දෙපාර්තමේන්තුවකටම ප්‍රධාන කාලසටහන විස්සයි."
+    },
+    {
+      "item_id": "HE0134",
+      "language_pair": "ta-si",
+      "source_text": "விரிவுரையாளர் உங்கள் கோரிக்கையை நிராகரித்தால், மாற்று நேரத்துடன் அறிவிப்பைப் பெறுவீர்கள்.",
+      "candidate_translation": "කථිකයා ඔබේ ඉල්ලීම ප්‍රතික්ෂේප කළොත්, වෙනස්වීමේ වේලාවේදී ඔබට දැනුම් දෙනු ලැබේ."
+    },
+    {
+      "item_id": "HE0135",
+      "language_pair": "si-en",
+      "source_text": "පළමු මහලට ලිෆ්ට් එකෙන් ගොස් හෝල් ඒ දෙසට පිටවන්න.",
+      "candidate_translation": "Get off the elevator for the first floor and drop the hotel."
+    },
+    {
+      "item_id": "HE0136",
+      "language_pair": "si-en",
+      "source_text": "කාලගුණය කෙබඳුද?",
+      "candidate_translation": "What's the weather?"
+    },
+    {
+      "item_id": "HE0137",
+      "language_pair": "si-en",
+      "source_text": "හෝල් බී පයින් දෙකට ලබා ගත හැකිද?",
+      "candidate_translation": "Can the hotel be obtained with two beets?"
+    },
+    {
+      "item_id": "HE0138",
+      "language_pair": "si-en",
+      "source_text": "හෝල් බී හි ප්රොජෙක්ටරයක්, සුදු පුවරුවක් සහ ශිෂ්යයන් අසූ දෙනකුට ආසන තිබේ.",
+      "candidate_translation": "In the United States, for example, the number of people in the United States and in the United States has increased by 50 percent."
+    },
+    {
+      "item_id": "HE0139",
+      "language_pair": "en-si",
+      "source_text": "Use the chatbot to ask about your schedule or book a hall.",
+      "candidate_translation": "චැට්බෝට් එක පාවිච්චි කරන්න ඔයාගේ කාලසටහන හෝ ශාලාවක් ගැන අහන්න."
+    },
+    {
+      "item_id": "HE0140",
+      "language_pair": "si-ta",
+      "source_text": "හෙට උදේ දහයට පන්තියක් තිබේද?",
+      "candidate_translation": "¿Es tomorrow close 10 hours?"
+    },
+    {
+      "item_id": "HE0141",
+      "language_pair": "ta-en",
+      "source_text": "டாக்டர் ஜயவர்தனாவை எப்போது பார்க்க முடியும்?",
+      "candidate_translation": "▸ When can you see the doctor’s smile?"
+    },
+    {
+      "item_id": "HE0142",
+      "language_pair": "si-en",
+      "source_text": "කාමර තුන බිංදු එක විවරයේ අවසානයේ වම් පැත්තේ ඇත.",
+      "candidate_translation": "Three rooms are at the end of the lake."
+    },
+    {
+      "item_id": "HE0143",
+      "language_pair": "ta-en",
+      "source_text": "வியாழன் காலை டாக்டர் ராஜபக்ஷ இயக்க முறைமைகள் கற்பிக்கிறார்.",
+      "candidate_translation": "In the morning, the doctor teaches the operating systems of the royal court."
+    },
+    {
+      "item_id": "HE0144",
+      "language_pair": "ta-en",
+      "source_text": "உங்கள் நிலையை புதுப்பிக்க இந்த இடத்தில் க்யூஆர் குறியீட்டை ஸ்கேன் செய்யவும்.",
+      "candidate_translation": "To update your status, scan the Kuar code here."
+    },
+    {
+      "item_id": "HE0145",
+      "language_pair": "si-en",
+      "source_text": "ඔබේ කාලසටහන ගැන අසන්න හෝ හෝල් එකක් වෙන්කර ගැනීමට chatbot භාවිතා කරන්න.",
+      "candidate_translation": "Listen to your schedule or use the chat to separate a hotel."
+    },
+    {
+      "item_id": "HE0146",
+      "language_pair": "ta-si",
+      "source_text": "டாக்டர் டயாஸுடனான உங்கள் சந்திப்பு விரிவுரையாளரால் ரத்து செய்யப்பட்டது.",
+      "candidate_translation": "ආචාර්ය ඩයස්සුටන් වෙත ගිය විට කථිකයා ප්‍රතික්ෂේප කළා."
+    },
+    {
+      "item_id": "HE0147",
+      "language_pair": "si-en",
+      "source_text": "කැෆෙටීරියාවට යන මාර්ගය",
+      "candidate_translation": "The Way to California"
+    },
+    {
+      "item_id": "HE0148",
+      "language_pair": "si-ta",
+      "source_text": "අතුරුමුහුණත භාෂාව දෙමළ හෝ සිංහලට මාරු කළ හැක.",
+      "candidate_translation": "In algun lingware, eventual possible transfere a surdut persona na mbeni aparte language, ou spreakse un lingware."
+    },
+    {
+      "item_id": "HE0149",
+      "language_pair": "ta-en",
+      "source_text": "கைகள் இல்லாத கேள்விகளுக்கு குரல் உள்ளீடு ஆங்கிலம், தமிழ் மற்றும் சிங்களத்தை ஆதரிக்கிறது.",
+      "candidate_translation": "In the United States, for example, the number of people who live in the United States has been estimated to have been higher than the number of people who live in the United States."
+    },
+    {
+      "item_id": "HE0150",
+      "language_pair": "en-ta",
+      "source_text": "Voice input supports English, Tamil, and Sinhala for hands-free queries.",
+      "candidate_translation": "கேள்விகளுக்கான கேள்விகளுக்கான ஆங்கிலம், டாமில் மற்றும் சிங்காலின் கேள்விகளை ஆதரவு செய்கிறது."
+    },
+    {
+      "item_id": "HE0151",
+      "language_pair": "si-ta",
+      "source_text": "පරිගණක විද්යා ගොඩනැගිල්ල කොහෙද?",
+      "candidate_translation": "Where's the computer science building?"
+    },
+    {
+      "item_id": "HE0152",
+      "language_pair": "ta-en",
+      "source_text": "இந்த தளம் அட்டவணை மேலாண்மை, சந்திப்புகள், உட்புற வழிசெலுத்தல் மற்றும் பன்மொழி செயற்கை நுண்ணறிவு உதவியை ஒருங்கிணைக்கிறது.",
+      "candidate_translation": "This table combines management, meetings, internal communication, and language information."
+    },
+    {
+      "item_id": "HE0153",
+      "language_pair": "si-ta",
+      "source_text": "පැයක් සඳහා හිස් හෝල් තිබේද?",
+      "candidate_translation": "Eh, eh, eh, ehke?"
+    },
+    {
+      "item_id": "HE0154",
+      "language_pair": "ta-en",
+      "source_text": "நாளை டாக்டர் சில்வாவை பார்க்க முடியுமா?",
+      "candidate_translation": ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
+    },
+    {
+      "item_id": "HE0155",
+      "language_pair": "si-ta",
+      "source_text": "මෙම වේදිකාව වේලාසටි කළමනාකරණය, හමුවීම්, ගෘහස්ථ සංචාලනය සහ බහුභාෂා කෘතිම බුද්ධි සහාය ඒකාබද්ධ කරයි.",
+      "candidate_translation": "Situation of the stadium of the stadies management, nominations, locations management and multimiliarion - sound memory - society for multimiliards."
+    },
+    {
+      "item_id": "HE0156",
+      "language_pair": "si-en",
+      "source_text": "ඩොක්ටර් ඩයස්ගේ කාර්යාල වේලාව සඳුදා පස්වරු තුන සිට පහ දක්වා.",
+      "candidate_translation": "Dr. Diaz's office is three to five."
+    },
+    {
+      "item_id": "HE0157",
+      "language_pair": "ta-si",
+      "source_text": "இந்த தளம் அட்டவணை மேலாண்மை, சந்திப்புகள், உட்புற வழிசெலுத்தல் மற்றும் பன்மொழி செயற்கை நுண்ணறிவு உதவியை ஒருங்கிணைக்கிறது.",
+      "candidate_translation": "මේ මේ මේසය මැනේජර්, රැස්වීම්, අභ්‍යන්තර මාර්ග සහ භාෂාව පිළිබඳ තොරතුරු සහයෝගිතාව එකතු කරයි."
+    },
+    {
+      "item_id": "HE0158",
+      "language_pair": "ta-en",
+      "source_text": "கணினி அறிவியல் மூன்றாம் ஆண்டு செயற்கை நுண்ணறிவு பாதைக்கான உங்கள் குழு அட்டவணை இப்போது கிடைக்கிறது.",
+      "candidate_translation": "▸ Your system’s third year of research is now available on your team’s Web site."
+    },
+    {
+      "item_id": "HE0159",
+      "language_pair": "ta-en",
+      "source_text": "கட்டிடம் சியில் எந்த துறை உள்ளது?",
+      "candidate_translation": "What door does the building have?"
+    },
+    {
+      "item_id": "HE0160",
+      "language_pair": "ta-si",
+      "source_text": "வெள்ளி காலை பதினொன்று மணிக்கு கணினி வலைப்பின்னல்களுக்கு ஆய்வக அமர்வு உள்ளது.",
+      "candidate_translation": "සුදු පැවැත්වෙන උදෑසන පැය දහයක අධ්‍යයනය සැසිවාරයක් පවත්වනවා."
+    },
+    {
+      "item_id": "HE0161",
+      "language_pair": "en-ta",
+      "source_text": "You can switch the interface language to Tamil or Sinhala.",
+      "candidate_translation": "நீங்கள் இடைவெளி மொழியை டாமில் அல்லது சிங்காலுக்கு மாற்ற முடியும்."
+    },
+    {
+      "item_id": "HE0162",
+      "language_pair": "si-ta",
+      "source_text": "මගේ ඊළඟ දත්ත ව්යුහ පංතිය කවදාද?",
+      "candidate_translation": "Kam es moj next data class?"
+    },
+    {
+      "item_id": "HE0163",
+      "language_pair": "en-ta",
+      "source_text": "Your meeting with Professor Chen is scheduled for ten am on Tuesday.",
+      "candidate_translation": "உங்களுடைய பிரசுரகசென் சந்திப்பு மாநாள் பத்து மாணாக்களாக திட்டமிடப்பட்டுள்ளது."
+    },
+    {
+      "item_id": "HE0164",
+      "language_pair": "si-en",
+      "source_text": "මෙම වේදිකාව කුමන භාෂා සඳහා සහාය දක්වයිද?",
+      "candidate_translation": "To what languages does this platform contribute?"
+    },
+    {
+      "item_id": "HE0165",
+      "language_pair": "ta-en",
+      "source_text": "அறை மூன்று பூஜ்ஜிய ஒன்று நடைபாதையின் முடிவில் இடதுபுறம் உள்ளது.",
+      "candidate_translation": "The three rooms are left at the end of a three - story operation."
+    },
+    {
+      "item_id": "HE0166",
+      "language_pair": "en-si",
+      "source_text": "Can I meet Dr. Rajapaksha tomorrow?",
+      "candidate_translation": "මට හෙට ඩොක්ටර් රාජපාෂාව මුණගැහෙන්න පුළුවන්ද?"
+    },
+    {
+      "item_id": "HE0167",
+      "language_pair": "si-ta",
+      "source_text": "ඔබේ අවලංගු ඉල්ලීම දේශකයා වෙත යවා ඇත.",
+      "candidate_translation": "Vau final request have publiced."
+    },
+    {
+      "item_id": "HE0168",
+      "language_pair": "ta-en",
+      "source_text": "பேராசிரியர் சென்னுடன் இடம் பதிவு செய்யுங்கள்",
+      "candidate_translation": "◯ Register with the Teacher’s Office"
+    },
+    {
+      "item_id": "HE0169",
+      "language_pair": "en-ta",
+      "source_text": "The Academic Building is on your right.",
+      "candidate_translation": "ஆக்கேமிக் கட்டை உங்கள் வலது."
+    },
+    {
+      "item_id": "HE0170",
+      "language_pair": "en-ta",
+      "source_text": "Show me my notifications",
+      "candidate_translation": "என் அறிவிப்புகளை எனக்கு காட்டு"
+    },
+    {
+      "item_id": "HE0171",
+      "language_pair": "si-ta",
+      "source_text": "අද කණ්ඩායම ඒ සඳහා පන්ති මොනවාද?",
+      "candidate_translation": "Causes is the classs for cada group today?"
+    },
+    {
+      "item_id": "HE0172",
+      "language_pair": "en-si",
+      "source_text": "The Software Engineering lecture starts at two pm in Hall B.",
+      "candidate_translation": "මෘදුකාංග ඉංජිනේරු දේශනය ආරම්භ වන්නේ බී ශාලාවේදීයි."
+    },
+    {
+      "item_id": "HE0173",
+      "language_pair": "en-si",
+      "source_text": "Go up one floor using the staircase near the main entrance.",
+      "candidate_translation": "එක තට්ටුවක් උඩට යන්න ප්‍රධාන දොරටුව අසල තියෙන පඩිපෙලෙන්."
+    },
+    {
+      "item_id": "HE0174",
+      "language_pair": "ta-si",
+      "source_text": "இருபது இருபத்து நான்கு தொகுப்பிற்கான முதன்மை அட்டவணை அனைத்து துறைகளுக்கும் வெளியிடப்பட்டது.",
+      "candidate_translation": "ප්‍රථම මේසය විසි හතරක එකතුව සියලු දොරවල් වෙත නිකුත් කර ඇත."
+    },
+    {
+      "item_id": "HE0175",
+      "language_pair": "en-ta",
+      "source_text": "I want to cancel my appointment with Dr. Dias",
+      "candidate_translation": "நான் டாக்டர் டியாஸ் இடத்தில் என்னுடைய சந்திப்பு ரத்து செய்ய விரும்புகிறேன்"
+    },
+    {
+      "item_id": "HE0176",
+      "language_pair": "si-en",
+      "source_text": "පරිගණක විද්යා තෙවන වසර කෘතිම බුද්ධි මාර්ගය සඳහා ඔබේ කණ්ඩායම් වේලාසටිය දැන් ලබා ගත හැක.",
+      "candidate_translation": "Your team schedule for computer science is now available for three years."
+    },
+    {
+      "item_id": "HE0177",
+      "language_pair": "si-ta",
+      "source_text": "ඩොක්ටර් ඩයස්ගේ කාර්යාල වේලාව සඳුදා පස්වරු තුන සිට පහ දක්වා.",
+      "candidate_translation": "Oficina de Dr. Diaz's of the Dr. Diaz's is 3 a 5."
+    },
+    {
+      "item_id": "HE0178",
+      "language_pair": "ta-en",
+      "source_text": "இப்போது எந்த மண்டபங்கள் காலியாக உள்ளன?",
+      "candidate_translation": ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."
+    },
+    {
+      "item_id": "HE0179",
+      "language_pair": "si-ta",
+      "source_text": "පරිගණක විද්යා තෙවන වසර කෘතිම බුද්ධි මාර්ගය සඳහා ඔබේ කණ්ඩායම් වේලාසටිය දැන් ලබා ගත හැක.",
+      "candidate_translation": "Your tim scheme scheme for computer science scheme scheme for computer science now is displayed now for there 3 years."
+    },
+    {
+      "item_id": "HE0180",
+      "language_pair": "ta-si",
+      "source_text": "கட்டிடம் சியில் எந்த துறை உள்ளது?",
+      "candidate_translation": "බිල්ඩිමේ මොන දොරක්ද තියෙන්නේ?"
+    }
+  ]
+}

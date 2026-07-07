@@ -1,0 +1,56 @@
+{
+  "phase": "9.4",
+  "generated_at": "2026-07-07T06:49:25.947890Z",
+  "status": "pending_data",
+  "num_raters": 0,
+  "raters": [],
+  "engines": [
+    "marian"
+  ],
+  "language_pairs": [
+    "en-si",
+    "en-ta",
+    "si-en",
+    "si-ta",
+    "ta-en",
+    "ta-si"
+  ],
+  "items_in_instrument": 180,
+  "items_with_ratings": 0,
+  "descriptive_by_engine": {},
+  "descriptive_by_engine_pair": {},
+  "inter_rater_reliability": {
+    "fluency": {
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
+    },
+    "adequacy": {
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
+    },
+    "overall": {
+      "krippendorff_alpha_ordinal": null,
+      "alpha_interpretation": "undefined",
+      "mean_pairwise_weighted_kappa": null,
+      "kappa_interpretation": "undefined",
+      "kappa_pairs": {},
+      "percent_agreement_exact": null,
+      "percent_agreement_within_1": null,
+      "n_comparisons": 0
+    }
+  },
+  "low_agreement_items": [],
+  "flag_threshold_std": 1.5
+}
