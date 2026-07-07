@@ -7,7 +7,7 @@ import TranslatableText from '@components/TranslatableText';
 import api from '@services/api';
 import { useMarkSectionReadOnVisit } from '@hooks/useMarkSectionReadOnVisit';
 import { formatBatchTableTitle, extractBatchYearLabel } from '@utils/batchTableMeta';
-import { formatCourseLabel } from '@utils/courseDisplay';
+import { formatCourseLabel, formatCatalogCourseLabel } from '@utils/courseDisplay';
 import { formatTimetableLecturer } from '@utils/timetableLecturerDisplay';
 import { Printer, Download, RefreshCw } from 'lucide-react';
 import FetTimetableGrid from '@components/FetTimetableGrid';
@@ -31,6 +31,20 @@ interface SlotData {
 }
 
 type WeeklyTimetable = Record<string, SlotData[]>;
+
+interface PersonalizationMeta {
+  supportsModuleSelection: boolean;
+  modulesConfigured: boolean;
+  selectedCourseIds: string[];
+  electiveCourseIds: string[];
+  catalog: Array<{
+    courseId: string;
+    code: string;
+    name: string;
+    requirementType: 'COMPULSORY' | 'OPTIONAL';
+    credits: number | null;
+  }>;
+}
 
 const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const DAY_LABELS: Record<string, string> = {
@@ -180,6 +194,9 @@ export default function MyTimetable() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [personalization, setPersonalization] = useState<PersonalizationMeta | null>(null);
+  const [savingModules, setSavingModules] = useState(false);
+  const [moduleDraft, setModuleDraft] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
   const [currentTimePos, setCurrentTimePos] = useState<number | null>(null);
   const [mobileDayIndex, setMobileDayIndex] = useState(() => Math.max(0, getCurrentDayIndex()));
@@ -239,6 +256,16 @@ export default function MyTimetable() {
       setFlat(data.flat || []);
       setGridSnapshot(data.grid ?? null);
       setEnrollment(data.enrollment ?? null);
+      setPersonalization(data.personalization ?? null);
+      const p = data.personalization as PersonalizationMeta | undefined;
+      if (p?.supportsModuleSelection) {
+        const electiveIds = new Set(p.electiveCourseIds ?? []);
+        setModuleDraft(
+          p.modulesConfigured ? p.selectedCourseIds.filter((id) => electiveIds.has(id)) : [],
+        );
+      } else {
+        setModuleDraft([]);
+      }
       setLastUpdated(data.lastUpdated ?? null);
       colorMap.current.clear();
       hasLoadedOnceRef.current = true;
@@ -301,6 +328,38 @@ export default function MyTimetable() {
     a.download = `timetable-${user?.firstName || 'export'}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const compulsoryCatalog = useMemo(
+    () => personalization?.catalog.filter((c) => c.requirementType === 'COMPULSORY') ?? [],
+    [personalization],
+  );
+
+  const optionalCatalog = useMemo(
+    () => personalization?.catalog.filter((c) => c.requirementType === 'OPTIONAL') ?? [],
+    [personalization],
+  );
+
+  const saveModuleSelections = async () => {
+    const electiveOnly = moduleDraft.filter((id) =>
+      (personalization?.electiveCourseIds ?? []).includes(id),
+    );
+    setSavingModules(true);
+    try {
+      await api.put('/courses/my/course-selections', { courseIds: electiveOnly });
+      showToast('success', 'Personal timetable saved.');
+      await fetchTimetable({ silent: true });
+    } catch {
+      showToast('error', 'Failed to save module selections');
+    } finally {
+      setSavingModules(false);
+    }
+  };
+
+  const toggleModuleDraft = (courseId: string) => {
+    setModuleDraft((prev) =>
+      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId],
+    );
   };
 
   const todayDayName = getCurrentDayName(); // e.g. "MONDAY" or null on Sunday
@@ -384,6 +443,90 @@ export default function MyTimetable() {
           </button>
         </div>
       </div>
+
+      {personalization?.supportsModuleSelection && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900">Personalize your timetable (Y3 / Y4)</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Compulsory modules always stay on your timetable. Tick the optional or elective subjects you are taking,
+            then save to build your personal view.
+          </p>
+
+          {compulsoryCatalog.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-medium text-slate-800">Compulsory modules</h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {compulsoryCatalog.map((course) => (
+                  <span
+                    key={course.courseId}
+                    className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
+                  >
+                    {formatCatalogCourseLabel(course.code, course.name)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {optionalCatalog.length > 0 ? (
+            <div className="mt-4">
+              <h3 className="text-sm font-medium text-slate-800">Optional / elective modules</h3>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {optionalCatalog.map((course) => (
+                  <label
+                    key={course.courseId}
+                    className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={moduleDraft.includes(course.courseId)}
+                      onChange={() => toggleModuleDraft(course.courseId)}
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium text-slate-800">
+                        {formatCatalogCourseLabel(course.code, course.name)}
+                      </span>
+                      {course.credits != null && (
+                        <span className="ml-2 text-slate-500">{course.credits} credits</span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setModuleDraft(optionalCatalog.map((c) => c.courseId))}
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setModuleDraft([])}
+                >
+                  Clear optional
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  disabled={savingModules}
+                  onClick={saveModuleSelections}
+                >
+                  {savingModules ? 'Saving...' : 'Save personal timetable'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">
+              No optional electives are listed for your pathway in the handbook. If the imported timetable includes
+              extra subjects from other pathways, they will appear here for selection.
+            </p>
+          )}
+        </div>
+      )}
 
       {!hasTimetableContent ? (
         <div className="tt-empty">

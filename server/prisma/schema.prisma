@@ -153,6 +153,9 @@ model User {
   studentGroupMemberships StudentGroupMember[]
   studentAppointments     Appointment[]        @relation("StudentAppointments")
   studentHallBookings     HallBooking[]        @relation("StudentHallBookings")
+  studentCourseSelections StudentCourseSelection[] @relation("StudentCourseSelections")
+  timetableModuleConfig   StudentTimetableModuleConfig?
+  programCourseLecturers  ProgramCourseLecturer[]  @relation("ProgramCourseLecturers")
 
   // Lecturer relations
   lecturerOffice        LecturerOffice?
@@ -291,10 +294,81 @@ model Course {
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
-  timetableEntries MasterTimetable[]
+  timetableEntries       MasterTimetable[]
+  programCourses         ProgramCourse[]
+  studentCourseSelections StudentCourseSelection[]
 
   @@index([departmentId])
   @@map("courses")
+}
+
+enum CourseRequirementType {
+  COMPULSORY
+  OPTIONAL
+}
+
+/// Faculty handbook entry: which courses belong to each program/year/pathway and if compulsory or optional.
+model ProgramCourse {
+  id              String                @id @default(uuid())
+  programCode     String
+  studyYear       Int
+  pathwayCode     String                @default("")
+  requirementType CourseRequirementType @default(COMPULSORY)
+  semester        Int?
+  credits         Int?
+  handbookTitle   String?
+  courseId        String
+  course          Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lecturers       ProgramCourseLecturer[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([programCode, studyYear, pathwayCode, courseId])
+  @@index([programCode, studyYear, pathwayCode])
+  @@map("program_courses")
+}
+
+model ProgramCourseLecturer {
+  id              String        @id @default(uuid())
+  programCourseId String
+  programCourse   ProgramCourse @relation(fields: [programCourseId], references: [id], onDelete: Cascade)
+  lecturerId      String?
+  lecturer        User?         @relation("ProgramCourseLecturers", fields: [lecturerId], references: [id], onDelete: SetNull)
+  lecturerName    String?
+  isPrimary       Boolean       @default(true)
+
+  @@index([programCourseId])
+  @@index([lecturerId])
+  @@map("program_course_lecturers")
+}
+
+/// Student optional module picks (Y3/Y4 personalized timetable — foundation).
+model StudentCourseSelection {
+  id           String   @id @default(uuid())
+  academicYear Int?
+  createdAt    DateTime @default(now())
+
+  studentId String
+  student   User   @relation("StudentCourseSelections", fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId, academicYear])
+  @@index([studentId])
+  @@map("student_course_selections")
+}
+
+/// Tracks that a student saved Y3/Y4 module choices (even when zero electives selected).
+model StudentTimetableModuleConfig {
+  studentId    String   @id
+  academicYear Int
+  configuredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_timetable_module_configs")
 }
 
 // ─────────────────────────────────────────

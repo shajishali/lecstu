@@ -27,7 +27,12 @@
     "db:seed-et-y1": "tsx scripts/seed-et-y1-timetable.ts",
     "db:reset": "npx prisma migrate reset",
     "db:studio": "npx prisma studio",
-    "db:remove-test-hosting-accounts": "tsx scripts/remove-test-hosting-accounts.ts"
+    "db:remove-test-hosting-accounts": "tsx scripts/remove-test-hosting-accounts.ts",
+    "handbook:extract": "tsx scripts/extract-handbook-pdf.ts",
+    "handbook:import": "tsx scripts/import-handbook-catalog.ts",
+    "handbook:build": "python scripts/build-fct-handbook-catalog.py",
+    "handbook:seed": "tsx scripts/seed-handbook-catalog.ts",
+    "handbook:sync-from-timetable": "tsx scripts/sync-catalog-from-timetable.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

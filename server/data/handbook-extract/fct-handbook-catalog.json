@@ -1,0 +1,3777 @@
+{
+  "source": "fct-student-handbook-22 (curated from scanned PDF pages 22-48)",
+  "extractedAt": "2026-07-07T06:10:54.536847+00:00",
+  "entries": [
+    {
+      "code": "CSCI 11014",
+      "title": "Mathematics for Computer Science \u2013 I",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "CSCI 11023",
+      "title": "Fundamentals of Statistics",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 11032",
+      "title": "Structured Programming \u2013 I",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 11042",
+      "title": "Fundamentals of Digital Electronics",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 11052",
+      "title": "Web Fundamentals",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 11062",
+      "title": "Introduction to Database Management Systems",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 11072",
+      "title": "Foundations in Computer Science",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DELT 13302",
+      "title": "English for Computing and Technology",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 12013",
+      "title": "Mathematics for Computer Science \u2013 II",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 12022",
+      "title": "Probability Distribution and Applications",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 12033",
+      "title": "Computer Architecture & Design",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 12042",
+      "title": "Structured Programming \u2013 II",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 12052",
+      "title": "Fundamentals of Operating Systems",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 12063",
+      "title": "Web Programming",
+      "programCode": "CS",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 21013",
+      "title": "Statistical Inference",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 21023",
+      "title": "Data Communication and Networks",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 21033",
+      "title": "Data Structures and Algorithms",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 21042",
+      "title": "Software Engineering",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 21052",
+      "title": "Object-Oriented Programming \u2013 I",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 21062",
+      "title": "Advanced Database Management Systems",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 23072",
+      "title": "Group Project",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DELT 21212",
+      "title": "English for the World",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 21012",
+      "title": "Principles of Management",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22012",
+      "title": "Statistics for Decision Making",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22022",
+      "title": "Advanced Operating Systems",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22032",
+      "title": "Object-Oriented Analysis and Design",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22042",
+      "title": "Visual Programming",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22052",
+      "title": "Introduction to Artificial Intelligence",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22062",
+      "title": "Introduction to Cyber Security",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22072",
+      "title": "Mobile Application Development",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 22082",
+      "title": "Object-Oriented Programming \u2013 II",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 22012",
+      "title": "Human Resource Management",
+      "programCode": "CS",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31014",
+      "title": "Mathematics for Computer Science III",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "CSCI 31022",
+      "title": "Machine Learning and Pattern Recognition",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31032",
+      "title": "Theory of Programming Languages",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31042",
+      "title": "Advanced Data Structures and Algorithms",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31052",
+      "title": "Project Management",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31072",
+      "title": "Python Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31082",
+      "title": "Systems and Network Administration",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 31012",
+      "title": "Applied Cryptography",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 31022",
+      "title": "Data and Systems Security",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DELT 33212",
+      "title": "English for Professional Purposes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 31012",
+      "title": "Introduction to Entrepreneurship",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32012",
+      "title": "Theory of Automation",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32022",
+      "title": "Human Computer Interaction",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32032",
+      "title": "Research Methodology and Scientific Communication",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32042",
+      "title": "Social and Professional Issues",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32052",
+      "title": "Distributed Systems & Cloud Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32062",
+      "title": "Computer Graphics",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32083",
+      "title": "Stochastic Processes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32092",
+      "title": "Data Mining and Warehousing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32012",
+      "title": "Wireless Communications and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32022",
+      "title": "Advanced Computer Communication and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32032",
+      "title": "Network Security",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 32012",
+      "title": "Advanced Database Applications",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 32012",
+      "title": "Parallel Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 43018",
+      "title": "Research Project",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CSCI 44026",
+      "title": "Industrial Training",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CSCI 44032",
+      "title": "Mobile Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44082",
+      "title": "Emerging Technologies in Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44092",
+      "title": "Enterprise Application Development",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44112",
+      "title": "Introduction to Quantum Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44012",
+      "title": "Internet of Things",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44022",
+      "title": "Information Security Management and Auditing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44032",
+      "title": "Cyber Crime and Forensics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44042",
+      "title": "Security Analytics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44052",
+      "title": "Cyber Laws and Standards",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44062",
+      "title": "Ethical Hacking and Vulnerability Analysis",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44072",
+      "title": "Secure Software Engineering",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44082",
+      "title": "Information & Coding Theory",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44092",
+      "title": "Mobile & IOT Security",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44102",
+      "title": "Advanced Cryptography",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44012",
+      "title": "Artificial Neural Networks",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44022",
+      "title": "Fuzzy Logic",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 44012",
+      "title": "High Performance Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "CSEC",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31014",
+      "title": "Mathematics for Computer Science III",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "CSCI 31022",
+      "title": "Machine Learning and Pattern Recognition",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31032",
+      "title": "Theory of Programming Languages",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31042",
+      "title": "Advanced Data Structures and Algorithms",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31052",
+      "title": "Project Management",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31062",
+      "title": "Semantic Web and Ontological Modeling",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31072",
+      "title": "Python Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31082",
+      "title": "Systems and Network Administration",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 31012",
+      "title": "Natural Language Processing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DELT 33212",
+      "title": "English for Professional Purposes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 31012",
+      "title": "Introduction to Entrepreneurship",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32012",
+      "title": "Theory of Automation",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32022",
+      "title": "Human Computer Interaction",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32032",
+      "title": "Research Methodology and Scientific Communication",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32042",
+      "title": "Social and Professional Issues",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32052",
+      "title": "Distributed Systems & Cloud Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32062",
+      "title": "Computer Graphics",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32083",
+      "title": "Stochastic Processes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32092",
+      "title": "Data Mining and Warehousing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32012",
+      "title": "Wireless Communications and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 32012",
+      "title": "Advanced Database Applications",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 32022",
+      "title": "Complex Systems & Agent Technology",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 32012",
+      "title": "Parallel Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 43018",
+      "title": "Research Project",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CSCI 44026",
+      "title": "Industrial Training",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CSCI 44032",
+      "title": "Mobile Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44082",
+      "title": "Emerging Technologies in Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44092",
+      "title": "Enterprise Application Development",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44112",
+      "title": "Introduction to Quantum Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44012",
+      "title": "Internet of Things",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44032",
+      "title": "Cyber Crime and Forensics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44052",
+      "title": "Cyber Laws and Standards",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44012",
+      "title": "Python for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44022",
+      "title": "Data Visualization",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44033",
+      "title": "Big Data Analytics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "DSCI 44042",
+      "title": "NoSQL Databases",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44052",
+      "title": "Time Series Analysis for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44062",
+      "title": "Big data Architecture & Management",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44072",
+      "title": "Geographical Information Systems",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44012",
+      "title": "Artificial Neural Networks",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44022",
+      "title": "Fuzzy Logic",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44032",
+      "title": "Deep Learning",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 44012",
+      "title": "High Performance Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "DSCI",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31014",
+      "title": "Mathematics for Computer Science III",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "CSCI 31022",
+      "title": "Machine Learning and Pattern Recognition",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31032",
+      "title": "Theory of Programming Languages",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31042",
+      "title": "Advanced Data Structures and Algorithms",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31052",
+      "title": "Project Management",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31062",
+      "title": "Semantic Web and Ontological Modeling",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31072",
+      "title": "Python Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31082",
+      "title": "Systems and Network Administration",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 31012",
+      "title": "Natural Language Processing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 31022",
+      "title": "Deductive Reasoning and Logic Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DELT 33212",
+      "title": "English for Professional Purposes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 31012",
+      "title": "Introduction to Entrepreneurship",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32012",
+      "title": "Theory of Automation",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32022",
+      "title": "Human Computer Interaction",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32032",
+      "title": "Research Methodology and Scientific Communication",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32042",
+      "title": "Social and Professional Issues",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32052",
+      "title": "Distributed Systems & Cloud Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32062",
+      "title": "Computer Graphics",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32073",
+      "title": "Introduction to Game Development",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32083",
+      "title": "Stochastic Processes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32092",
+      "title": "Data Mining and Warehousing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32012",
+      "title": "Wireless Communications and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 32012",
+      "title": "Advanced Database Applications",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 32012",
+      "title": "Digital Image Processing and Computer Vision",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 32022",
+      "title": "Complex Systems & Agent Technology",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 32012",
+      "title": "Parallel Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 43018",
+      "title": "Research Project",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CSCI 44026",
+      "title": "Industrial Training",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CSCI 44032",
+      "title": "Mobile Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44042",
+      "title": "Theory of Computability and Complexity",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44072",
+      "title": "Computer Modelling and Simulation",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44082",
+      "title": "Emerging Technologies in Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44092",
+      "title": "Enterprise Application Development",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44112",
+      "title": "Introduction to Quantum Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44012",
+      "title": "Internet of Things",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44012",
+      "title": "Python for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44052",
+      "title": "Time Series Analysis for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44062",
+      "title": "Big data Architecture & Management",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44012",
+      "title": "Artificial Neural Networks",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44022",
+      "title": "Fuzzy Logic",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44032",
+      "title": "Deep Learning",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44042",
+      "title": "Machine Translation",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44052",
+      "title": "Intelligent Autonomous Robotics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44062",
+      "title": "Computational Cognitive Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44072",
+      "title": "Introduction to Virtual Reality",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 44012",
+      "title": "High Performance Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "AINT",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31014",
+      "title": "Mathematics for Computer Science III",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "CSCI 31022",
+      "title": "Machine Learning and Pattern Recognition",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31032",
+      "title": "Theory of Programming Languages",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31042",
+      "title": "Advanced Data Structures and Algorithms",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31052",
+      "title": "Project Management",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31062",
+      "title": "Semantic Web and Ontological Modeling",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31072",
+      "title": "Python Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 31082",
+      "title": "Systems and Network Administration",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 31012",
+      "title": "Applied Cryptography",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 31022",
+      "title": "Data and Systems Security",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 31012",
+      "title": "Natural Language Processing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 31022",
+      "title": "Deductive Reasoning and Logic Programming",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DELT 33212",
+      "title": "English for Professional Purposes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "MGMT 31012",
+      "title": "Introduction to Entrepreneurship",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32012",
+      "title": "Theory of Automation",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32022",
+      "title": "Human Computer Interaction",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32032",
+      "title": "Research Methodology and Scientific Communication",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32042",
+      "title": "Social and Professional Issues",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32052",
+      "title": "Distributed Systems & Cloud Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32062",
+      "title": "Computer Graphics",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 32073",
+      "title": "Introduction to Game Development",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32083",
+      "title": "Stochastic Processes",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 32092",
+      "title": "Data Mining and Warehousing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32012",
+      "title": "Wireless Communications and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32022",
+      "title": "Advanced Computer Communication and Networking",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 32032",
+      "title": "Network Security",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 32012",
+      "title": "Advanced Database Applications",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "AINT 32012",
+      "title": "Digital Image Processing and Computer Vision",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 32022",
+      "title": "Complex Systems & Agent Technology",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 32012",
+      "title": "Parallel Computing",
+      "programCode": "CS",
+      "studyYear": 3,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 43018",
+      "title": "Research Project",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CSCI 44026",
+      "title": "Industrial Training",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CSCI 44032",
+      "title": "Mobile Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44042",
+      "title": "Theory of Computability and Complexity",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44052",
+      "title": "Software Quality and Automation",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44062",
+      "title": "Software Architecture and Design",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44072",
+      "title": "Computer Modelling and Simulation",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44082",
+      "title": "Emerging Technologies in Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44092",
+      "title": "Enterprise Application Development",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSCI 44103",
+      "title": "Advanced Compilers",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "CSCI 44112",
+      "title": "Introduction to Quantum Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44012",
+      "title": "Internet of Things",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44022",
+      "title": "Information Security Management and Auditing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44032",
+      "title": "Cyber Crime and Forensics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44042",
+      "title": "Security Analytics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44052",
+      "title": "Cyber Laws and Standards",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CSEC 44072",
+      "title": "Secure Software Engineering",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44012",
+      "title": "Python for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44042",
+      "title": "NoSQL Databases",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44052",
+      "title": "Time Series Analysis for Data Science",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DSCI 44062",
+      "title": "Big data Architecture & Management",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44012",
+      "title": "Artificial Neural Networks",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44022",
+      "title": "Fuzzy Logic",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44032",
+      "title": "Deep Learning",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44052",
+      "title": "Intelligent Autonomous Robotics",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "AINT 44072",
+      "title": "Introduction to Virtual Reality",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "SCOM 44012",
+      "title": "High Performance Computing",
+      "programCode": "CS",
+      "studyYear": 4,
+      "pathwayCode": "SPCS",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 11013",
+      "title": "Mathematics for Technology - 1",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 11023",
+      "title": "Physics for Technology I",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 13032",
+      "title": "Projects in Technology I",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 11041",
+      "title": "Engineering Drawing with CAD I",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 11071",
+      "title": "Physics for Technology Laboratory I",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 1
+    },
+    {
+      "code": "CTEC 11052",
+      "title": "Structured Programming I",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 11063",
+      "title": "Computer Systems Organization",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "DELT 13522",
+      "title": "English for Computing & Technology",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 12013",
+      "title": "Mathematics for Technology - II",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12023",
+      "title": "Physics for Technology II",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12033",
+      "title": "Fundamental Practices in Technology",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12041",
+      "title": "Engineering Drawing with CAD II",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 12062",
+      "title": "Statistics for Technology",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 12081",
+      "title": "Physics for Technology Laboratory II",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 1
+    },
+    {
+      "code": "CTEC 12052",
+      "title": "Data Communication and Networking",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 12073",
+      "title": "Structured Programming II",
+      "programCode": "CT",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 21023",
+      "title": "Fundamentals of Electronics",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 23032",
+      "title": "Projects in Technology II",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 21043",
+      "title": "Mathematics for Technology III",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 21042",
+      "title": "Web Programming I",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 21052",
+      "title": "Introduction to Cyber Security",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 21063",
+      "title": "Database Systems",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "LNPR 21072",
+      "title": "Japanese Language - I",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DELT 21512",
+      "title": "English for the World",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 22033",
+      "title": "Mathematics for Technology - IV",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 22023",
+      "title": "Data Structures & Algorithms",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 22032",
+      "title": "Software Engineering",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 22043",
+      "title": "Object Oriented Programming",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 22053",
+      "title": "Computer Architecture & Operating Systems",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 22061",
+      "title": "Systems and Network Laboratory",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "DELT 22552",
+      "title": "English for Technology",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "LNPR 22072",
+      "title": "Japanese Language - II",
+      "programCode": "CT",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 31013",
+      "title": "Web Programming II",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31023",
+      "title": "Mobile Application Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31032",
+      "title": "ICT for Business",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 31042",
+      "title": "Python Programming",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 31012",
+      "title": "Introduction to Telecommunication",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 31022",
+      "title": "Wireless and Mobile Communication",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Management and Technology Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 32012",
+      "title": "Project Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 32023",
+      "title": "Internet of Things",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTNT 32012",
+      "title": "Optical Fibre Communications and Satellite Communications",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 32032",
+      "title": "Virtualization and Cloud Computing",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 32042",
+      "title": "Advanced Communication Networks",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 32051",
+      "title": "Cyber Security Laboratory",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "CTNT 32062",
+      "title": "Mobile Computing",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CTEC 43018",
+      "title": "Project",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CTNT 44021",
+      "title": "Advanced Networking Laboratory",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "CTNT 44032",
+      "title": "Network and System Administration",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 44042",
+      "title": "Advanced Wireless and Mobile Communication",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 44053",
+      "title": "Network and Information Security",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTNT 44062",
+      "title": "Security Management",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTNT 44073",
+      "title": "Distributed Computing",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "CTNT",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31013",
+      "title": "Web Programming II",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31023",
+      "title": "Mobile Application Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31032",
+      "title": "ICT for Business",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GANI 31012",
+      "title": "Data Structures for Game Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GANI 31022",
+      "title": "Introduction to 3D Modelling",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GANI 31032",
+      "title": "Game Design and Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Management and Technology Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 32012",
+      "title": "Project Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 32012",
+      "title": "Human Computer Interaction",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GANI 32013",
+      "title": "Advanced 3D Modelling Workshop",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GANI 32024",
+      "title": "Mathematics for Modelling and Rendering",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 4
+    },
+    {
+      "code": "GANI 32033",
+      "title": "Animation for Game Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CTEC 43018",
+      "title": "Project",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CTEC 44022",
+      "title": "Software and Hardware Optimization Techniques",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GANI 44033",
+      "title": "3D Games Prototyping",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GANI 44043",
+      "title": "Real-Time 3D Techniques for Games",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GANI 44053",
+      "title": "Fundamentals of Virtual Reality",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GANI 44062",
+      "title": "Motion Graphics Workshop",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "GANI",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31013",
+      "title": "Web Programming II",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31023",
+      "title": "Mobile Application Development",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 31032",
+      "title": "ICT for Business",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 31042",
+      "title": "Python Programming",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 31022",
+      "title": "Requirements Engineering",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 31032",
+      "title": "Applied Information Systems",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Management and Technology Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 32012",
+      "title": "Project Management",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "CTEC 32012",
+      "title": "Human Computer Interaction",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 32012",
+      "title": "System Analysis and Design",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 32022",
+      "title": "Quality Assurance",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 32033",
+      "title": "Advanced Databases",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "SWST 32043",
+      "title": "Software Architecture and Concepts",
+      "programCode": "CT",
+      "studyYear": 3,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "CTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "CTEC 43018",
+      "title": "Project",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "CTEC 44022",
+      "title": "Software and Hardware Optimization Techniques",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 44022",
+      "title": "Applied Internet-of-Things",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 44032",
+      "title": "Scientific Communication",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 44042",
+      "title": "Speech Interfaces",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "SWST 44053",
+      "title": "Software Modelling",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "SWST 44062",
+      "title": "Enterprise Application Development",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "CT",
+      "studyYear": 4,
+      "pathwayCode": "SWST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 11013",
+      "title": "Mathematics for Technology \u2013 1",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 11023",
+      "title": "Physics for Technology I",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 11041",
+      "title": "Engineering Drawing with CAD I",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "ETEC 11052",
+      "title": "Introduction to programming for Technology",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 11063",
+      "title": "Chemistry for Technology",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 11071",
+      "title": "Physics for Technology Laboratory I",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 13032",
+      "title": "Projects in Technology I",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "DELT 13522",
+      "title": "English for Computing & Technology",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 12013",
+      "title": "Mathematics for Technology \u2013 II",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12023",
+      "title": "Physics for Technology II",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12033",
+      "title": "Fundamental Practices in Technology",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 12041",
+      "title": "Engineering Drawing with CAD II",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "ETEC 12051",
+      "title": "Engineering Workshop",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 12062",
+      "title": "Statistics for Technology",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 12071",
+      "title": "Chemistry for Technology Laboratory",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 12081",
+      "title": "Physics for Technology Laboratory II",
+      "programCode": "ET",
+      "studyYear": 1,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "GTEC 21013",
+      "title": "Applied Calculus - I",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 21023",
+      "title": "Fundamentals of Electronics",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 23032",
+      "title": "Projects in Technology II",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 21043",
+      "title": "Engineering Materials -I",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 21053",
+      "title": "Manufacturing Processes",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 21062",
+      "title": "Object Oriented Programming for Engineering Technology",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "LNPR 21072",
+      "title": "Japanese Language \u2013 I",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "DELT 21512",
+      "title": "English for the World",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "GTEC 22013",
+      "title": "Applied Calculus- II",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 22023",
+      "title": "Sustainable Technology Systems",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 22033",
+      "title": "Applied Thermodynamics",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 22042",
+      "title": "Electric Circuits and Electric Machines",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 22053",
+      "title": "Industrial Control Systems",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 22063",
+      "title": "Mechanics of Materials",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "DELT 22552",
+      "title": "English for Technology",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "LNPR 22072",
+      "title": "Japanese Language -II",
+      "programCode": "ET",
+      "studyYear": 2,
+      "pathwayCode": "",
+      "requirementType": "OPTIONAL",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 31013",
+      "title": "Programming in Python for Engineering Technology",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31023",
+      "title": "Fluid Mechanics and Fluid Systems",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31033",
+      "title": "Mechanics of Machines",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Technology management",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETIA 31413",
+      "title": "Introduction to Industrial Automation",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 31423",
+      "title": "Introduction to Microprocessors and Embedded systems",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 32012",
+      "title": "Machine Design with Computer Aided Design",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 32022",
+      "title": "Manufacturing Systems and Computer Integrated Manufacturing",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 33033",
+      "title": "Innovations to Market",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GCPR 32041",
+      "title": "Professional Ethics and Practices",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "ETIA 32413",
+      "title": "Introduction to Robotics in Manufacturing",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 32423",
+      "title": "Process Instrumentation and Control",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 32433",
+      "title": "Industrial Automation Networks",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 32443",
+      "title": "Embedded systems and Applications",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "ETEC 43018",
+      "title": "Capstone Project",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "GCPR 44022",
+      "title": "Occupational Health and Safety",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 44033",
+      "title": "Total Productive Maintenance (TPM)",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44052",
+      "title": "Lean/Six Sigma Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETIA 44413",
+      "title": "Computer Integrated Manufacturing",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 44423",
+      "title": "Industrial Motion Control",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETIA 44433",
+      "title": "Computer Aided Manufacturing with Lab",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETIA",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31013",
+      "title": "Programming in Python for Engineering Technology",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31023",
+      "title": "Fluid Mechanics and Fluid Systems",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31033",
+      "title": "Mechanics of Machines",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Technology management",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETMP 31213",
+      "title": "Chemical Process Technology",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 31223",
+      "title": "Engineering Materials - II",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 32012",
+      "title": "Machine Design with Computer Aided Design",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 32022",
+      "title": "Manufacturing Systems and Computer Integrated Manufacturing",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 33033",
+      "title": "Innovations to Market",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GCPR 32041",
+      "title": "Professional Ethics and Practices",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "ETMP 32213",
+      "title": "Science of Engineering Materials",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 32223",
+      "title": "Materials Processes in Industry- I",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 32233",
+      "title": "Nanoscience and Nanomaterials",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 32243",
+      "title": "Integrated Computational Materials Engineering",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "ETEC 43018",
+      "title": "Capstone Project",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "GCPR 44022",
+      "title": "Occupational Health and Safety",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 44033",
+      "title": "Total Productive Maintenance (TPM)",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44052",
+      "title": "Lean/Six Sigma Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETMP 44213",
+      "title": "Materials Processes in Industry -- II",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 44223",
+      "title": "Novel Engineering Materials and Next Generation Devices",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETMP 44233",
+      "title": "Materials Characterization and Testing Laboratory",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETMP",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31013",
+      "title": "Programming in Python for Engineering Technology",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31023",
+      "title": "Fluid Mechanics and Fluid Systems",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 31033",
+      "title": "Mechanics of Machines",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 31042",
+      "title": "Principles and Practices of Technology management",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETST 31613",
+      "title": "Hydrology and hydrogeology with lab",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 31623",
+      "title": "Conventional and Alternative Energy Resources",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETEC 32012",
+      "title": "Machine Design with Computer Aided Design",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETEC 32022",
+      "title": "Manufacturing Systems and Computer Integrated Manufacturing",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 33033",
+      "title": "Innovations to Market",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GCPR 32041",
+      "title": "Professional Ethics and Practices",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 1
+    },
+    {
+      "code": "ETST 32613",
+      "title": "Energy Storage Technologies with Lab",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 32623",
+      "title": "Water and Wastewater Treatment",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 32633",
+      "title": "Soil and Solid Waste Treatment",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 32643",
+      "title": "Air and Air Pollution Control",
+      "programCode": "ET",
+      "studyYear": 3,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "GTEC 41016",
+      "title": "Industrial Training",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 6
+    },
+    {
+      "code": "ETEC 43018",
+      "title": "Capstone Project",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 8
+    },
+    {
+      "code": "GCPR 44022",
+      "title": "Occupational Health and Safety",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ENPR 44033",
+      "title": "Total Productive Maintenance (TPM)",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "OPTIONAL",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44043",
+      "title": "Entrepreneurship and Small Business Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ENPR 44052",
+      "title": "Lean/Six Sigma Management",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 2
+    },
+    {
+      "code": "ETST 44613",
+      "title": "Monitoring and Assessment of Sustainability",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 44623",
+      "title": "Sustainable Facilities and Operations",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    },
+    {
+      "code": "ETST 44633",
+      "title": "Geographical Information Systems for Sustainability with Laboratory",
+      "programCode": "ET",
+      "studyYear": 4,
+      "pathwayCode": "ETST",
+      "requirementType": "COMPULSORY",
+      "credits": 3
+    }
+  ]
+}
