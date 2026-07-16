@@ -1,0 +1,26 @@
+failed	DIAGNOSTIC — show current class and slot count
+failed	timetable updates: CS-Y3-AINT (13 slots) → CS-Y2 (19 slots)
+failed	timetable updates: CS-Y3-AINT → CS-Y3-CSEC
+passed	profile current class group field updates after enrollment change
+timedOut	floor plan image has no letterboxing (height:auto, no object-contain)
+timedOut	SVG overlay must match image dimensions exactly
+passed	forgot-password link on login page
+failed	forgot → reset code → new password → login
+passed	unknown email shows generic success copy
+passed	login succeeds and reaches dashboard
+failed	My Timetable page loads with CS-Y3-AINT group
+failed	timetable shows at least 1 slot in the selected period
+failed	DIAGNOSTIC — list visible course codes
+failed	shows course CSCI 32012 in timetable
+failed	shows course CSCI 32073 in timetable
+failed	shows course CSCI 32083 in timetable
+failed	shows course CSCI 32032 in timetable
+failed	shows course CSCI 32052 in timetable
+failed	shows course CSCI 32022 in timetable
+failed	shows course CSCI 32092 in timetable
+failed	shows course CSCI 32042 in timetable
+failed	shows course AINT 32012 in timetable
+failed	shows course AINT 32022 in timetable
+failed	shows course DELT 33212 in timetable
+failed	shows course DSCI 32012 in timetable
+failed	ALL required courses visible — full regression check

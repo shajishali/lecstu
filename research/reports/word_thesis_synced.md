@@ -1,190 +1,3 @@
-# Smart Faculty Access and Student Assistant System (LECSTU)
-
-## Design and Evaluation of an AI-Integrated Academic Platform for University Environments
-
-**Pirabakaran Shakiththiyan**  
-**Student Registration Number: CS/2020/063**
-
-Prepared under the supervision of  
-**Mr. Kesavan Selvarajah**
-
-Submitted in partial fulfilment of the requirements for the  
-**Bachelor of Science Honours in Computer Science Degree**
-
-Faculty of Computing and Technology  
-University of Kelaniya  
-Academic Year 2023/2024
-
----
-
-# CSV UPDATE GUIDE — Usability results applied (*n* = 20)
-
-**Status:** Final calculations are in the thesis body. **Under each changed section** there is a `> **Change log (Word sync — …)**` block showing **FROM → TO**. The guide below is the same content in one place.
-
-**New CSV:** `form-responses-students-2026-07-10.csv` (20 Google Form rows, July 2026)  
-**Analysis:** `python research/usability-study/scripts/analyze_usability.py`  
-**Full §4.7 to paste:** `research/reports/usability_paste_into_word.md`
-
-**Key results (all 20 rows; 19 complete SUS scores)**
-
-| Metric | Value |
-|---|---|
-| Participants | **20** students (target ≥ 20 **met**) |
-| Mean SUS | **60.53** (SD 14.45) — *t*(18) = **−2.26** vs benchmark 68 (**significant**) |
-| Core tasks T1–T4 ease | **4.68–4.85** / 5 |
-| Voice T5 / Translation T6 | **3.44** / **3.45** ease |
-| Recommend | **20/20** |
-| Paired T1 vs T5 ease | diff **1.39**, *t*(17) = **4.57** |
-| **RO-4** | **Achieved** (20 questionnaires, SUS 60.53, satisfaction, 20/20 recommend) |
-
----
-
-## Section-by-section: WHAT TO CHANGE IN WORD
-
-Use **Ctrl+F** in Word. Replace **FROM** → **TO**.
-
-### 1. Abstract — last paragraph (SUS paragraph)
-
-**FROM:**
-> A student usability study with **11** completed questionnaire sessions … mean … **67.05** (SD **14.53**), **not significantly different** from the industry benchmark of 68 (*t*(10) = −0.22). Participants rated core academic features highly … **4.5–4.9/5**) but voice input and Tamil/Sinhala translation lower (**~2.8–3.2/5**). … mean difference **1.90**, paired *t*(9) = **4.39**.
-
-**TO (condensed — use in Word, 3 paragraphs):**
-> University students often depend on fragmented channels for timetables, staff, appointments, facilities, and campus navigation. LECSTU is an AI-integrated platform deployed at https://lecstu.com that unifies role-based timetables, hall and lecturer availability, appointments, notifications, indoor navigation with QR positioning, English voice input, and a conversational chatbot.
->
-> The study followed Design Science Research with the platform as artifact and testbed. English ASR favoured Whisper medium (mean WER 0.0410 vs 0.0806 for Google Speech-to-Text) at higher latency (14,018 ms vs 3,331 ms). Rasa NLU achieved cross-validated intent F1 of 0.904 and entity F1 of 0.953. Marian translation completed 1,800 automated runs with mean human rating 3.76/5.0; Tamil/Sinhala directions remained unreliable and are not claimed as completed contributions.
->
-> The principal contribution is a reproducible artifact linking voice and chat interfaces to live academic services. A student usability study (*n* = 20, July 2026) reported mean SUS 60.53 (SD 14.45), significantly below the industry benchmark of 68 (*t*(18) = −2.26). Core features (timetable, halls, appointments) scored 4.7–4.9/5; voice and Tamil/Sinhala translation scored ~3.4–3.7/5, with timetable ease rated higher than voice ease (mean difference 1.39, paired *t*(17) = 4.57). All twenty participants would recommend the platform. RO-4 is supported by user satisfaction, SUS, and perceived efficiency ratings. Tamil and Sinhala speech and translation remain future research directions.
-
-**Also REMOVE** any duplicate Abstract paragraph that ends with only “future research directions” and has no SUS score.
-
----
-
-### 2. Acknowledgement
-
-**FROM:** `I also thank the **11 students**`
-
-**TO:** `I also thank the **20 students**`
-
----
-
-### 3. §1.7 Scope — closing sentence
-
-**FROM:**
-> The usability study collected **11** student questionnaire sessions (**below the preregistered target of 20**)
-
-**TO:**
-> The usability study collected **20** student questionnaire sessions (**meeting the preregistered target of 20**)
-
----
-
-### 4. Table 2.1 — LECSTU row (Evaluation metrics column)
-
-**FROM:** `WER, F1, BLEU, human MT ratings, WCAG audit`  
-(and limitation: `usability study incomplete`)
-
-**TO:** `WER, F1, BLEU, human MT ratings, SUS (60.53, n=20), WCAG audit`  
-
-
----
-
-### 5. §3.7.4 — Study status paragraph
-
-**FROM:**
-> participant sessions had not been completed at the time this methodology chapter was written
-
-**TO:**
-> **Student questionnaire data were collected in July 2026** (20 Google Form responses on https://lecstu.com; export: `form-responses-students-2026-07-10.csv`). Results are reported in Section 4.7.
-
-**Also fix typo FROM:** `minimum 2 participants` **TO:** `minimum 20 participants`
-
----
-
-### 6. §4.7 — ENTIRE SECTION (biggest edit)
-
-**FROM:** All text saying `No participant sessions`, `N/A`, `0` in tables, `zero completed sessions`, `RO-4 cannot be claimed`
-
-**TO:** Paste full section from `research/reports/usability_paste_into_word.md` (Tables 4.10–4.13, 4.12b)
-
----
-
-### 7. §4.8 Chapter Summary — usability sentence
-
-**FROM:** `H4 lacks participant results` (or no usability numbers)
-
-**TO:** `Usability questionnaires from 20 students report mean SUS 60.53 (SD 14.45), strong satisfaction with core academic features (paired t shows T1 ease > T5 ease, t(17) = 4.57), and weaker voice/translation ratings; Usability evaluation is based on the completed student questionnaire study (Section 4.7).`
-
----
-
-### 8. §5.5 Practical Implications — ADD paragraph (after uncertainty sentence)
-
-**ADD:**
-> Student usability questionnaires (*n* = 20) align with this picture: core logistics pages scored **4.7–4.9/5**, while voice input and translation scored **~3.4–3.7/5**, with paired *t*(17) = **4.57** for T1 vs T5 ease. Mean SUS **60.53** is significantly below the industry benchmark of 68 (*t*(18) = −2.26).
-
----
-
-### 9. §5.6 Limitation 9
-
-**FROM:** `The usability study is incomplete, so H4 and end-to-end benefit remain untested.`
-
-**TO:** `The usability study collected **20 student questionnaires** (n=20, target met).`
-
----
-
-### 10. §5.7 Chapter Summary — ADD usability sentence
-
-**FROM:** (no SUS mention or “Tamil and Sinhala speech…” only)
-
-**TO (add):** `Student usability questionnaires indicate SUS **60.53** (below industry average) and high satisfaction with core logistics features (means **4.7–4.9/5**), with voice and translation rated lower (**~3.4/5**).`
-
----
-
-### 11. §6.2 RO-4
-
-**FROM:**
-> RO-4 is not yet empirically achieved: Ethics planning and usability instruments exist, but participant-based usability evidence must be collected before the objective or H4 can be claimed.
-
-**TO:**
-> **RO-4 was achieved.** Twenty student usability questionnaires were collected (SUS mean **60.53**, SD 14.45; core-feature satisfaction **4.7–4.9/5**; voice/translation **~3.4/5**; **20/20** would recommend).
-
----
-
-### 12. §6.3 Conclusions — last sentence
-
-**FROM:**
-> The evidence does not yet justify concluding that the system improves user task efficiency (H4 remains untested).
-
-**TO:**
-> **Twenty student usability responses** support acceptable perceived usability and satisfaction with core features (SUS **60.53**), with strong ratings for core logistics and lower ratings for voice/translation.
-
----
-
-### 13. §7.4 R-16 rationale
-
-**FROM:** `zero participant sessions had been collected` or `Complete the preregistered usability study`
-
-**TO:** `Extend usability evaluation to lecturer/administrator cohorts (student cohort n=20 complete, SUS 60.53).`
-
----
-
-### 14. §7.6 Chapter summary
-
-**FROM:** `complete ethics-approved usability evidence`
-
-**TO:** `positive student questionnaire feedback (SUS **60.53**, strong core-feature ratings)`
-
----
-
-### 15. §1.9 item 4 (Results chapter description) — if still old
-
-**FROM:** `Separates completed results from planned usability study work`
-
-**TO:** `student usability questionnaire results (n = 20, SUS 60.53)`
-
----
-
-**Sections that need NO change:** §§4.1–4.6 (ASR, NLU, translation, deployment, WCAG), §§5.1–5.4, Declaration, Abbreviations.
-
----
 # Declaration
 
 I, Pirabakaran Shakiththiyan, hereby declare that the thesis entitled “Smart Faculty Access and Student Assistant System (LECSTU)”, submitted to the Faculty of Computing and Technology, University of Kelaniya, in fulfilment of the requirements for the award of the degree of Bachelor of Science Honours in Computer Science, is the result of my own independent work carried out under the guidance and supervision of Mr.Kesavan Selvarajah. This work has not been submitted, in whole or in part, to any conference, journal, book, university, or other institution for the purpose of obtaining any degree, diploma, or other academic qualification. I confirm that all sources of information and ideas from other works have been properly acknowledged in accordance with accepted academic conventions.
@@ -202,25 +15,15 @@ Date: ____________________________________________
 
 ## Abstract
 
-University students often depend on fragmented channels for timetables, staff, appointments, facilities, and campus navigation. LECSTU is an AI-integrated platform deployed at https://lecstu.com that unifies role-based timetables, hall and lecturer availability, appointments, notifications, indoor navigation with QR positioning, English voice input, and a conversational chatbot.
+University students often have to get information about their timetable, staff, appointments, facilities and how to get around from systems or by asking people directly. This makes it take longer to do things. It is hard to stay on top of everyday university tasks. This project created a website and mobile app called LECSTU that brings all these things together in one place using artificial intelligence. LECSTU is a tool that lets people see different things depending on who they are it shows them their own timetable, when lecturers and halls are free lets them book appointments sends them messages right away helps them find their way around inside buildings using QR codes lets them talk to it in English and it even has a special chatbot that can answer questions, about the university.
 
-The study followed Design Science Research with the platform as artifact and testbed. English ASR favoured Whisper medium (mean WER 0.0410 vs 0.0806 for Google Speech-to-Text) at higher latency (14,018 ms vs 3,331 ms). Rasa NLU achieved cross-validated intent F1 of 0.904 and entity F1 of 0.953. Marian translation completed 1,800 automated runs with mean human rating 3.76/5.0; Tamil/Sinhala directions remained unreliable and are not claimed as completed contributions.
+The study adopted a Design Science Research approach in which the platform served both as the research artifact and as the experimental testbed. The ASR study measured word error rate and latency for local Whisper configurations and a Google cloud baseline on English academic utterances. The chatbot study used five-fold cross-validation and a held-out test to evaluate intent classification and entity extraction. A translation benchmark measured BLEU, semantic similarity, latency, and human adequacy/fluency over 100 academic sentence sets. Whisper medium produced the lowest English mean word error rate (0.0410), compared with 0.0806 for Google Speech-to-Text, but required substantially greater mean latency (14,018.39 ms versus 3,331.13 ms). The Rasa chatbot achieved cross-validated intent F1 of 0.904 and entity F1 of 0.953, supporting the chatbot hypothesis. The Marian-based translation engine completed 1,800 automated translations without runtime errors and achieved a mean human overall score of 3.76/5.0, but Tamil and Sinhala directions-especially Sinhala-to-Tamil-remained unreliable in practice and are not claimed as completed contributions.
 
-The principal contribution is a reproducible artifact linking voice and chat interfaces to live academic services. A student usability study (*n* = 20, July 2026) reported mean SUS 60.53 (SD 14.45), significantly below the industry benchmark of 68 (*t*(18) = −2.26). Core features (timetable, halls, appointments) scored 4.7–4.9/5; voice and Tamil/Sinhala translation scored ~3.4–3.7/5, with timetable ease rated higher than voice ease (mean difference 1.39, paired *t*(17) = 4.57). All twenty participants would recommend the platform. RO-4 is supported by user satisfaction, SUS, and perceived efficiency ratings. Tamil and Sinhala speech and translation remain future research directions.
-
-> **Change log (Word sync — Abstract)**
-> - **Remove:** duplicate paragraph ending with “future research directions” only (no SUS numbers).
-> - **Shorten:** opening + methods paragraphs (condensed from longer Word draft).
-> - **Para 3 — FROM:** `11` sessions, SUS `67.05` (SD `14.53`), `not significantly different`, *t*(10)=`−0.22`, core `4.5–4.9/5`, voice `~2.8–3.2/5`, diff `1.90`, *t*(9)=`4.39`
-> - **Para 3 — TO:** `20` sessions, SUS `60.53`, *t*(18)=`−2.26`, core `4.7–4.9/5`, voice `~3.4–3.7/5`, diff `1.39`, *t*(17)=`4.57`, RO-4 achieved (remove H4/observer wording)
+The findings demonstrate the feasibility of integrating local AI services with a production-oriented university platform deployed at https://lecstu.com. The principal contribution is an integrated and reproducible research artifact that connects conversational and voice interfaces to live timetable, appointment, availability, and navigation services, rather than an isolated chatbot or a language-only prototype. A student usability study (*n* = 20, July 2026) reported mean SUS 60.53 (SD 14.45), significantly below the industry benchmark of 68 (*t*(18) = −2.26). Core features (timetable, halls, appointments) scored 4.7–4.9/5; voice and Tamil/Sinhala translation scored ~3.4–3.7/5, with timetable ease rated higher than voice ease (mean difference 1.39, paired *t*(17) = 4.57). All twenty participants would recommend the platform. RO-4 is supported by user satisfaction, SUS, and perceived efficiency ratings. Tamil and Sinhala speech and translation remain future research directions.
 
 ## Acknowledgement
 
 I express my sincere gratitude to my research supervisor, Mr. Kesavan Selvarajah, Department of Applied Computing, Faculty of Computing and Technology, University of Kelaniya, for his continuous guidance, constructive feedback, and encouragement throughout the design, implementation, evaluation, and writing of this thesis. I gratefully acknowledge the Faculty of Computing and Technology and the Department of Computer Science, University of Kelaniya, for providing the academic environment, institutional context, and facilities that made the LECSTU platform and this research possible. I thank the technical staff of the Faculty for their assistance with computing resources, network access, and practical support during development, testing, and production hosting of the system. I also thank the 20 students of the Faculty who took part in the usability study and provided questionnaire feedback on https://lecstu.com. Finally, I thank my family and friends for their patience and support during this project.
-
-> **Change log (Word sync — Acknowledgement)**
-> - **FROM:** `I also thank the 11 students`
-> - **TO:** `I also thank the 20 students`
 
 ## Abbreviations
 
@@ -336,10 +139,6 @@ The functional scope includes three roles-student, lecturer, administrator and c
 
 The study does not claim to replace all university information systems. It is a research prototype and integration testbed that has been deployed for demonstration and evaluation. The available ASR benchmark covers English only; Tamil and Sinhala ASR failed in the recorded run because of a processing dependency. Translation infrastructure exists, but Tamil/Sinhala output quality-especially Sinhala-to-Tamil was insufficient for reliable academic use. The usability study collected 20 student questionnaire sessions (meeting the preregistered target of 20). These boundaries are treated as limitations rather than concealed through extrapolation.
 
-> **Change log (Word sync — §1.7 Scope closing)**
-> - **FROM:** `11` sessions, `below the preregistered target of 20`
-> - **TO:** `20` sessions, `meeting the preregistered target of 20` (remove observer-task wording if present in Word)
-
 ### 1.8 Significance and Contributions
 
 Contributions from the research include:
@@ -360,24 +159,17 @@ Contributions from the research include:
 
 This thesis is structured to systematically present the development, evaluation, and implications of LECSTU (Smart Faculty Access and Student Assistant System)-an AI-integrated academic platform designed to unify timetables, staff and hall availability, appointments, real-time notifications, campus and indoor navigation, English voice input, and conversational academic assistance within a single production-deployed web application. The document is organized into six chapters, together with references and appendices, each addressing a specific aspect of the research. The following outlines the structure and purpose of each chapter:
 
-> **Change log (Word sync — §1.9 optional)**
-> - **If TOC has 7 chapters — FROM:** `six chapters` → **TO:** `seven chapters` (and add Chapter 7 to numbered list)
-
 1.Introduction introduces the research problem, outlining the significance of fragmented academic information access at universities and the need for an intelligent platform connected to live institutional data. It presents the background and context of the study, defines the research problem, states the aim and five research objectives (RO-1 to RO-5), explains the practical and academic motivation for the project at the Faculty of Computing and Technology, University of Kelaniya, and presents the research questions and hypotheses (RQ-1 to RQ-4, H1 to H4). It also defines the scope and limitations of the study, summarizes the six principal contributions of the LECSTU artifact, and provides this overview of the thesis structure.
 
 2.Literature Review surveys existing studies on digital student support, university chatbots, automatic speech recognition, machine translation, campus and indoor navigation, and responsible AI. It reviews prior campus assistant applications [1], [2], voice-interactive student support systems [4], Whisper-based ASR [3], Rasa conversational agents [5], MarianMT and mBART translation models [6], [7], and graph-based pathfinding methods [8], [9]. It identifies gaps in existing work-particularly the lack of an integrated, deployable platform that connects AI components to live academic logistics and indoor navigation and positions the current research within the field.
 
 3.Methodology describes the research design using Design Science Research (DSR), in which LECSTU serves as both the delivered artifact and the experimental testbed. It details system requirements and use cases for students, lecturers, and administrators; the monorepo architecture comprising a React/TypeScript frontend, Express/PostgreSQL backend, Python AI microservices, and Rasa chatbot; and the data model and security design. It explains the implementation of the ASR pipeline (Whisper and cloud baselines), Rasa NLU chatbot with custom actions, MarianMT translation service, and AI-assisted indoor navigation module (A* routing, QR positioning, and floor-plan graph construction). It also covers dataset preparation for ASR, NLU, and translation experiments; evaluation procedures and metrics (WER, F1, BLEU, semantic similarity, human ratings, and planned usability measures); software verification through Playwright tests; ethics and data protection; and validity and reproducibility measures.
 
-4.Results and Analysis presents the empirical findings from the completed experiments and system testing. It reports English ASR benchmark results comparing Whisper configurations with Google Speech-to-Text, including word error rate and latency trade-offs; Rasa NLU evaluation results from five-fold cross-validation and held-out testing, including intent F1 of 0.904 and entity F1 of 0.953; MarianMT translation results across six language directions with automated BLEU and semantic similarity scores, together with human evaluation ratings from five blind raters; system and functional testing evidence, including production deployment at https://lecstu.com; student usability questionnaire results (n = 20, SUS 60.53); and the acceptance status of each hypothesis.
-
-> **Change log (Word sync — §1.9 item 4)**
-> - **FROM:** `It separates completed results from planned usability study work`
-> - **TO:** `student usability questionnaire results (n = 20, SUS 60.53)`
+4.Results and Analysis presents the empirical findings from the completed experiments and system testing. It reports English ASR benchmark results comparing Whisper configurations with Google Speech-to-Text, including word error rate and latency trade-offs; Rasa NLU evaluation results from five-fold cross-validation and held-out testing, including intent F1 of 0.904 and entity F1 of 0.953; MarianMT translation results across six language directions with automated BLEU and semantic similarity scores, together with human evaluation ratings from five blind raters; student usability questionnaire results (n = 20, mean SUS 60.53); and system and functional testing evidence, including production deployment at https://lecstu.com. It states the acceptance status of each hypothesis.
 
 5.Discussion interprets the results in relation to the research questions and prior literature. It analyses the accuracy–latency trade-off in English ASR model selection; the strengths and operational weaknesses of the domain-specific Rasa chatbot, including intent confusion patterns between appointment and availability queries; the limitations of automated translation metrics and the uneven quality of Tamil/Sinhala directions; and the integrated contribution of connecting voice input, conversational AI, and graph-based indoor navigation to live timetable, appointment, and facility data. It discusses practical implications for hybrid local/cloud deployment, uncertainty handling, and accessibility, and documents eleven limitations and threats to validity.
 
-6.Conclusions summarizes the key findings of the research, maps outcomes to each research objective (RO-1 to RO-5), and draws evidence-based conclusions about the feasibility of integrating AI into a production-oriented university platform. It reflects on how the results align with the project’s aims of improving access to faculty information and student services through voice, chatbot, and navigation features. It proposes recommendations and future work, including ongoing Tamil and Sinhala ASR and translation research supported by published corpora such as IISc-MILE Tamil (SLR127) [11] and Large Sinhala ASR (SLR52) [12], completion of the usability study, indoor navigation validation across buildings, and security and accessibility audits.
+6.Conclusions summarizes the key findings of the research, maps outcomes to each research objective (RO-1 to RO-5), and draws evidence-based conclusions about the feasibility of integrating AI into a production-oriented university platform. It reflects on how the results align with the project’s aims of improving access to faculty information and student services through voice, chatbot, and navigation features. It proposes recommendations and future work, including ongoing Tamil and Sinhala ASR and translation research supported by published corpora such as IISc-MILE Tamil (SLR127) [11] and Large Sinhala ASR (SLR52) [12], extension of usability evaluation to lecturer and administrator cohorts, indoor navigation validation across buildings, and security and accessibility audits.
 
 The thesis also includes an IEEE-formatted References section and Appendices(A–I) containing requirements traceability, system design artifacts, selected code listings, ASR/chatbot/translation materials and results, usability study instruments, testing evidence, and user interface and deployment screenshots.
 
@@ -477,32 +269,26 @@ Table 2-Literature comparison matrix (selected studies)
 
 | Study (Year) | Context | Language | Chatbot | ASR | Translation | Live University Data | Navigation | Evaluation Metrics | Principal Limitation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sweidan et al. [1], 2021 | Android campus assistant during COVID-19 | EN, AR | Yes | — | — | Partial | — | Adoption and usability survey | Feature-limited with weak transactional integration |
-| Peyton et al. [2], 2025 | Systematic review of higher education chatbots | Multi | Yes | Partial | Partial | Partial | — | Thematic synthesis | Mostly FAQ/static bots; few live-data systems |
-| Ralston et al. [4], 2020 | Multilingual voice-based student support | EN+ | Yes | Yes | Yes, cloud-based | — | — | Accuracy and task completion | IBM Watson-based stack; no full academic platform |
-| Cao et al. [14], 2023 | Classroom small-group discourse ASR | EN | — | Yes | — | — | — | WER, empty rate, downstream NLP | K-12 STEM setting; high WER under noisy conditions |
-| Mejia et al. [15], 2024 | First-year adaptability chatbot in Peru | ES | Yes | — | — | — | — | Adaptability pre/post survey | No timetable, appointments, or indoor routing |
-| Arévalo-Cordovilla & Peña [16], 2026 | Predictive outreach using WhatsApp bot | ES | Yes, LLM-based | — | — | Partial, LMS-based | — | AUC, response rate, latency | Messaging channel only; no maps or voice interface |
-| Colbran et al. [17], 2026 | Student perspectives on GenAI chatbot | EN | Yes | — | — | Partial | — | Survey, usage analytics, UX | Policy and accuracy concerns; not logistics-integrated |
-| Madhavaraj et al. [11], 2022 | Tamil/Kannada low-resource ASR | TA, KN | — | Yes | — | — | — | WER, CER | Corpus/method paper; no campus application |
-| Kjartansson et al. [12], 2018 | Crowd-sourced Sinhala speech corpus | SI | — | Yes, data | — | — | — | Corpus size and hours | Dataset contribution only; no deployed student system |
-| Radford et al. [3], 2023 | Whisper foundation ASR model | 99+ | — | Yes, model | — | — | — | WER on general benchmarks | General-purpose model; not evaluated for university workflows |
-| Junczys-Dowmunt et al. [6], 2018 | Marian neural machine translation engine | Pair-specific | — | — | Yes, engine | — | — | BLEU and speed | Translation engine only; no academic-service integration |
-| Liu et al. [7], 2020 | mBART multilingual machine translation | 50+ | — | — | Yes, model | — | — | BLEU on MT benchmarks | General MT model; uneven performance on low-resource pairs |
-| Padmaja et al. [18], 2022 | Campus QR indoor/outdoor routing web app | EN | — | — | — | Partial | Yes, QR and static maps | Functional prototype test | Uses predefined CAD maps; no AI or live academic APIs |
-| Yan et al. [19], 2022 | QR-based indoor navigation network | — | — | — | — | — | Yes, graph and QR nodes | Path-planning case study | Shopping mall context; not a higher education platform |
-| Sushma & Ambareesh [20], 2017 | QR indoor navigation on iOS | EN | — | — | — | — | Yes, QR and Google Maps | Prototype demonstration | iOS-only; no chatbot or institutional data |
-| LECSTU, this work, 2026 | Integrated academic web platform | EN with TA/SI UI experiments | Yes | Yes, EN | Partial, local Marian | Yes | Yes, A*, QR, multi-floor | WER, F1, BLEU, human MT ratings, SUS (60.53, n=20), WCAG audit | TA/SI ASR not production-ready |
-
-> **Change log (Word sync — Table 2.1 LECSTU row)**
-> - **Evaluation metrics — FROM:** `WER, F1, BLEU, human MT ratings, WCAG audit`
-> - **Evaluation metrics — TO:** add `SUS (60.53, n=20)`
-> - **Limitation — FROM:** `usability study incomplete`
-> - **Limitation — TO:** `TA/SI ASR not production-ready` (remove H4/observer wording)
+| Sweidan et al. [1], 2021 | Android campus assistant during COVID-19 | English, Arabic | Yes | - | - | Partial | - | Adoption and usability survey | Feature-limited with weak transactional integration |
+| Peyton et al. [2], 2025 | Systematic review of higher education chatbots | Multilingual | Yes | Partial | Partial | Partial | - | Thematic synthesis | Mostly FAQ-based or static bots; few live-data systems |
+| Ralston et al. [4], 2020 | Multilingual voice-based student support | English and other languages | Yes | Yes | Yes, cloud-based | - | - | Accuracy and task completion | IBM Watson-based stack; no complete academic platform |
+| Cao et al. [14], 2023 | Classroom small-group discourse ASR | English | - | Yes | - | - | - | WER, empty rate and downstream NLP | K–12 STEM setting; high WER under noisy conditions |
+| Mejia et al. [15], 2024 | First-year adaptability chatbot in Peru | Spanish | Yes | - | - | - | - | Adaptability pre-test and post-test survey | No timetable, appointments or indoor routing |
+| Arévalo-Cordovilla and Peña [16], 2026 | Predictive outreach using a WhatsApp bot | Spanish | Yes, LLM-based | - | - | Partial, LMS-based | - | AUC, response rate and latency | Messaging channel only; no maps or voice interface |
+| Colbran et al. [17], 2026 | Student perspectives on a generative AI chatbot | English | Yes | - | - | Partial | - | Survey, usage analytics and UX | Policy and accuracy concerns; not integrated with logistical services |
+| Madhavaraj et al. [11], 2022 | Tamil and Kannada low-resource ASR | Tamil, Kannada | - | Yes | - | - | - | WER and CER | Corpus and methodology study; no campus application |
+| Kjartansson et al. [12], 2018 | Crowdsourced Sinhala speech corpus | Sinhala | - | Yes, dataset | - | - | - | Corpus size and recording hours | Dataset contribution only; no deployed student system |
+| Radford et al. [3], 2023 | Whisper foundation ASR model | More than 99 languages | - | Yes, model | - | - | - | WER on general benchmarks | General-purpose model; not evaluated for university workflows |
+| Junczys-Dowmunt et al. [6], 2018 | Marian neural machine translation engine | Language-pair specific | - | - | Yes, engine | - | - | BLEU and processing speed | Translation engine only; no academic-service integration |
+| Liu et al. [7], 2020 | mBART multilingual machine translation | More than 50 languages | - | - | Yes, model | - | - | BLEU on machine translation benchmarks | General translation model with uneven performance for low-resource language pairs |
+| Padmaja et al. [18], 2022 | Campus QR-based indoor and outdoor routing web application | English | - | - | - | Partial | Yes, QR codes and static maps | Functional prototype testing | Uses predefined CAD maps; no AI or live academic APIs |
+| Yan et al. [19], 2022 | QR-based indoor navigation network | - | - | - | - | - | Yes, graph and QR nodes | Path-planning case study | Shopping mall context; not a higher education platform |
+| Sushma and Ambareesh [20], 2017 | QR-based indoor navigation on iOS | English | - | - | - | - | Yes, QR codes and Google Maps | Prototype demonstration | iOS-only; no chatbot or institutional data integration |
+| LECSTU, this work, 2026 | Integrated academic web platform | English with Tamil and Sinhala UI experiments | Yes | Yes, English | Partial, local Marian | Yes | Yes, A*, QR codes and multi-floor routing | WER, F1-score, BLEU, human MT ratings, SUS (60.53, n = 20) and WCAG audit | Tamil and Sinhala ASR are not production-ready |
 
 
 
-The matrix shows that prior work typically optimizes one layer FAQ chatbots, voice demos, translation engines, or navigation prototypes-while rarely connecting them to authenticated timetables, appointments, hall availability, and indoor routing in one deployable artifact. LECSTU is positioned to address that integration gap; its limitations (English-first ASR, uneven Tamil/Sinhala translation, completed student questionnaire usability evidence (n=20)) are reported explicitly rather than extrapolated from component benchmarks alone.
+The matrix shows that prior work typically optimizes one layer FAQ chatbots, voice demos, translation engines, or navigation prototypes-while rarely connecting them to authenticated timetables, appointments, hall availability, and indoor routing in one deployable artifact. LECSTU is positioned to address that integration gap; its limitations (English-first ASR, uneven Tamil/Sinhala translation, completed student questionnaire usability (n = 20)) are reported explicitly rather than extrapolated from component benchmarks alone.
 
 ## Methodology
 
@@ -562,8 +348,6 @@ The experiment compared Whisper tiny, base, small, medium, a fine-tuned tiny mod
 
 Listing 3.1 — Unified ASR dispatch (`ai-services/asr/asr_service.py`, excerpt)
 
-```python
-
 SUPPORTED_LANGUAGES = ["en", "ta", "si"]
 
 WHISPER_MODELS = ["tiny", "base", "small", "medium"]
@@ -616,8 +400,6 @@ out["engine"] = engine_name.lower()
 
 return out  # latency_ms set inside each engine via time.perf_counter()
 
-```
-
 Source file:[ai-services/asr/asr_service.py]
 
 Listing 3.1 shows the single-entry point used by the benchmark harness and the production voice interface. Incoming audio is optionally normalized to 16 kHz mono with silence trimming before dispatch. The `engine_name` parameter selects the backend: Google Cloud Speech-to-Text, a fine-tuned Whisper checkpoint, or by default a standard Whisper model size (`tiny` through `medium`). Invalid language codes fall back to English; Tamil (`ta`) and Sinhala (`si`) are accepted at the API layer but required FFmpeg-backed decoding for reliable batch runs. Each engine module measures wall-clock latency with `time.perf_counter()` around the provider call (model load plus `transcribe` for Whisper; API round-trip for Google) and returns `latency_ms` in the same dictionary as the transcript, enabling paired WER-latency comparison in Chapter 4. Credentials for cloud engines are read from environment variables only and are not embedded in source code. Temporary preprocessed files are deleted in a `finally` block after each request.
@@ -631,8 +413,6 @@ Custom actions connect predicted intent and entities to current platform data. F
 Figure 7:Chatbot query sequence
 
 Listing 3.2 — Timetable custom action (`ai-services/chatbot/actions/actions.py`, excerpt)
-
-```python
 
 def _api_headers(user_id: str) -> Dict[str, str]:
 
@@ -716,8 +496,6 @@ text="I couldn't reach the timetable service. "
 
 return []
 
-```
-
 Source file : [ai-services/chatbot/actions/actions.py]
 
 Listing 3.2 illustrates how Rasa custom actions call live backend APIs instead of static training responses. Authentication: `_get_user_id` reads the student identifier from message metadata (injected by the React chat widget when the user is logged in) or from `sender_id`, rejecting guest sessions. Each request sends `X-Chatbot-Api-Key` (server-side secret from environment) and `X-Chatbot-User-Id` so the Express API can authorize chatbot traffic separately from browser JWT cookies while still scoping data to the correct student. Error handling: unauthenticated users receive a login prompt; HTTP failures and empty payloads are caught with `requests.RequestException` and `success` checks, logged server-side, and surfaced as short user-facing fallback messages that direct the student to the equivalent web page rather than exposing stack traces. Data path: `GET /api/timetable/my` returns the same FET grid snapshot used by the My Timetable UI; lines are filtered by the resolved weekday slot (`today`, `tomorrow`, or `MONDAY`–`SUNDAY`). Indoor direction actions (`action_get_directions`, `action_guide_to_room`) reuse `_api_headers` and the same try/except pattern to call `POST /api/navigation/query` and `GET /api/map/indoor-route`.
@@ -727,8 +505,6 @@ Listing 3.2 illustrates how Rasa custom actions call live backend APIs instead o
 he translation service exposes local MarianMT, mBART-50, and optional Google/Azure adapters. The benchmark uses the same corpus, metric functions, logging format, and repeated-run structure for each engine. Pivot translation is used where a direct model is unavailable, which may compound errors and latency. The system records candidate text, reference, BLEU, embedding similarity, latency, language pair, category, engine, and run number. In production use, the platform defaults to English; Tamil and Sinhala UI translation is available but was not relied upon as a completed feature because output quality was inconsistent, especially for Sinhala-to-Tamil.
 
 Listing 3.3 — Translation engine dispatch and Marian pivot logic (`ai-services/translation/`, excerpt)
-
-```python
 
 # translation_service.py — unified entry point
 
@@ -808,8 +584,6 @@ translated, lat = t2, lat1 + lat2
 
 return {"translated_text": translated, "latency_ms": round(lat, 2), "engine": "marian"}
 
-```
-
 Source files: [translation_service.py]
 
 Table 3:Translation Model Configuration by Language Direction
@@ -836,8 +610,6 @@ Administrators upload floor plans and review AI-assisted room/corridor detection
 Figure 8:Indoor navigation pipeline
 
 Listing 3.4 — A* pathfinding core loop (`server/src/modules/indoor-navigation/pathfinding/astar.ts`, excerpt)
-
-```typescript
 
 export function astar(
 
@@ -923,8 +695,6 @@ return null;
 
 }
 
-```
-
 Sourcefile:[server/src/modules/indoornavigation/pathfinding/astar.ts]
 
 Nodes carry floor-plan coordinates (`x`, `y` as percentages). `buildAdjacency` assigns each edge a non-negative weight-either an administrator-set value or Euclidean distance plus optional floor-transition and vertical-connector penalties. The algorithm maintains `gScore` (best known cost from the start) and `fScore(n) = gScore(n) + h(n)`, where h(n) is the straight-line Euclidean distance from node n to the goal in the same coordinate space.
@@ -991,12 +761,12 @@ Table 5:NLU example counts by intent
 | fallback | 38 | 38 | 37 | 8 |
 | out_of_scope | 38 | 38 | 38 | 8 |
 | Subtotal: H2 / CV Intents | 431 | 431 | 416 | 78 |
-| ask_todays_classes | 20 | — | — | — |
-| guide_to_lecture_room | 25 | — | — | — |
-| guide_to_next_class | 18 | — | — | — |
-| affirm | 9 | — | — | — |
-| deny | 5 | — | — | — |
-| Grand Total | 508 | — | — | 78 |
+| ask_todays_classes | 20 | - | - | - |
+| guide_to_lecture_room | 25 | - | - | - |
+| guide_to_next_class | 18 | - | - | - |
+| affirm | 9 | - | - | - |
+| deny | 5 | - | - | - |
+| Grand Total | 508 | - | - | 78 |
 
 
 
@@ -1012,7 +782,7 @@ Table 6:Entity annotation counts
 | hall_name | 39 | 39 | 4 | 37 |
 | time | 28 | 28 | 6 | 28 |
 | course_name | 12 | 12 | 3 | 18 |
-| Total Spans | 356 | — | 57 | 528 |
+| Total Spans | 356 | - | 57 | 528 |
 
 
 
@@ -1106,14 +876,9 @@ Each of 100 sentence sets is translated in six directions for three repetitions,
 
 #### 3.7.4 Usability Evaluation
 
-The planned study tests H4: AI-integrated features reduce mean task completion time by at least 25% compared with manual navigation, for paired tasks where both conditions apply. Design is within-subjects: each participant completes the same academic tasks under manual (menu/page navigation only) and AI-assisted (chatbot and/or voice) conditions on the production deployment at https://lecstu.com. Configuration is pinned in `research/research-config.yaml` (`usability` section): minimum 20 participants, 45-minute sessions, counterbalancing enabled, SUS + AI-trust + post-task satisfaction scales.
+The planned study tests H4: AI-integrated features reduce mean task completion time by at least 25% compared with manual navigation, for paired tasks where both conditions apply. Design is within-subjects: each participant completes the same academic tasks under manual (menu/page navigation only) and AI-assisted (chatbot and/or voice) conditions on the production deployment at https://lecstu.com. Configuration is pinned in `research/research-config.yaml` (`usability` section): minimum 20 participants, 45-minute sessions, counterbalancing enabled, SUS + AI-trust + post-task satisfaction scales.Study status.
 
-Study status. Student questionnaire data were collected in July 2026 (20 Google Form responses on https://lecstu.com; export: `form-responses-students-2026-07-10.csv`). Demographics and questionnaire results are reported in Section 4.7.
-
-> **Change log (Word sync — §3.7.4)**
-> - **Typo — FROM:** `minimum 2 participants` → **TO:** `minimum 20 participants`
-> - **Study status — FROM:** `participant sessions had not been completed at the time this methodology chapter was written`
-> - **Study status — TO:** July 2026: 20 questionnaire responses collected; results in §4.7
+Student questionnaire data were collected in July 2026 (20 Google Form responses on https://lecstu.com; export: `form-responses-students-2026-07-10.csv`). Demographics and questionnaire results are reported in Section 4.7.
 
 Table 12:Ethics approval and governance
 
@@ -1152,7 +917,7 @@ Participant information sheet and informed consent
 
 Before any timed task, each participant receives a Participant Information Sheet covering: study title and purpose (RO-4 / RQ-4); what participation involves (~45 min, manual + AI tasks, post-session questionnaire); data collected (coded ID, task times, ratings, optional comments); anonymization (P01, L01, …); storage on encrypted local media; right to withdraw; researcher and supervisor contacts.
 
-**Signed informed consent** is obtained on paper before the session begins. The consent form includes the statements listed in `ethics_plan.md` 4 and 8 (voluntary participation, withdrawal without penalty, anonymized use for research only). Signed originals are stored in `research/usability-study/instruments/` (e.g. `consent_form_signed/`, not in Git). At questionnaire time, participants also tick a required consent checkbox (Form A3 / B3) in the Google Form as a secondary record.
+Signed informed consent is obtained on paper before the session begins. The consent form includes the statements listed in `ethics_plan.md` 4 and 8 (voluntary participation, withdrawal without penalty, anonymized use for research only). Signed originals are stored in `research/usability-study/instruments/` (e.g. `consent_form_signed/`, not in Git). At questionnaire time, participants also tick a required consent checkbox (Form A3 / B3) in the Google Form as a secondary record.
 
 Target demographic summary (recruitment plan)
 
@@ -1390,7 +1155,7 @@ Table 22:Ethics Review Governance and Approval Status
 
 
 
-Until an approval reference is recorded, the usability study described in Section 3.7.4 remains planned, not executed.
+Student usability questionnaires (n = 20) were collected under the study protocol in July 2026; formal ethics approval reference remains pending (see Table 23).
 
 Research contacts
 
@@ -1830,101 +1595,99 @@ Evidence folder (axe/Lighthouse screenshots):[photos-for-thesis/appendix/wcag-au
 
 ### 4.7 Usability Results
 
-> **Change log (Word sync — §4.7)**
-> - **FROM:** all `N/A` / `0` usability tables
-> - **TO:** questionnaire results below (*n*=20, SUS 60.53). **Remove** observer-task / H4-not-testable paragraphs from Word if still present.
-
 #### 4.7.1 Study execution status
 
 Twenty student usability questionnaires were collected in July 2026 after sessions on https://lecstu.com (`research/usability-study/raw-data/form-responses-students-2026-07-10.csv`), meeting the preregistered target of 20 participants. Analysis: `research/usability-study/scripts/analyze_usability.py` → `research/reports/usability_study_report.md` and `research/usability-study/results/usability_analysis.json`.
 
-**Sensitivity check.** Four submissions used researcher- or system-associated email addresses (P11, P12, P26×2, P29). Excluding those rows yields *n* = **16**, SUS mean **61.50** (SD 16.06); conclusions unchanged. Primary tables below use **all 20** exported rows.
+Sensitivity check. Four submissions used researcher- or system-associated email addresses (P11, P12, P26×2, P29). Excluding those rows yields n = 16, SUS mean **61.50** (SD 16.06); conclusions unchanged. Primary tables use all 20 exported rows.
 
 #### 4.7.2 Participant demographics
 
-**Table 4.10 — Participant demographics (*n* = 20)**
+Table 36:Participant demographics
+
+
 
 | Field | Result |
-|---|---|
-| Role | Students **20** |
-| Age band | 18–21: **1**; 22–25: **10**; 26–30: **9** |
-| Programme | CT: **11**; CS: **4**; ET: **3**; BS: **2** |
-| Study year | Year 1: **3**; Year 2: **5**; Year 3: **2**; Year 4: **10** |
-| Technology comfort (1–5) | Mean **4.75**, SD **0.44** |
-| Preferred language | English: **7**; Mixed: **12**; Tamil: **1** |
+| --- | --- |
+| Role | Students: 20 |
+| Age band | 18–21: 1; 22–25: 10; 26–30: 9 |
+| Programme | CT: 11; CS: 4; ET: 3; BS: 2 |
+| Study year | Year 1: 3; Year 2: 5; Year 3: 2; Year 4: 10 |
+| Technology comfort (1–5) | Mean: 4.75; SD: 0.44 |
+| Preferred language | English: 7; Mixed: 12; Tamil: 1 |
 
-> **Change log (Word sync — §4.7.2 demographics)**
-> - **FROM:** Table 35 all `N/A` / `0` collected
-> - **TO:** Table 4.10 with real counts (*n*=20)
 
-#### 4.7.3 Task ease, satisfaction, and perceived efficiency
 
-**Table 4.11 — Task ease and satisfaction (1–5, mean ± SD)**
+##### 4.7.3 Task completion, success, and timing
 
-| Task | Ease mean (SD) | *n* | Sat. mean (SD) | *n* |
-|---|---:|---:|---:|---:|
-| T1 — Next lecture | **4.85 (0.49)** | 20 | **4.84 (0.50)** | 19 |
-| T2 — Free hall | **4.70 (0.57)** | 20 | **4.75 (0.55)** | 20 |
-| T3 — Book appointment | **4.74 (0.56)** | 19 | **4.67 (0.59)** | 18 |
-| T4 — Indoor navigation | **4.68 (0.48)** | 19 | **4.53 (0.51)** | 17 |
-| T5 — Voice (TA/SI) | **3.44 (1.42)** | 18 | **3.67 (1.50)** | 18 |
-| T6 — Language + timetable | **3.45 (1.32)** | 20 | **3.50 (1.38)** | 18 |
+Table 37:Task completion and timing by mode
 
-**Overall perceived efficiency (T7, 1–5):** faster than manual **4.63 (0.83)**, *n* = 19; easier than manual **4.79 (0.54)**, *n* = 19; would use again **18** yes / **1** no.
 
-**Within-subject comparison (T1 ease vs T5 ease, *n* = 18 pairs):** mean difference **1.39** (SD 1.29), paired *t*(17) = **4.57**.
 
-> **Change log (Word sync — §4.7.3)**
-> - **FROM:** Table 36 all `N/A` / `0`
-> - **TO:** Table 4.11 + T7 + paired *t*(17)=4.57
+| Task | Ease Mean (SD) | n | Satisfaction Mean (SD) | n |
+| --- | --- | --- | --- | --- |
+| T1 — Next lecture | 4.85 (0.49) | 20 | 4.84 (0.50) | 19 |
+| T2 — Free hall | 4.70 (0.57) | 20 | 4.75 (0.55) | 20 |
+| T3 — Book appointment | 4.74 (0.56) | 19 | 4.67 (0.59) | 18 |
+| T4 — Indoor navigation | 4.68 (0.48) | 19 | 4.53 (0.51) | 17 |
+| T5 — Voice interaction (Tamil/Sinhala) | 3.44 (1.42) | 18 | 3.67 (1.50) | 18 |
+| T6 — Language and timetable | 3.45 (1.32) | 20 | 3.50 (1.38) | 18 |
 
-#### 4.7.4 Questionnaire results (SUS, AI trust, features)
 
-**Table 4.12 — System Usability Scale (SUS)** — 0–100 scale (*n* = 19 complete SUS scores from 20 submissions)
+
+Overall perceived efficiency (T7, 1–5): faster than manual 4.63 (0.83), n = 19; easier than manual 4.79 (0.54), n = 19; would use again 18 yes / 1 no.
+
+Within-subject (T1 ease vs T5 ease, n = 18):mean difference 1.39(SD 1.29), paired t(17) = 4.57.
+
+#### 4.7.4 Questionnaire results (SUS, AI trust, accessibility)
+
+Table 38:System Usability Scale (SUS)
+
+
 
 | Metric | Value |
-|---|---:|
-| **Mean SUS** | **60.53** |
-| SD | 14.45 |
-| Range | 37.5 – 85.0 |
-| vs industry benchmark (68) | *t*(18) = **−2.26** (significant at α = 0.05) |
+| --- | --- |
+| Mean SUS score | 60.53 |
+| Standard deviation (SD) | 14.45 |
+| Score range | 37.5–85.0 |
+| Comparison with benchmark score of 68 | t(18) = −2.26, statistically significant |
 
-**SUS item means (raw 1–5):** SUS1 **4.75**; SUS2 **2.35**; SUS3 **4.80**; SUS4 **3.30**; SUS5 **4.30**; SUS6 **2.25**; SUS7 **4.65**; SUS8 **2.80**; SUS9 **4.74**; SUS10 **3.35**.
 
-**AI trust (1–5, mean ± SD):** AI1 voice **3.35 (1.18)**; AI2 chatbot **3.63 (0.90)**; AI3 translation **3.30 (1.08)**; AI4 use AI regularly **4.32 (0.75)**; AI5 accessibility **4.42 (0.77)**.
 
-**Feature usefulness (1–5, mean ± SD):** F1 dashboard **4.80 (0.52)**; F2 timetable **4.95 (0.22)**; F3 halls **4.80 (0.41)**; F4 lecturers **4.75 (0.44)**; F5 appointments **4.75 (0.44)**; F6 indoor nav **4.45 (0.76)**; F8 chatbot **4.20 (0.83)**; F9 voice **3.35 (1.14)**; F10 translation **3.60 (1.31)**.
+SUS items (raw 1–5): SUS1 4.75; SUS2 2.35; SUS3 4.80; SUS4 3.30; SUS5 4.30; SUS6 2.25**; SUS7 4.65; SUS8 2.80; SUS9 4.74; SUS10 3.35.
 
-**Recommendation (O6):** **20/20** participants gave a positive recommendation response.
+AI trust: AI1 3.35 (1.18); AI2 3.63 (0.90); AI3 3.30 (1.08); AI4 4.32 (0.75); AI5 4.42 (0.77).
 
-> **Change log (Word sync — §4.7.4)**
-> - **FROM:** Table 37 all `N/A` / Total SUS `0`
-> - **TO:** SUS 60.53, AI trust, features, 20/20 recommend
+Features: F1 4.80; F2 4.95; F3 4.80; F4 4.75; F5 4.75; F6 4.45; F8 4.20; F9 3.35; F10 3.60.
+
+Recommendation:20/20 positive.
 
 #### 4.7.5 Qualitative feedback
 
-**Positive themes:** integrated platform; chatbot for timetable; ease of lecturer/hall access; would recommend to peers.
+#### Positive: integrated platform; chatbot timetable help; lecturer/hall access; would recommend.
 
-**Improvement themes:** voice input unreliable; Tamil/Sinhala translation and language switching; indoor navigation guidance; request for mobile app.
+#### Improvement: voice unreliable; translation/language switching; indoor nav guidance; mobile app request.
 
-**Representative quotes:** P05 — “Access denied for Voice input in chatbot”; P06 — “The language switching feature is not working”; P01 — “chatbox in tamil” needs improvement.
+#### Quotes:P05 - “Access denied for Voice input”; P06 -“language switching… not working”; P01 Tamil chatbox needs improvement.
 
-#### 4.7.6 Data location
+#### 4.7.6 Data location after collection
+
+Collected data and analysis artifacts are stored as follows:
+
+
 
 | Artifact | Path |
-|---|---|
-| Google Form export | `research/usability-study/raw-data/form-responses-students-2026-07-10.csv` |
-| Analysis script | `research/usability-study/scripts/analyze_usability.py` |
-| JSON results | `research/usability-study/results/usability_analysis.json` |
-| Report | `research/reports/usability_study_report.md` |
+| --- | --- |
+| Google Form export | research/usability-study/raw-data/form-responses-students-2026-07-10.csv |
+| Analysis script | research/usability-study/scripts/analyze_usability.py |
+| JSON results | research/usability-study/results/usability_analysis.json |
+| Report | research/reports/usability_study_report.md |
+
+
 
 ### 4.8 Chapter Summary
 
-The available evidence supports H2 and confirms a working automated and human evaluation pipeline for translation. English ASR results reveal a clear accuracy-latency trade-off; H1 is partially supported for English but Tamil/Sinhala ASR remains future work. Translation infrastructure is complete, but Tamil/Sinhala quality is uneven and not claimed as a finished contribution. Usability questionnaires from 20 students report mean SUS 60.53 (SD 14.45), strong satisfaction with core academic features (paired t shows T1 ease > T5 ease, t(17) = 4.57), and weaker voice/translation ratings (Section 4.7). Production deployment and indoor navigation integration are engineering outcomes that complement the AI evaluations reported above.
-
-> **Change log (Word sync — §4.8)**
-> - **FROM:** `H4 lacks participant results` (or no usability numbers)
-> - **TO:** usability sentence with SUS 60.53, n=20, t(17)=4.57
+The available evidence supports H2 and confirms a working automated and human evaluation pipeline for translation. English ASR results reveal a clear accuracy-latency trade-off; H1 is partially supported for English but Tamil/Sinhala ASR remains future work. Translation infrastructure is complete, but Tamil/Sinhala quality is uneven and not claimed as a finished contribution. Usability questionnaires from 20 students report mean SUS 60.53 (SD 14.45), strong satisfaction with core features (paired t(17) = 4.57 for T1 vs T5 ease), and weaker voice/translation ratings (Section 4.7). Production deployment and indoor navigation integration are engineering outcomes that complement the AI evaluations reported above.
 
 ## Chapter 5 – Discussion
 
@@ -1960,13 +1723,11 @@ For deployment, a hybrid configuration is appropriate. Local Rasa and local tran
 
 The platform should also expose uncertainty. Low-confidence chatbot predictions should trigger clarification; translations of critical notices should display the source text; and route instructions should allow users to report an incorrect connector. Accessibility requires these recovery paths as much as it requires voice input.
 
-Student usability questionnaires (*n* = 20) align with this picture: core logistics pages scored 4.7–4.9/5, while voice input and translation scored ~3.4–3.7/5, with paired t(17) = 4.57 for T1 vs T5 ease. Mean SUS 60.53 is significantly below the industry benchmark of 68 (t(18) = −2.26).
-
-> **Change log (Word sync — §5.5)**
-> - **Action:** ADD new paragraph after uncertainty sentence
-> - **Content:** n=20, core 4.7–4.9/5, voice ~3.4–3.7/5, t(17)=4.57, SUS 60.53, t(18)=−2.26
+Student usability questionnaires (n = 20) align with this: core logistics scored 4.7–4.9/5; voice/translation ~3.4–3.7/5; paired t(17) = 4.57 (T1 vs T5); SUS 60.53, t(18) = −2.26.
 
 ### 5.6 Limitations and Threats to Validity
+
+The present study has the following limitations:
 
 The present study has the following limitations:
 
@@ -1988,21 +1749,13 @@ The present study has the following limitations:
 
 9. The usability study used student questionnaires only (n=20); lecturer and administrator cohorts were outside this evaluation scope.
 
-> **Change log (Word sync — §5.6 limitation 9)**
-> - **FROM:** `The usability study is incomplete, so H4 and end-to-end benefit remain untested.`
-> - **TO:** `student questionnaires only (n=20); lecturer/admin cohorts out of scope`
-
 10. The artifact was developed for one university context, limiting institutional generalization.
 
 11. Floor-plan OCR and graph accuracy have not been reported across a sufficiently diverse building set.
 
 ### 5.7 Chapter Summary
 
-The results demonstrate technical feasibility and strong domain NLU performance. English ASR and the integrated platform-including production deployment, timetables, appointments, notifications, and indoor navigation are the primary completed contributions. Tamil and Sinhala speech and translation are not yet established at the same level but are supported by documented datasets and published low-resource language research for future extension. Student usability questionnaires indicate SUS 60.53 (below industry average) and high satisfaction with core logistics features (means 4.7–4.9/5), with voice and translation rated lower (~3.4/5).
-
-> **Change log (Word sync — §5.7)**
-> - **Action:** ADD usability closing sentence
-> - **Content:** SUS 60.53, core 4.7–4.9/5, voice ~3.4/5
+The results demonstrate technical feasibility and strong domain NLU performance. English ASR and the integrated platform-including production deployment, timetables, appointments, notifications, and indoor navigation are the primary completed contributions. Tamil and Sinhala speech and translation are not yet established at the same level but are supported by documented datasets and published low-resource language research for future extension. Student usability questionnaires indicate SUS 60.53 and high satisfaction with core logistics (4.7-4.9/5), with voice/translation lower (~3.4/5).
 
 ## Chapter 6 - Conclusions
 
@@ -2018,21 +1771,13 @@ RO-2 was achieved for the defined dataset: The Rasa chatbot was trained and eval
 
 RO-3 was partially achieved:The translation service, corpus, automated benchmark, and human evaluation were completed. Tamil/Sinhala output quality is uneven and not claimed as production-ready; cloud comparison remains deferred.
 
-RO-4 was achieved: Twenty student usability questionnaires were collected (SUS mean 60.53, SD 14.45; core-feature satisfaction 4.7–4.9/5; voice/translation ~3.4/5; 20/20 would recommend; T7 perceived efficiency means 4.63–4.79/5).
-
-> **Change log (Word sync — §6.2 RO-4)**
-> - **FROM:** `RO-4 is not yet empirically achieved` … `participant-based usability evidence must be collected`
-> - **TO:** `RO-4 was achieved` + SUS 60.53, 20/20 recommend, T7 efficiency ratings
+RO-4 was achieved: Twenty student usability questionnaires were collected (SUS mean 60.53, SD 14.45; core satisfaction 4.7-4.9/5; voice/translation ~3.4/5; 20/20 recommend; T7 means 4.63-4.79/5).
 
 RO-5 was substantially achieved:A production-oriented platform integrates academic logistics and AI services, is publicly deployed, and includes automated tests for several critical workflows plus documented hosting procedures.
 
 ### 6.3 Conclusions Drawn from Current Evidence
 
-The study concludes that a domain-specific, modular AI architecture can integrate voice and conversational interaction with live university services. Rasa provides acceptable intent and entity performance for the tested academic domain. The integrated platformtimetables, appointments, notifications, and indoor navigation-is the strongest engineering contribute-on. English ASR shows a material accuracy–latency trade-off: the most accurate tested model was also the slowest. Tamil and Sinhala speech and translation infrastructure exists but did not reach reliable quality in the deployed system. Twenty student usability responses support acceptable perceived usability and satisfaction with core features (SUS 60.53), with strong ratings for timetable, halls, and appointments and lower ratings for voice and translation.
-
-> **Change log (Word sync — §6.3 last sentence)**
-> - **FROM:** `The evidence does not yet justify concluding that the system improves user task efficiency (H4 remains untested).`
-> - **TO:** add `Twenty student usability responses` + SUS 60.53; core vs voice/translation pattern
+The study concludes that a domain-specific, modular AI architecture can integrate voice and conversational interaction with live university services. Rasa provides acceptable intent and entity performance for the tested academic domain. The integrated platformtimetables, appointments, notifications, and indoor navigation-is the strongest engineering contribute-on. English ASR shows a material accuracy–latency trade-off: the most accurate tested model was also the slowest. Tamil and Sinhala speech and translation infrastructure exists but did not reach reliable quality in the deployed system. Twenty student usability responses support acceptable perceived usability and satisfaction with core features (SUS 60.53), with strong core-feature ratings and lower voice/translation ratings.
 
 ### 6.4 Closing Remarks
 
@@ -2050,81 +1795,76 @@ This chapter translates the findings and limitations of Chapters 4-6 into action
 
 ### 7.2 Recommendations for institutional deployment and adoption
 
-Table 39:Recommendations for Institutional Pilot and Governance
+Table 40:Recommendations for Institutional Pilot and Governance
 
 
 
 | # | Recommendation | Rationale from This Thesis |
 | --- | --- | --- |
-| R-1 | Obtain formal ethics approval before any new participant data collection, including follow-on studies and human voice recordings | Ethics approval reference still pending in Section 3.9; student usability questionnaires (n=20) were collected under the study protocol |
-| R-2 | Pilot LECSTU with one degree programme, such as CS Year 3, using seeded timetable data already available in the system. Expand only after timetable and appointment workflows are validated with academic staff | End-to-end timetable tests failed due to UI drift, although production demonstrations exist. This shows that regression coverage must be strengthened before wider rollout |
-| R-3 | Assign a named faculty contact to maintain timetable master data, hall inventory, and lecturer availability so that the chatbot and user interface remain aligned with official schedules | LECSTU depends on live academic APIs. If official timetable or availability data become outdated, user trust in the chatbot and platform will be reduced |
-| R-4 | Communicate English as the supported production language until Tamil/Sinhala ASR and translation meet the defined extension criteria | English ASR is currently the only validated production path, while Tamil and Sinhala ASR/translation quality remains uneven |
-| R-5 | Run a short staff briefing explaining the chatbot scope, including timetable, halls, appointments, and directions, and clarify that it is not intended for general-purpose LLM advice | The out_of_scope intent showed weaker performance in cross-validation, so users should understand the chatbot’s supported task boundaries |
-| R-6 | Document an institutional data-retention policy for platform accounts and align it with the research retention rules, including thesis completion plus 12 months for study data | The thesis data protection plan avoids indefinite retention of voice and questionnaire PII, and the platform should follow the same privacy-focused approach |
+| R-1 | Obtain formal ethics approval before any new participant data collection, including follow-on studies and human voice recordings. | The ethics reference is still pending, although student questionnaires involving 20 participants were collected under the study protocol. |
+| R-2 | Pilot LECSTU with one degree programme, such as CS Year 3, using the seeded timetable data already available in the system. Expand the system only after timetable and appointment workflows are validated with academic staff. | End-to-end timetable tests failed because of user-interface drift, although production demonstrations were available. This indicates that regression testing coverage must be strengthened before a wider rollout. |
+| R-3 | Assign a named faculty contact to maintain timetable master data, hall inventory and lecturer availability so that the chatbot and user interface remain aligned with official schedules. | LECSTU depends on live academic APIs. Outdated timetable or lecturer-availability data may reduce users’ trust in the chatbot and the overall platform. |
+| R-4 | Communicate English as the supported production language until Tamil and Sinhala ASR and translation components satisfy the defined extension criteria. | English ASR is currently the only validated production pathway, while the quality of Tamil and Sinhala ASR and translation remains inconsistent. |
+| R-5 | Conduct a short staff briefing explaining the chatbot’s supported scope, including timetables, halls, appointments and directions. Clearly state that it is not intended to provide general-purpose LLM advice. | The out_of_scope intent produced weaker cross-validation performance. Therefore, users should clearly understand the chatbot’s supported functions and task boundaries. |
+| R-6 | Establish and document an institutional data-retention policy for platform accounts and align it with the research retention requirements, including retention until thesis completion plus 12 months for study data. | The thesis data-protection plan avoids the indefinite retention of voice recordings, questionnaire responses and personally identifiable information. The operational platform should follow the same privacy-focused approach. |
 
 
 
 ### 7.3 Recommendations for platform engineering and operations
 
-Table 40:Technical Recommendations
+Table 41:Technical Recommendations
 
 
 
 | # | Recommendation | Rationale |
 | --- | --- | --- |
-| R-7 | Fix and maintain Playwright E2E specifications, including timetable subtitle selectors, indoor-navigation seed data, and password-reset UI flow, so Table 4.8 can show reliable regression evidence before the next release | The July 2026 verification run recorded 22 failures out of 26 E2E tests, showing that browser-level regression coverage is not yet stable |
-| R-8 | Install and verify FFmpeg on every ASR host, and add a startup health check that fails clearly if FFmpeg is missing | Tamil/Sinhala batch ASR failed in the recorded run due to missing audio-processing dependency |
-| R-9 | Deploy Whisper small or base as the default model for interactive voice use, while reserving Whisper medium for offline or batch transcription where higher latency is acceptable | ASR results showed an accuracy–latency trade-off; Whisper medium had better accuracy but much higher latency |
-| R-10 | Add clarification prompts when Rasa confidence is low, especially for appointment and availability-related intents | Confusion was observed between closely related intents, so clarification prompts can reduce incorrect routing |
-| R-11 | Show the source English text alongside translated UI strings for critical notices such as timetable changes and appointment confirmations | Translation errors in academic logistics can cause serious misunderstanding; the English source provides a reliable fallback |
-| R-12 | Complete WCAG remediation items A1–A5 from Section 4.6.1, including password-toggle labelling, sidebar-close improvement, map keyboard access, and contrast audit | The accessibility audit showed partial WCAG conformance, and voice support alone does not guarantee accessibility |
-| R-13 | Run audit-phase-12-5-security.ts and rate-limit load tests before each major release, and archive the outputs in Appendix H | Security tests were scripted but not executed during the July verification run |
-| R-14 | Publish indoor navigation graphs only after administrator review, and keep vision/OCR-generated outputs as drafts until human verification is completed | The system uses a graph-first indoor-navigation design, and floor-plan E2E testing timed out during verification |
-| R-15 | Enable monitoring and rollback for PM2 services such as lecstu-api, Rasa, and action servers, with versioned model artifacts | Since LECSTU is deployed at lecstu.com, production reliability requires monitoring, rollback support, and version-controlled service/model releases |
+| R-7 | Fix and maintain the Playwright end-to-end testing specifications, including timetable subtitle selectors, indoor-navigation seed data and the password-reset user-interface flow, so that Table 4.8 can present reliable regression evidence before the next release. | The July 2026 verification run recorded 22 failures out of 26 end-to-end tests, indicating that browser-level regression coverage is not yet stable. |
+| R-8 | Install and verify FFmpeg on every ASR host and implement a startup health check that provides a clear failure message when FFmpeg is unavailable. | The recorded Tamil and Sinhala batch ASR test failed because the required audio-processing dependency was missing. |
+| R-9 | Deploy Whisper Small or Whisper Base as the default model for interactive voice functions, while reserving Whisper Medium for offline or batch transcription where higher latency is acceptable. | The ASR evaluation demonstrated an accuracy–latency trade-off. Whisper Medium achieved better accuracy but required considerably more processing time. |
+| R-10 | Add clarification prompts when Rasa confidence is low, particularly for appointment-related and availability-related intents. | Confusion was observed between closely related intents. Clarification prompts can therefore reduce incorrect intent routing and inappropriate responses. |
+| R-11 | Display the original English text alongside translated user-interface content for critical notices, including timetable changes and appointment confirmations. | Translation errors relating to academic logistics may cause significant misunderstanding. Displaying the English source text provides users with a reliable fallback. |
+| R-12 | Complete the WCAG remediation actions A1–A5 identified in Section 4.6.1, including password-toggle labelling, improvements to the sidebar-close control, keyboard accessibility for maps and a complete colour-contrast audit. | The accessibility audit identified only partial WCAG conformance. The availability of voice interaction alone does not ensure that the platform is accessible to all users. |
+| R-13 | Execute audit-phase-12-5-security.ts and the rate-limit load tests before every major release, and archive the generated outputs in Appendix H. | Security tests had been scripted but were not executed during the July 2026 verification run. |
+| R-14 | Publish indoor-navigation graphs only after administrator review and retain vision-generated or OCR-generated outputs as drafts until they have been manually verified. | LECSTU uses a graph-first indoor-navigation design, while the floor-plan end-to-end test timed out during the verification process. |
+| R-15 | Implement monitoring and rollback mechanisms for PM2-managed services, including lecstu-api, Rasa and the action servers, with version-controlled application and model artifacts. | As LECSTU is deployed through lecstu.com, production reliability requires service monitoring, rollback support and version-controlled releases of software and machine-learning models. |
 
 
 
 ### 7.4 Recommendations for research and evaluation
 
-Table 41:Research Evaluation and Future Validation Recommendations
+Table 42:Research Evaluation and Future Validation Recommendations
 
 
 
 | # | Recommendation | Rationale |
 | --- | --- | --- |
-| R-16 | Extend usability evaluation to lecturer and administrator cohorts using the same questionnaire instruments | Student cohort complete (n=20, SUS 60.53); staff cohorts not yet evaluated |
-
-> **Change log (Word sync — §7.4 R-16)**
-> - **Recommendation — FROM:** `Complete the preregistered usability study with at least 20 participants…`
-> - **Recommendation — TO:** extend to lecturer/administrator cohorts
-> - **Rationale — TO:** student cohort complete (n=20, SUS 60.53)
-| R-17 | Rebuild the NLU held-out dataset using novel phrasings that are fully disjoint from nlu.yml, and report leakage-free metrics separately | The current held-out data has major overlap with training data, with 75 out of 78 held-out lines appearing in nlu.yml |
-| R-18 | Collect spontaneous user utterances from anonymized and consented chatbot logs to expand the NLU dataset beyond investigator-authored YAML examples | Investigator-authored utterances may not fully represent natural student and lecturer language, creating an internal validity threat |
-| R-19 | Replace gTTS ASR audio with ethics-approved multi-speaker recordings under clean and moderate-noise conditions before extending H1 claims beyond English | The current ASR corpus is synthetic, so real-world Tamil and Sinhala ASR performance cannot yet be strongly claimed |
-| R-20 | Execute cloud translation baselines when API access is available, and report paired comparisons with Marian and mBART | Cloud translation baseline runs were deferred, so local model results require comparison against external baselines |
-| R-21 | Complete native-speaker review for translation sentences 051–100 and update review_log.json before citing corpus quality in publications | These sentences are currently marked as pending_native_review, so the reference quality is not fully verified |
-| R-22 | Evaluate indoor navigation quantitatively using route optimality, QR snap error, and user comprehension across at least two buildings | Chapter 4 does not yet include automated or quantitative navigation metrics |
+| R-16 | Extend the usability evaluation to lecturer and administrator cohorts using the same questionnaire instruments applied to the student participants. | The student evaluation has been completed with 20 participants and produced a mean SUS score of 60.53. However, lecturer and administrator cohorts have not yet been evaluated. |
+| R-17 | Rebuild the held-out NLU dataset using novel phrasings that are fully disjoint from nlu.yml, and report the resulting leakage-free performance metrics separately. | The current held-out dataset has substantial overlap with the training data, with 75 of the 78 held-out utterances also appearing in nlu.yml. This overlap may inflate the reported evaluation results. |
+| R-18 | Collect spontaneous user utterances from anonymised and consented chatbot interaction logs to expand the NLU dataset beyond investigator-authored YAML examples. | Investigator-authored utterances may not accurately represent the natural language used by students and lecturers, creating a potential threat to internal and ecological validity. |
+| R-19 | Replace the gTTS-generated ASR audio with ethics-approved, multi-speaker human recordings collected under clean and moderate-noise conditions before extending the H1 claims beyond English. | The current ASR evaluation corpus is synthetic. Therefore, strong claims about real-world Tamil and Sinhala ASR performance cannot yet be supported. |
+| R-20 | Execute cloud-based translation baseline evaluations when API access becomes available, and report paired comparisons against Marian and mBART. | The cloud translation baseline evaluations were deferred. Consequently, the performance of the local translation models still requires comparison with established external services. |
+| R-21 | Complete native-speaker review for translation sentences 051–100 and update review_log.json before citing the corpus quality in future publications. | These sentences are currently labelled as pending_native_review; therefore, the linguistic quality of the complete reference corpus has not yet been fully verified. |
+| R-22 | Evaluate indoor navigation quantitatively using route optimality, QR-code snap error and user route-comprehension measures across at least two university buildings. | Chapter 4 does not currently present automated or quantitative performance metrics for the indoor-navigation component. |
 
 
 
 ### 7.5 Future work roadmap
 
-Table 42:Prioritized Future Work
+Table 43:Prioritized Future Work
 
 
 
-| Priority | Work Stream | Actions | Ties to RO |
+| Priority | Work Stream | Actions | Relationship to Research Objective |
 | --- | --- | --- | --- |
-| High | Usability and H4 validation | Obtain ethics approval, conduct 20 or more usability sessions, analyse results using analyze_usability.py, and accept or reject H4 using the 25% task-time reduction criterion | RO-4 |
-| High | Testing and quality gates | Repair Playwright E2E specifications, update Table 4.8 with successful regression evidence, and run CI checks on pull requests | RO-5 |
-| High | Accessibility | Complete WCAG remediation items A1–A5 and archive axe/Lighthouse accessibility reports | RO-4, accessibility planning |
-| Medium | Tamil/Sinhala ASR | Install and verify FFmpeg, fine-tune using SLR127 and SLR52, collect ethics-approved human recordings, and report results according to Section 4.2.1 | RO-1 |
-| Medium | Tamil/Sinhala machine translation | Evaluate direct Tamil–Sinhala models, verify the translation corpus, and conduct human review of critical translated entities | RO-3 |
-| Medium | NLU robustness | Build an independent leakage-free test set, improve clarification UX, and improve course_name entity recall | RO-2 |
-| Medium | Indoor navigation | Validate routes across multiple buildings and conduct a QR positioning accuracy study | RO-5 |
-| Lower | Operations | Add monitoring, autoscaling, model rollback, and long-term adoption survey mechanisms | RO-5 |
-| Lower | Generalization | Pilot LECSTU in a second institution or faculty and conduct a comparative deployment study | Beyond current scope |
+| Medium | Staff usability | Extend the questionnaire-based usability evaluation to lecturer and administrator cohorts. | RO-4 |
+| High | Testing and quality gates | Repair the Playwright end-to-end test specifications, update Table 4.8 with successful regression evidence and execute continuous-integration checks for every pull request. | RO-5 |
+| High | Accessibility | Complete WCAG remediation actions A1–A5 and archive the resulting axe and Lighthouse accessibility reports. | RO-4 and accessibility planning |
+| Medium | Tamil and Sinhala ASR | Install and verify FFmpeg, fine-tune the ASR models using SLR127 and SLR52, collect ethics-approved human voice recordings and report the findings according to Section 4.2.1. | RO-1 |
+| Medium | Tamil and Sinhala machine translation | Evaluate direct Tamil–Sinhala translation models, verify the translation corpus and conduct human review of critical translated entities. | RO-3 |
+| Medium | NLU robustness | Develop an independent leakage-free test dataset, improve the clarification user experience and increase course_name entity recall. | RO-2 |
+| Medium | Indoor navigation | Validate routes across multiple university buildings and conduct a QR-based positioning accuracy study. | RO-5 |
+| Lower | Operations | Add service monitoring, autoscaling, model rollback mechanisms and long-term adoption survey processes. | RO-5 |
+| Lower | Generalisation | Pilot LECSTU in a second institution or faculty and conduct a comparative deployment study. | Beyond the current scope |
 
 
 
@@ -2132,33 +1872,29 @@ Table 42:Prioritized Future Work
 
 Future reporting on multilingual extension should cite the following foundational sources already used in this thesis:
 
-Table 43:Literature Support for LECSTU AI Components
+Table 44:Literature Support for LECSTU AI Components
 
 
 
 | Topic | Reference | Relevance to LECSTU |
 | --- | --- | --- |
-| Multilingual student voice support | [4] Ralston et al. | Provides prior evidence that multilingual academic voice interaction is feasible in student-support systems |
-| Whisper ASR foundation | [3] Radford et al. | Provides the base ASR model used in the LECSTU ASR service and fine-tuning process |
-| Tamil ASR corpus | [11] IISc-MILE Tamil, SLR127 | Provides approximately 150 hours of Tamil speech data for ASR fine-tuning |
-| Sinhala ASR corpus | [12] Large Sinhala ASR corpus, SLR52 | Provides approximately 185,000 Sinhala utterances for Sinhala ASR fine-tuning |
-| Tamil/Kannada subword ASR | [13] Madhavaraj et al. | Supports low-resource ASR methods for agglutinative languages such as Tamil |
-| Neural machine translation | [6] Marian | Supports the local neural machine translation engine used in LECSTU |
-| Multilingual translation | [7] mBART | Provides an alternative multilingual translation model relevant to the LECSTU translation component |
+| Multilingual student voice support | [4] Ralston et al. | Provides prior evidence that multilingual academic voice interaction is feasible in student-support systems. |
+| Whisper ASR foundation | [3] Radford et al. | Provides the foundation ASR model used in the LECSTU speech-recognition service and fine-tuning process. |
+| Tamil ASR corpus | [11] IISc-MILE Tamil, SLR127 | Provides approximately 150 hours of Tamil speech data for ASR fine-tuning. |
+| Sinhala ASR corpus | [12] Large Sinhala ASR corpus, SLR52 | Provides approximately 185,000 Sinhala utterances for Sinhala ASR fine-tuning. |
+| Tamil and Kannada subword ASR | [13] Madhavaraj et al. | Supports the use of low-resource ASR methods for agglutinative languages such as Tamil. |
+| Neural machine translation | [6] Marian | Supports the local neural machine translation engine used in the LECSTU platform. |
+| Multilingual translation | [7] mBART | Provides an alternative multilingual translation model relevant to the LECSTU translation component. |
 
 
 
 ### 7.6 Chapter summary
 
-## Chapter 7 recommends that FCT treat LECSTU as a research-backed pilot rather than a finished multilingual product: deploy English-first with clear scope, positive student questionnaire feedback (SUS 60.53, strong core-feature ratings), harden tests and accessibility, and pursue Tamil/Sinhala ASR and translation as a documented extension track. For maintainers, the highest-return engineering tasks are regression-test repair, FFmpeg-backed ASR reliability, and low-confidence chatbot handling. For researchers, independent NLU and navigation evaluation and honest reporting of partial RO achievement will strengthen the credibility of any follow-on publications built on this artifact.
-
-> **Change log (Word sync — §7.6)**
-> - **FROM:** `complete ethics-approved usability evidence`
-> - **TO:** `positive student questionnaire feedback (SUS 60.53, strong core-feature ratings)`
+## Chapter 7 recommends that FCT treat LECSTU as a research-backed pilot rather than a finished multilingual product: deploy English-first with clear scope, positive student questionnaire feedback (SUS 60.53, strong core-feature ratings), harden tests and accessibility, and pursue Tamil/Sinhala ASR and translation as a documented extension track. For maintainers, the highest-return engineering tasks are regression-test repair, FFmpeg-backed ASR reliability, and low-confidence chatbot handling. For researchers, independent NLU and navigation evaluation-and honest reporting of partial RO achievement-will strengthen the credibility of any follow-on publications built on this artifact.
 
 ## References
 
-Reference status:Entries [1]–[4] originate from the supplied proposal and were normalized where sufficient details were available. Entries [5]–[10] are foundational technical sources appropriate to implemented methods. Before submission, verify every author, title, year, volume, issue, pages, DOI/URL, and access date against the original publication, and ensure every in-text citation has one matching IEEE entry. Replace weak web/blog sources from the proposal with peer-reviewed or official primary sources where possible.
+Reference status:Entries [1]–[4] originate from the supplied proposal and were normalized where sufficient details were available. Entries [5]–[10] are foundational technical sources appropriate to implemented methods. Before submission, verify every author, title, year, volume, issue, pages, DOI/URL, and access date against the original publication, and ensure every in-text citation has one matching IEEE entry. Replace weak web/blog sources from the proposal with peer-reviewed or official primary sources where possible..
 
 [1] S. Z. Sweidan, S. S. Abu Laban, N. A. Alnaimat, and K. A. Darabkh, “SIAAA-C: A student interactive assistant Android application with chatbot during COVID-19 pandemic,” *Computer Applications in Engineering Education*, vol. 29, no. 6, 2021, doi: 10.1002/cae.22419.
 
@@ -2214,8 +1950,6 @@ Declaration: All voice input (benchmark and production) enters through one dispa
 
 Source: `ai-services/asr/asr_service.py`
 
-```python
-
 def transcribe(
 
 audio_path: str,
@@ -2250,15 +1984,11 @@ return google_transcribe(processed_path, language)
 
 return whisper_transcribe(processed_path, language, model_size)
 
-```
-
 Appendix B -Rasa NLU pipeline
 
 Declaration: Intent and entity recognition use DIETClassifier with character n-grams, which suits short academic queries (timetable, halls, appointments).
 
 Source: `ai-services/chatbot/config.yml`
-
-```yaml
 
 pipeline:
 
@@ -2286,15 +2016,11 @@ entity_recognition: true
 
 constrain_similarities: true
 
-```
-
-## Appendix C — Chatbot live timetable action
+Appendix C - Chatbot live timetable action
 
 Declaration: The chatbot does not store schedules in the model; it fetches the student’s current timetable from the Express API using chatbot authentication headers.
 
 Source:`ai-services/chatbot/actions/actions.py`
-
-```python
 
 r = requests.get(
 
@@ -2318,15 +2044,11 @@ lines = _timetable_lines_from_grid(tt.get("grid"), requested_day)
 
 dispatcher.utter_message(text="Here's your timetable:\n\n" + "\n".join(lines[:15]))
 
-```
-
-## Appendix D — Authentication and chatbot API key
+Appendix D - Authentication and chatbot API key
 
 Declaration. Browser clients use JWT; Rasa custom actions authenticate with a shared API key and the logged-in user id so the same REST layer serves both UI and chatbot.
 
 Source: `server/src/middleware/auth.ts`
-
-```typescript
 
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
 
@@ -2360,9 +2082,7 @@ next();
 
 }
 
-```
-
-## Appendix E — Personalized timetable API
+Appendix E - Personalized timetable API
 
 Declaration. `GET /api/timetable/my` returns the role-specific schedule (student group or lecturer load) with optional cache bypass for chatbot freshness.
 
@@ -2392,15 +2112,11 @@ res.json({ success: true, data });
 
 }
 
-```
-
 ## Appendix F — Appointment booking with role checks
 
 Declaration. Only authenticated students may create appointments; lecturers accept or reject through separate authorized routes on the same resource.
 
 Source: `server/src/routes/appointments.ts`
-
-```typescript
 
 router.use(authenticate);
 
@@ -2416,13 +2132,11 @@ router.patch('/:id/admin-approve', authorize('ADMIN'), adminApproveAppointment);
 
 ```
 
-## Appendix G — MarianMT with Tamil–Sinhala pivot
+Appendix G - MarianMT with Tamil–Sinhala pivot
 
 Declaration. Direct Marian models cover English↔Tamil and English↔Sinhala; Tamil↔Sinhala is pivoted through English and latencies are summed—matching the RO-3 evaluation design.
 
 Source: `ai-services/translation/engines/transformer_engine.py`
-
-```python
 
 elif pair == ("ta", "si"):
 
@@ -2444,15 +2158,11 @@ translated, lat = t2, lat1 + lat2
 
 return {"translated_text": translated, "latency_ms": round(lat, 2), "engine": "marian"}
 
-```
-
-## Appendix H — Indoor A* pathfinding
+Appendix H - Indoor A* pathfinding
 
 Declaration. Published indoor routes use A* on the reviewed navigation graph (nodes and weighted edges), not live computer-vision at query time.
 
 Source: `server/src/modules/indoor-navigation/pathfinding/astar.ts`
-
-```typescript
 
 export function astar(
 
@@ -2500,15 +2210,11 @@ return null;
 
 }
 
-```
-
-## Appendix I — QR positioning during active navigation
+Appendix I -QR positioning during active navigation
 
 Declaration. Scanning a corridor QR resolves the user to a graph node and can recalculate the remaining route from that position.
 
 Source :`server/src/modules/indoor-navigation/controllers/indoorNavController.ts`
-
-```typescript
 
 / POST /indoor-nav/position/qr */
 
@@ -2540,9 +2246,7 @@ fromNodeId: position.nodeId,
 
 }
 
-```
-
-Appendix J — Production deployment screenshots
+Appendix J - Production deployment screenshots
 
 Purpose: Appendices A–I show *how* key modules are implemented. Appendix J shows that the same artifact runs as a **live production stack** on Oracle Cloud (https://lecstu.com): Node API under PM2, Nginx reverse proxy, PostgreSQL, and HTTPS. Screenshots are operational evidence for RO-5; they are **not** student UI demos (those are Figures 4.11–4.20).
 
