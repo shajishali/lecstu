@@ -576,6 +576,8 @@ def _looks_like_hall_query(text: str, tracker: Tracker) -> bool:
     t = (text or "").lower().strip()
     if not t:
         return False
+    if _looks_like_timetable_query(text):
+        return False
     # Never steal lecturer/appointment turns
     if _looks_like_lecturer_query(text, tracker):
         return False
@@ -1247,6 +1249,10 @@ class ActionCheckHallAvailability(Action):
             return []
 
         text = ((tracker.latest_message or {}).get("text") or "").strip()
+
+        # Hard guard: never answer halls when the user clearly asked for their timetable
+        if _looks_like_timetable_query(text):
+            return await ActionQueryTimetable().run(dispatcher, tracker, domain)
 
         # Person names (even after mistaken "lecture hall …") go to appointment booking
         mistyped_person = _extract_person_after_hall_words(text)

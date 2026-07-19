@@ -14,6 +14,16 @@ rules:
       - intent: deny
       - action: action_recover_or_fallback
 
+  - rule: Ask timetable
+    steps:
+      - intent: ask_timetable
+      - action: action_query_timetable
+
+  - rule: Ask today's classes
+    steps:
+      - intent: ask_todays_classes
+      - action: action_today_on_campus
+
   - rule: Ask hall availability
     steps:
       - intent: ask_hall_availability

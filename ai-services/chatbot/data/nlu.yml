@@ -56,6 +56,15 @@ nlu:
       - time table of the monday
       - show me schedule of the wednesday
       - i want timetable of the thursday
+      - Hi, what is my today timetable?
+      - Hi what is my timetable today?
+      - what is my today timetable
+      - what is my today's timetable
+      - Can you tell me my today timetable?
+      - Please show my timetable for today
+      - my today timetable please
+      - tell me my timetable today
+      - hi what classes do I have today
 
   - intent: ask_hall_availability
     examples: |

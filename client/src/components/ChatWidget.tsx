@@ -2,7 +2,8 @@
  * LECSTU Chat Widget
  * Floating chat bubble connecting to Rasa REST API.
  * Supports text and voice input.
- * English: Web Speech API (instant, built-in). Tamil/Sinhala: ASR (Whisper tiny).
+ * Voice: live words in the input while speaking (browser speech when available,
+ * otherwise Whisper with periodic updates). User edits, then Enter/Send.
  */
 import { useState, useRef, useEffect, useCallback, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { MessageSquare, X, Minimize2, Send, Mic, Square, Loader2 } from 'lucide-react';
@@ -16,6 +17,8 @@ const RASA_WEBHOOK =
   import.meta.env.VITE_RASA_WEBHOOK || '/rasa/webhooks/rest/webhook';
 
 const MIN_RECORDING_MS = 500; // Avoid sending empty/short clips
+/** How often to refresh the live Whisper transcript while recording (any browser). */
+const LIVE_WHISPER_MS = 2200;
 const MD_BREAKPOINT = 768;
 const SIZE_STORAGE_KEY = 'lecstu-chat-widget-size';
 const MIN_CHAT_W = 280;
@@ -96,22 +99,33 @@ function persistChatSize(size: ChatSize) {
 function normalizeTimetableMessage(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return trimmed;
-  const lower = trimmed.toLowerCase();
+  // Drop casual openers so intent classification focuses on the ask
+  const withoutGreeting = trimmed
+    .replace(/^(?:hi|hello|hey|please)[,\s]+/i, '')
+    .trim();
+  const lower = withoutGreeting.toLowerCase();
   const isTimetableAsk =
-    /\b(time\s*table|timetable|schedule)\b/i.test(trimmed) ||
-    (/\btable\b/i.test(trimmed) && /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)\b/i.test(trimmed));
+    /\b(time\s*table|timetable|schedule)\b/i.test(withoutGreeting) ||
+    (/\btable\b/i.test(withoutGreeting) &&
+      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)\b/i.test(
+        withoutGreeting
+      )) ||
+    (/\b(my\s+classes|what\s+classes)\b/i.test(withoutGreeting) &&
+      /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(
+        withoutGreeting
+      ));
   if (!isTimetableAsk) return trimmed;
 
   const dayMatch = lower.match(
-    /\b(?:the\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today|tomorrows)\b/
+    /\b(?:the\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today|tomorrows|today's)\b/
   );
   if (dayMatch) {
-    let day = dayMatch[1];
+    let day = dayMatch[1].replace(/'s$/, '');
     if (day.startsWith('tomorrow')) day = 'tomorrow';
     if (day.startsWith('today')) day = 'today';
     return `What is my timetable for ${day}`;
   }
-  return trimmed;
+  return `What is my timetable`;
 }
 
 type ChatLanguage = UiLanguage;
@@ -132,11 +146,72 @@ const CHAT_PLACEHOLDERS: Record<ChatLanguage, string> = {
 };
 
 // Web Speech API: instant transcription for English (Chrome, Edge, Safari)
-const SpeechRecognitionClass =
-  typeof window !== 'undefined'
-    ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognition; webkitSpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
-    : null;
+function getSpeechRecognitionCtor(): (new () => SpeechRecognition) | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
+function micErrorMessage(err: unknown): string {
+  const name =
+    err && typeof err === 'object' && 'name' in err ? String((err as { name?: string }).name) : '';
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+    return 'Chrome blocked the mic. Click the lock icon in the address bar → Site settings → Microphone → Allow, then refresh.';
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+    return 'No microphone found. In Windows Sound settings set your laptop mic as Default input, then refresh Chrome.';
+  }
+  if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+    return 'Mic is busy or still linked to the old earphone. Unplug the headset, set the laptop mic as Default input in Windows Sound, close other apps using the mic, then refresh Chrome.';
+  }
+  return 'Could not open the microphone. After unplugging earphones, set the laptop mic as Default in Windows Sound, allow mic in Chrome, refresh, then try again. Or type your message.';
+}
+
+/** Prefer laptop/built-in mic so Chrome does not stick to an unplugged headset. */
+async function getPreferredMicStream(): Promise<MediaStream> {
+  const baseAudio: MediaTrackConstraints = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  };
+
+  // Permission + fresh device list (needed after hot-plug)
+  let inputs: MediaDeviceInfo[] = [];
+  try {
+    const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+    probe.getTracks().forEach((t) => t.stop());
+    inputs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput');
+  } catch (err) {
+    // Fall through; final getUserMedia will surface a clear error
+    throw err;
+  }
+
+  const notHeadset = (label: string) =>
+    !/headset|headphone|earphone|earbuds|airpods|bluetooth/i.test(label);
+  const looksBuiltIn = (label: string) =>
+    /microphone|internal|array|realtek|laptop|built.?in|default/i.test(label);
+
+  const preferred =
+    inputs.find((d) => looksBuiltIn(d.label) && notHeadset(d.label)) ||
+    inputs.find((d) => notHeadset(d.label) && d.label.trim()) ||
+    inputs.find((d) => d.deviceId === 'default') ||
+    inputs[0];
+
+  if (preferred?.deviceId && preferred.deviceId !== 'default') {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: { ...baseAudio, deviceId: { ideal: preferred.deviceId } },
+      });
+    } catch {
+      // Retry with plain default constraints
+    }
+  }
+
+  return navigator.mediaDevices.getUserMedia({ audio: baseAudio });
+}
 
 interface ChatMessage {
   id: string;
@@ -163,9 +238,30 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const recognitionRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptRef = useRef<string>('');
+  /** Finalized phrases kept across Chrome speech restarts (otherwise only the last word remains). */
+  const finalsAccumRef = useRef<string>('');
   const recordingStartRef = useRef<number>(0);
+  const voiceModeRef = useRef<'idle' | 'browser' | 'whisper'>('idle');
+  const wantListeningRef = useRef(false);
+  const asrBusyRef = useRef(false);
+  const asrAbortRef = useRef<AbortController | null>(null);
+  const asrTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mimeTypeRef = useRef('audio/webm');
+  const switchingToWhisperRef = useRef(false);
+  /** Prefer reviewing voice text in the input before Send (avoids bad ASR cascading into Rasa). */
+  const placeVoiceTextForReview = useCallback((raw: string) => {
+    const text = raw.replace(/\s+/g, ' ').trim();
+    if (!text) {
+      setError('No speech detected. Speak clearly and try again.');
+      return;
+    }
+    setInput(text);
+    setError(null);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
   const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -369,68 +465,284 @@ export default function ChatWidget() {
     }
   };
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+  const clearAsrTick = useCallback(() => {
+    if (asrTickRef.current) {
+      clearInterval(asrTickRef.current);
+      asrTickRef.current = null;
     }
-    setIsRecording(false);
+    asrAbortRef.current?.abort();
+    asrAbortRef.current = null;
+    asrBusyRef.current = false;
   }, []);
 
-  const useWebSpeech = chatLanguage === 'en' && !!SpeechRecognitionClass;
+  const stopMediaTracks = useCallback(() => {
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+  }, []);
 
-  const sendForTranscription = useCallback(
-    async (blob: Blob) => {
-      setIsVoiceProcessing(true);
-      setError(null);
-      try {
-        const formData = new FormData();
-        formData.append('audio', blob, 'recording.webm');
-        formData.append('language', chatLanguage);
-        formData.append('engine', 'whisper');
-        formData.append('model', 'tiny'); // tiny = 3-5x faster than base
+  const stopRecording = useCallback(() => {
+    wantListeningRef.current = false;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    } else {
+      clearAsrTick();
+      stopMediaTracks();
+      setIsRecording(false);
+      voiceModeRef.current = 'idle';
+    }
+  }, [clearAsrTick, stopMediaTracks]);
 
-        const { data } = await api.post<{ success: boolean; data?: { text?: string }; message?: string }>(
-          '/ai/asr/transcribe',
-          formData,
-          { timeout: 60000 }
-        );
-
-        const text = data.data?.text?.trim();
-        if (data.success && text) {
-          await sendMessage(text);
-        } else {
-          const serverMsg = (data as { data?: { error?: string } }).data?.error || data.message;
-          setError(
-            serverMsg || 'Could not transcribe. Speak clearly, try Tamil/Sinhala, or type your message.'
-          );
-        }
-      } catch (err: unknown) {
-        let msg =
-          chatLanguage === 'en'
-            ? 'Voice needs the ASR service. Run: npm run asr (in a separate terminal), then set ASR_USE_HTTP=true in server .env. Or type your message.'
-            : 'Tamil/Sinhala voice needs the ASR service. Run: npm run asr, then set ASR_USE_HTTP=true in server .env. Or type your message.';
-        if (err && typeof err === 'object' && 'response' in err) {
-          const res = (err as { response?: { data?: { message?: string; data?: { error?: string } } } })
-            .response?.data;
-          const serverMsg = res?.data?.error || res?.message;
-          if (serverMsg) msg = serverMsg;
-        }
-        setError(msg);
-        setTimeout(() => setError(null), 6000);
-      } finally {
-        setIsVoiceProcessing(false);
-      }
+  const transcribeAudioBlob = useCallback(
+    async (blob: Blob, model: 'tiny' | 'base', signal?: AbortSignal): Promise<string | null> => {
+      const formData = new FormData();
+      formData.append('audio', blob, mimeTypeRef.current.includes('mp4') ? 'recording.mp4' : 'recording.webm');
+      formData.append('language', chatLanguage);
+      formData.append('engine', 'whisper');
+      formData.append('model', model);
+      const { data } = await api.post<{ success: boolean; data?: { text?: string }; message?: string }>(
+        '/ai/asr/transcribe',
+        formData,
+        { timeout: model === 'tiny' ? 45000 : 90000, signal }
+      );
+      return data.success ? data.data?.text?.trim() || null : null;
     },
-    [chatLanguage, sendMessage]
+    [chatLanguage]
   );
+
+  const refreshLiveWhisper = useCallback(async () => {
+    if (!wantListeningRef.current || voiceModeRef.current !== 'whisper') return;
+    if (asrBusyRef.current || chunksRef.current.length === 0) return;
+    const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
+    if (blob.size < 1200) return;
+
+    asrBusyRef.current = true;
+    asrAbortRef.current?.abort();
+    const controller = new AbortController();
+    asrAbortRef.current = controller;
+    try {
+      const text = await transcribeAudioBlob(blob, 'tiny', controller.signal);
+      if (text && wantListeningRef.current && voiceModeRef.current === 'whisper') {
+        const prev = transcriptRef.current.trim();
+        // Ignore bad short partials that wipe a longer phrase already shown
+        if (!prev || text.length + 8 >= prev.length || text.toLowerCase().includes(prev.toLowerCase())) {
+          transcriptRef.current = text;
+          setInput(text);
+          setError(null);
+        }
+      }
+    } catch (err: unknown) {
+      if (!wantListeningRef.current) return;
+      const canceled =
+        (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'ERR_CANCELED') ||
+        (err instanceof DOMException && err.name === 'AbortError');
+      if (canceled) return;
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message || '')
+          : String(err || '');
+      if (/ECONNREFUSED|not running|ASR|Network Error|503/i.test(msg)) {
+        setError('Voice service is not running. Keep npm run asr open, then try the mic again.');
+      }
+    } finally {
+      asrBusyRef.current = false;
+    }
+  }, [transcribeAudioBlob]);
+
+  const startWhisperLive = useCallback(async () => {
+    try {
+      clearAsrTick();
+      const stream = await getPreferredMicStream();
+      mediaStreamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : '';
+      mimeTypeRef.current = mimeType || 'audio/webm';
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+      // Keep any text already captured from browser speech when falling over to Whisper
+      if (!transcriptRef.current.trim()) {
+        transcriptRef.current = '';
+        setInput('');
+      } else {
+        setInput(transcriptRef.current);
+      }
+      recordingStartRef.current = Date.now();
+      voiceModeRef.current = 'whisper';
+      wantListeningRef.current = true;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        clearAsrTick();
+        stopMediaTracks();
+        const duration = Date.now() - recordingStartRef.current;
+        setIsRecording(false);
+        voiceModeRef.current = 'idle';
+        wantListeningRef.current = false;
+
+        // Prefer text already shown live — no long wait after Stop
+        if (transcriptRef.current.trim()) {
+          placeVoiceTextForReview(transcriptRef.current);
+          return;
+        }
+
+        if (chunksRef.current.length > 0 && duration >= MIN_RECORDING_MS) {
+          setIsVoiceProcessing(true);
+          try {
+            const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
+            const text = await transcribeAudioBlob(blob, 'tiny');
+            placeVoiceTextForReview(text || '');
+          } catch {
+            setError('Voice service is not running. Keep npm run asr open, then try again. Or type your message.');
+          } finally {
+            setIsVoiceProcessing(false);
+          }
+        } else {
+          setError(duration < MIN_RECORDING_MS ? 'Speak for at least half a second.' : 'No speech detected.');
+        }
+      };
+
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+      setIsVoiceProcessing(false);
+      setError(null);
+      asrTickRef.current = setInterval(() => {
+        void refreshLiveWhisper();
+      }, LIVE_WHISPER_MS);
+      // First update a bit sooner so text appears quickly
+      window.setTimeout(() => {
+        void refreshLiveWhisper();
+      }, 1200);
+    } catch (err) {
+      wantListeningRef.current = false;
+      voiceModeRef.current = 'idle';
+      setIsRecording(false);
+      setError(micErrorMessage(err));
+    }
+  }, [
+    clearAsrTick,
+    stopMediaTracks,
+    placeVoiceTextForReview,
+    transcribeAudioBlob,
+    refreshLiveWhisper,
+  ]);
+
+  const startBrowserLive = useCallback(() => {
+    const RecognitionCtor = getSpeechRecognitionCtor();
+    if (!RecognitionCtor) return false;
+
+    try {
+      transcriptRef.current = '';
+      finalsAccumRef.current = '';
+      setInput('');
+      const recognition = new RecognitionCtor();
+      recognitionRef.current = recognition;
+      voiceModeRef.current = 'browser';
+      wantListeningRef.current = true;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 3;
+      const navLang = (typeof navigator !== 'undefined' && navigator.language) || 'en-GB';
+      recognition.lang =
+        chatLanguage === 'en'
+          ? navLang.toLowerCase().startsWith('en')
+            ? navLang
+            : 'en-GB'
+          : chatLanguage === 'ta'
+            ? 'ta-IN'
+            : 'si-LK';
+
+      recognition.onresult = (e: SpeechRecognitionEvent) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const piece = (e.results[i][0]?.transcript || '').trim();
+          if (!piece) continue;
+          if (e.results[i].isFinal) {
+            finalsAccumRef.current = `${finalsAccumRef.current} ${piece}`.replace(/\s+/g, ' ').trim();
+          } else {
+            interim += (interim ? ' ' : '') + piece;
+          }
+        }
+        const text = `${finalsAccumRef.current} ${interim}`.replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        transcriptRef.current = text;
+        setInput(text);
+      };
+
+      recognition.onend = () => {
+        if (switchingToWhisperRef.current) {
+          recognitionRef.current = null;
+          return;
+        }
+        // Chrome often stops mid-utterance — restart but KEEP finalsAccumRef
+        if (wantListeningRef.current && voiceModeRef.current === 'browser') {
+          try {
+            recognition.start();
+            return;
+          } catch {
+            /* fall through to finish */
+          }
+        }
+        recognitionRef.current = null;
+        setIsRecording(false);
+        setIsVoiceProcessing(false);
+        voiceModeRef.current = 'idle';
+        const finalText = (finalsAccumRef.current || transcriptRef.current).trim();
+        transcriptRef.current = finalText;
+        if (finalText) {
+          placeVoiceTextForReview(finalText);
+        }
+      };
+
+      recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
+        if (e.error === 'aborted' || e.error === 'no-speech') return;
+        // Keep whatever we already transcribed, then continue with Whisper live
+        switchingToWhisperRef.current = true;
+        wantListeningRef.current = false;
+        recognitionRef.current = null;
+        voiceModeRef.current = 'idle';
+        setIsRecording(false);
+        setError(null);
+        void startWhisperLive().finally(() => {
+          switchingToWhisperRef.current = false;
+        });
+      };
+
+      setIsRecording(true);
+      setIsVoiceProcessing(false);
+      setError(null);
+      recognition.start();
+      return true;
+    } catch {
+      recognitionRef.current = null;
+      voiceModeRef.current = 'idle';
+      wantListeningRef.current = false;
+      return false;
+    }
+  }, [chatLanguage, placeVoiceTextForReview, startWhisperLive]);
 
   const selectChatLanguage = useCallback(
     (lang: ChatLanguage) => {
       if (CHAT_LANG_FUTURE_WORK.has(lang)) return;
       if (lang === chatLanguage) return;
       if (isRecording) {
-        if (useWebSpeech && recognitionRef.current) {
-          recognitionRef.current.stop();
+        wantListeningRef.current = false;
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {
+            /* ignore */
+          }
         } else {
           stopRecording();
         }
@@ -440,105 +752,69 @@ export default function ChatWidget() {
       setChatLanguage(lang);
       setError(null);
     },
-    [chatLanguage, isRecording, useWebSpeech, stopRecording]
+    [chatLanguage, isRecording, stopRecording]
   );
 
   const handleVoiceToggle = useCallback(async () => {
     if (isVoiceProcessing || isTyping) return;
+
+    // Stop
     if (isRecording) {
-      setIsRecording(false);
-      if (useWebSpeech && recognitionRef.current) {
-        recognitionRef.current.stop();
+      wantListeningRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          /* ignore */
+        }
+        recognitionRef.current = null;
+        setIsRecording(false);
+        voiceModeRef.current = 'idle';
+        const finalText = (finalsAccumRef.current || transcriptRef.current).trim();
+        transcriptRef.current = finalText;
+        placeVoiceTextForReview(finalText);
       } else {
         stopRecording();
       }
       return;
     }
 
-    if (useWebSpeech) {
-      // Web Speech API: instant, no server (English only)
-      try {
-        transcriptRef.current = '';
-        const Recognition = SpeechRecognitionClass!;
-        const recognition = new Recognition();
-        recognitionRef.current = recognition;
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.onresult = (e: SpeechRecognitionEvent) => {
-          const last = e.results[e.results.length - 1];
-          transcriptRef.current = last[0].transcript;
-        };
-        recognition.onend = () => {
-          recognitionRef.current = null;
-          setIsRecording(false);
-          setIsVoiceProcessing(false);
-          const text = transcriptRef.current.trim();
-          if (text) {
-            sendMessage(text);
-          } else {
-            setError('No speech detected. Speak clearly and try again.');
-          }
-        };
-        recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-          recognitionRef.current = null;
-          setIsRecording(false);
-          setIsVoiceProcessing(false);
-          if (e.error !== 'aborted' && e.error !== 'no-speech') {
-            setError('Voice recognition failed. Try typing or use ASR (Tamil/Sinhala).');
-          }
-        };
-        setIsVoiceProcessing(true);
-        setIsRecording(true);
-        setError(null);
-        recognition.start();
-      } catch {
-        setError('Voice recognition not supported. Use English or type your message.');
-      }
+    // Start: browser live speech when available, else Whisper live (any browser)
+    if (chatLanguage === 'en' && startBrowserLive()) {
       return;
     }
-
-    // ASR path (Tamil/Sinhala or fallback)
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-      recordingStartRef.current = Date.now();
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const duration = Date.now() - recordingStartRef.current;
-        if (chunksRef.current.length > 0 && duration >= MIN_RECORDING_MS) {
-          const blob = new Blob(chunksRef.current, { type: mimeType });
-          await sendForTranscription(blob);
-        } else {
-          setError(duration < MIN_RECORDING_MS ? 'Speak for at least half a second.' : 'No audio recorded.');
-          setIsVoiceProcessing(false);
-        }
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch {
-      setError('Microphone access denied. Please allow microphone or type your message.');
-    }
+    await startWhisperLive();
   }, [
     isRecording,
     isVoiceProcessing,
     isTyping,
-    useWebSpeech,
+    chatLanguage,
     stopRecording,
-    sendForTranscription,
-    sendMessage,
+    startBrowserLive,
+    startWhisperLive,
+    placeVoiceTextForReview,
   ]);
+
+  // Cleanup if chat closes while listening
+  useEffect(() => {
+    if (isOpen) return;
+    wantListeningRef.current = false;
+    clearAsrTick();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+      recognitionRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    stopMediaTracks();
+    setIsRecording(false);
+    voiceModeRef.current = 'idle';
+  }, [isOpen, clearAsrTick, stopMediaTracks]);
 
   if (!user) return null;
 
@@ -710,10 +986,8 @@ export default function ChatWidget() {
                 {(isRecording || isVoiceProcessing) && (
                   <p className="mb-2 text-xs text-slate-500">
                     {isRecording
-                      ? useWebSpeech
-                        ? `Listening (${CHAT_LANG_LABELS[chatLanguage]})… Click mic when done`
-                        : `Recording (${CHAT_LANG_LABELS[chatLanguage]})… Click mic to stop`
-                      : `Transcribing (${CHAT_LANG_LABELS[chatLanguage]})…`}
+                      ? 'Listening… words appear in the box as you speak. Click stop when done, edit if needed, then Enter.'
+                      : 'Finishing voice text…'}
                   </p>
                 )}
                 <div className="flex min-w-0 gap-2">
@@ -729,6 +1003,7 @@ export default function ChatWidget() {
                     placeholder={CHAT_PLACEHOLDERS[chatLanguage]}
                     className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
                     disabled={isTyping || isVoiceProcessing}
+                    readOnly={isRecording}
                   />
                   <button
                     type="button"

@@ -30,7 +30,7 @@ rasa train
 
 ---
 
-## Every day — open 5 terminals
+## Every day — open 6 terminals
 
 ### Terminal 1 — API (required)
 
@@ -89,6 +89,32 @@ First run installs core packages (~200MB). If pip times out, retry: `.\.venv\Scr
 
 Optional PaddleOCR (large): `pip install -r requirements-paddle.txt` then `$env:NAV_USE_PADDLE='true'`
 
+### Terminal 6 — Voice (ASR) (required for chatbot microphone / Whisper fallback)
+
+```powershell
+cd d:\Reasearch\lecstu
+npm run asr
+```
+
+First time only (if `ai-services\asr\venv` is missing):
+
+```powershell
+cd d:\Reasearch\lecstu\ai-services\asr
+py -3.11 -m venv venv
+.\venv\Scripts\pip install -r requirements.txt
+```
+
+In `server\.env` set:
+
+```
+ASR_USE_HTTP=true
+ASR_SERVICE_URL=http://localhost:8001
+```
+
+Then restart Terminal 1 (API) so it picks up the env vars.
+
+This powers chat mic transcription when browser speech is unavailable or fails (English live speech still works in Chrome/Edge without Whisper; ASR is required for reliable fallback and for Tamil/Sinhala later).
+
 ---
 
 
@@ -100,21 +126,13 @@ Optional PaddleOCR (large): `pip install -r requirements-paddle.txt` then `$env:
 | API | 5000 |
 | Rasa | 5005 |
 | Rasa actions | 5055 |
+| Voice (ASR) | 8001 |
 | Floor plan AI | 8003 |
 | Indoor Navigation AI | 8004 |
 
 ---
 
 ## Optional — only if you use that feature
-
-**Voice (ASR)** — extra terminal:
-
-```powershell
-cd d:\Reasearch\lecstu
-npm run asr
-```
-
-In `server\.env`: `ASR_USE_HTTP=true` and `ASR_SERVICE_URL=http://localhost:8001` — then restart Terminal 1.
 
 **Timetable PDF import** — extra terminal:
 

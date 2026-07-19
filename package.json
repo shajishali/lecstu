@@ -7,7 +7,7 @@
     "dev": "concurrently -k \"npm run dev:server\" \"wait-on http://localhost:5000/api/health -t 60000 && npm run dev:client\"",
     "dev:client": "npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
-    "asr": "cd ai-services/asr && python -m uvicorn server:app --host 0.0.0.0 --port 8001",
+    "asr": "cd ai-services/asr && .\\venv\\Scripts\\python -m uvicorn server:app --host 0.0.0.0 --port 8001",
     "timetable-extract": "cd ai-services/timetable-extract && python -m uvicorn server:app --host 0.0.0.0 --port 8002",
     "floorplan-vision": "cd ai-services/floorplan-vision && .venv\\Scripts\\python -m uvicorn server:app --host 0.0.0.0 --port 8003 --reload",
     "indoor-navigation": "cd ai-services/indoor-navigation-engine && .venv\\Scripts\\python -m uvicorn server:app --host 0.0.0.0 --port 8004 --reload",
