@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { showToast } from '@components/Toast';
 import api, { showApiErrorToast } from '@services/api';
 import { useAuthStore } from '@store/authStore';
@@ -55,10 +56,15 @@ interface WeeklySchedule {
   days: DaySchedule[];
 }
 
-const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const DAY_LABELS: Record<string, string> = {
-  MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday',
-  THURSDAY: 'Thursday', FRIDAY: 'Friday',
+  MONDAY: 'Monday',
+  TUESDAY: 'Tuesday',
+  WEDNESDAY: 'Wednesday',
+  THURSDAY: 'Thursday',
+  FRIDAY: 'Friday',
+  SATURDAY: 'Saturday',
+  SUNDAY: 'Sunday',
 };
 
 const TIME_OPTIONS = [
@@ -102,18 +108,64 @@ function formatFreeTimeRanges(slots: FreeSlot[]): string {
 }
 
 function getCurrentDay(): string {
-  const jsDay = new Date().getDay();
-  return jsDay >= 1 && jsDay <= 5 ? DAYS[jsDay - 1] : 'MONDAY';
+  const map = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  return map[new Date().getDay()] || 'MONDAY';
+}
+
+function dayNameFromDateStr(dateStr: string): string {
+  const map = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  return map[parseLocalDate(dateStr).getDay()] || 'MONDAY';
+}
+
+/** Parse chat-style dates; prefer DMY when ambiguous (e.g. 05/06/2026). */
+function parseLooseDateToIso(raw: string): string | null {
+  const s = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    try {
+      parseLocalDate(s);
+      return s;
+    } catch {
+      return null;
+    }
+  }
+  const m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+  if (!m) return null;
+  let a = parseInt(m[1], 10);
+  let b = parseInt(m[2], 10);
+  let y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  const valid = (mo: number, day: number) => {
+    const dt = new Date(y, mo - 1, day);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === day;
+  };
+  const dmyOk = b >= 1 && b <= 12 && a >= 1 && a <= 31 && valid(b, a);
+  const mdyOk = a >= 1 && a <= 12 && b >= 1 && b <= 31 && valid(a, b);
+  if (dmyOk && !mdyOk) return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+  if (mdyOk && !dmyOk) return `${y}-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`;
+  if (dmyOk && mdyOk) return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+  return null;
+}
+
+function looksLikeDateToken(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s.trim())
+    || /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(s.trim());
 }
 
 function getNextDateForDay(dayName: string): string {
+  // JS getDay(): 0=Sun … 6=Sat
   const dayMap: Record<string, number> = {
-    MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, FRIDAY: 5,
+    SUNDAY: 0,
+    MONDAY: 1,
+    TUESDAY: 2,
+    WEDNESDAY: 3,
+    THURSDAY: 4,
+    FRIDAY: 5,
+    SATURDAY: 6,
   };
   const target = dayMap[dayName] ?? 1;
   const today = new Date();
-  const todayNum = today.getDay() || 7;
-  let daysAhead = target - (todayNum === 7 ? 0 : todayNum);
+  const todayNum = today.getDay();
+  let daysAhead = target - todayNum;
   if (daysAhead <= 0) daysAhead += 7;
   const d = new Date(today);
   d.setDate(d.getDate() + daysAhead);
@@ -150,6 +202,9 @@ function canBookRole(role?: string): boolean {
 export default function HallAvailability() {
   const { user } = useAuthStore();
   const canBook = canBookRole(user?.role);
+  const [searchParams] = useSearchParams();
+  /** Re-apply chatbot prefills whenever the URL query changes (same page, new Book link). */
+  const lastDeepLinkKey = useRef('');
 
   const [tab, setTab] = useState<'search' | 'now'>('now');
   const [loading, setLoading] = useState(false);
@@ -172,12 +227,15 @@ export default function HallAvailability() {
   const [weeklyExpandedDay, setWeeklyExpandedDay] = useState<string | null>(null);
 
   const [day, setDay] = useState(getCurrentDay());
+  const [searchDate, setSearchDate] = useState(() => getNextDateForDay(getCurrentDay()));
+  const [hallFilter, setHallFilter] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [minCapacity, setMinCapacity] = useState('');
   const [building, setBuilding] = useState('');
   const [equipment, setEquipment] = useState('');
   const [searchApplied, setSearchApplied] = useState(false);
+  const [fromChatbot, setFromChatbot] = useState(false);
 
   const [buildings, setBuildings] = useState<string[]>([]);
   const [equipmentOptions, setEquipmentOptions] = useState<string[]>([]);
@@ -214,17 +272,72 @@ export default function HallAvailability() {
   const searchAvailable = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { day };
+      // Keep Day aligned with Date so Search/Book use the same weekday
+      const scheduleDay = searchDate ? dayNameFromDateStr(searchDate) : day;
+      if (searchDate && scheduleDay !== day) {
+        setDay(scheduleDay);
+      }
+
+      const namedHallQ = hallFilter.trim().toLowerCase();
+      const namedHall = namedHallQ
+        ? allHalls.find(
+            (h) =>
+              h.name.toLowerCase() === namedHallQ
+              || h.name.toLowerCase().includes(namedHallQ)
+          )
+        : undefined;
+
+      const params: Record<string, string> = { day: scheduleDay };
+      if (searchDate) params.date = searchDate;
       if (startTime) params.startTime = startTime;
       if (endTime) params.endTime = endTime;
-      if (minCapacity) params.minCapacity = minCapacity;
-      if (building) params.building = building;
-      if (equipment) params.equipment = equipment;
+      // When user named a specific hall, don't let capacity/building hide it
+      if (!namedHall) {
+        if (minCapacity) params.minCapacity = minCapacity;
+        if (building) params.building = building;
+        if (equipment) params.equipment = equipment;
+      }
 
       const res = await api.get('/halls/available', { params });
       const results: AvailableResult[] = res.data.data || [];
       const map: Record<string, AvailableResult> = {};
       for (const r of results) map[r.hall.id] = r;
+
+      // Named hall: if filters / API miss it, load that day's free slots directly
+      if (namedHall && !map[namedHall.id]) {
+        const scheduleRes = await api.get(`/halls/${namedHall.id}/schedule`, {
+          params: { day: scheduleDay, date: searchDate || getNextDateForDay(scheduleDay) },
+        });
+        const schedule = scheduleRes.data.data as ScheduleData | undefined;
+        if (schedule) {
+          let matching = schedule.freeSlots || [];
+          if (startTime && endTime) {
+            const qStart = timeToMinutes(startTime);
+            const qEnd = timeToMinutes(endTime);
+            matching = matching.filter((fs) => {
+              const fsStart = timeToMinutes(fs.startTime);
+              const fsEnd = timeToMinutes(fs.endTime);
+              return fsStart <= qStart && fsEnd >= qEnd;
+            });
+          }
+          map[namedHall.id] = {
+            hall: namedHall,
+            freeSlots: schedule.freeSlots || [],
+            matchingFreeSlots: matching,
+          };
+        }
+
+        if (minCapacity) {
+          const need = parseInt(minCapacity, 10);
+          if (!Number.isNaN(need) && namedHall.capacity < need) {
+            showToast(
+              'info',
+              `${namedHall.name} has ${namedHall.capacity} seats (you asked for ${need}+). Showing it anyway because you named this hall.`
+            );
+          }
+        }
+      }
+
       setAvailabilityMap(map);
       setSearchApplied(true);
       setExpandedHall(null);
@@ -235,7 +348,64 @@ export default function HallAvailability() {
     } finally {
       setLoading(false);
     }
-  }, [day, startTime, endTime, minCapacity, building, equipment]);
+  }, [day, searchDate, startTime, endTime, minCapacity, building, equipment, hallFilter, allHalls]);
+
+  // Deep link from chatbot: prefill fields; user reviews then clicks Search
+  useEffect(() => {
+    let qDay = searchParams.get('day');
+    let qDate = searchParams.get('date');
+    let qHall = searchParams.get('hall');
+    const qHallId = searchParams.get('hallId');
+    const qFrom = searchParams.get('startTime') || searchParams.get('from');
+    const qTo = searchParams.get('endTime') || searchParams.get('to');
+    const qBuilding = searchParams.get('building');
+    const qCapacity = searchParams.get('minCapacity') || searchParams.get('capacity');
+    if (!qDay && !qDate && !qHall && !qHallId && !qFrom && !qTo && !qBuilding && !qCapacity) return;
+
+    const linkKey = searchParams.toString();
+    if (linkKey === lastDeepLinkKey.current) return;
+    lastDeepLinkKey.current = linkKey;
+
+    // Guard: older chatbot links sometimes put the date in `hall`
+    if (qHall && looksLikeDateToken(qHall)) {
+      const iso = parseLooseDateToIso(qHall);
+      if (iso && !qDate) qDate = iso;
+      qHall = null;
+    }
+    if (qDate && !/^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+      qDate = parseLooseDateToIso(qDate);
+    }
+
+    setFromChatbot(true);
+    setTab('search');
+    setSearchApplied(false);
+    setAvailabilityMap({});
+    setExpandedHall(null);
+    setHallSchedule(null);
+
+    if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+      setSearchDate(qDate);
+      setDay(dayNameFromDateStr(qDate));
+    } else if (qDay) {
+      const upper = qDay.toUpperCase();
+      if (DAYS.includes(upper)) {
+        setDay(upper);
+        setSearchDate(getNextDateForDay(upper));
+      }
+    } else {
+      const today = getCurrentDay();
+      setDay(today);
+      setSearchDate(getNextDateForDay(today));
+    }
+
+    setHallFilter(qHall || '');
+    if (qHallId) setExpandedHall(qHallId);
+    setStartTime(qFrom || '');
+    setEndTime(qTo || '');
+    setBuilding(qBuilding || '');
+    setMinCapacity(qCapacity || '');
+    setEquipment('');
+  }, [searchParams]);
 
   const fetchAvailableNow = useCallback(async () => {
     setLoading(true);
@@ -268,7 +438,16 @@ export default function HallAvailability() {
   const displayedHalls = useMemo(() => {
     let halls = [...allHalls];
 
-    if (tab === 'search' && searchApplied) {
+    const hallQ = hallFilter.trim().toLowerCase();
+    const namedFocus = hallQ.length > 0;
+    if (namedFocus) {
+      const focused = halls.filter(
+        (h) => h.name.toLowerCase() === hallQ || h.name.toLowerCase().includes(hallQ)
+      );
+      if (focused.length > 0) halls = focused;
+    }
+
+    if (tab === 'search' && searchApplied && !namedFocus) {
       if (building) {
         halls = halls.filter((h) => h.building.toLowerCase() === building.toLowerCase());
       }
@@ -288,7 +467,7 @@ export default function HallAvailability() {
       if (aAvail !== bAvail) return bAvail - aAvail;
       return a.name.localeCompare(b.name);
     });
-  }, [allHalls, tab, searchApplied, building, minCapacity, equipment, availabilityMap]);
+  }, [allHalls, tab, searchApplied, building, minCapacity, equipment, availabilityMap, hallFilter]);
 
   const fetchSchedule = async (hallId: string) => {
     if (expandedHall === hallId) {
@@ -301,7 +480,7 @@ export default function HallAvailability() {
     const scheduleDayVal = tab === 'now' ? getCurrentDay() : day;
     const scheduleDateVal = tab === 'now'
       ? toLocalDateString(new Date())
-      : getNextDateForDay(day);
+      : searchDate || getNextDateForDay(day);
     try {
       const res = await api.get(`/halls/${hallId}/schedule`, {
         params: { day: scheduleDayVal, date: scheduleDateVal },
@@ -341,6 +520,97 @@ export default function HallAvailability() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     searchAvailable();
+  };
+
+  const resolveNamedHall = (): HallInfo | null => {
+    const hallQ = hallFilter.trim().toLowerCase();
+    if (!hallQ) return null;
+    return (
+      allHalls.find((h) => h.name.toLowerCase() === hallQ)
+      || allHalls.find((h) => h.name.toLowerCase().includes(hallQ))
+      || null
+    );
+  };
+
+  const handleQuickBook = async () => {
+    if (!canBook) {
+      showToast('error', 'Only students and lecturers can book halls');
+      return;
+    }
+    const hall = resolveNamedHall();
+    if (!hall) {
+      showToast('error', hallFilter.trim() ? `Hall "${hallFilter.trim()}" not found` : 'Enter a hall name to book');
+      return;
+    }
+    if (!searchDate) {
+      showToast('error', 'Select a date to book');
+      return;
+    }
+    // Date is source of truth (Day dropdown can get out of sync)
+    const scheduleDay = dayNameFromDateStr(searchDate);
+    if (scheduleDay !== day) {
+      setDay(scheduleDay);
+    }
+    if (!startTime) {
+      showToast('error', 'Select a From time to book');
+      return;
+    }
+    const dayEndMin = timeToMinutes('18:00');
+    const qStart = timeToMinutes(startTime);
+    if (qStart >= dayEndMin) {
+      showToast('error', 'Hall bookings end at 6:00 PM. Pick a From time earlier than 6:00 PM.');
+      return;
+    }
+    let bookEnd = endTime;
+    if (!bookEnd) {
+      const next = Math.min(qStart + 60, dayEndMin);
+      bookEnd = `${String(Math.floor(next / 60)).padStart(2, '0')}:${String(next % 60).padStart(2, '0')}`;
+    }
+    const qEnd = timeToMinutes(bookEnd);
+    if (qEnd > dayEndMin) {
+      showToast('error', 'Hall bookings end at 6:00 PM. Change To time to 6:00 PM or earlier.');
+      return;
+    }
+    if (qEnd <= qStart) {
+      showToast('error', 'To time must be after From time');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.get(`/halls/${hall.id}/schedule`, {
+        params: { day: scheduleDay, date: searchDate },
+      });
+      const freeSlots: FreeSlot[] = res.data.data?.freeSlots || [];
+      const covers = freeSlots.some((fs) => {
+        return timeToMinutes(fs.startTime) <= qStart && timeToMinutes(fs.endTime) >= qEnd;
+      });
+      if (!covers) {
+        const ranges = freeSlots.length
+          ? freeSlots
+              .map((fs) => `${formatTime(fs.startTime)}-${formatTime(fs.endTime)}`)
+              .join(', ')
+          : 'none';
+        showToast(
+          'error',
+          `${hall.name} is not free ${formatTime(startTime)}-${formatTime(bookEnd)} on ${formatShortDate(searchDate)}. Free then: ${ranges}`
+        );
+        return;
+      }
+      openBookModal(
+        hall,
+        {
+          startTime,
+          endTime: bookEnd,
+          durationMinutes: qEnd - qStart,
+        },
+        searchDate
+      );
+    } catch {
+      showToast('error', 'Could not check hall schedule for booking');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openBookModal = (hall: HallInfo, slot: FreeSlot, date: string) => {
@@ -448,14 +718,48 @@ export default function HallAvailability() {
 
       {tab === 'search' && (
         <form className="ha-filters" onSubmit={handleSearch}>
+          {fromChatbot && (
+            <p className="mb-3 text-sm text-slate-600">
+              Filled in from chat. Check the fields, then click <strong>Search</strong> or <strong>Book</strong>.
+            </p>
+          )}
           <div className="ha-filter-row">
             <div className="form-group">
               <label>Day</label>
-              <select value={day} onChange={(e) => setDay(e.target.value)}>
+              <select
+                value={day}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setDay(next);
+                  setSearchDate(getNextDateForDay(next));
+                }}
+              >
                 {DAYS.map((d) => (
                   <option key={d} value={d}>{DAY_LABELS[d]}</option>
                 ))}
               </select>
+            </div>
+            <div className="form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                value={searchDate}
+                min={toLocalDateString(new Date())}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setSearchDate(next);
+                  if (next) setDay(dayNameFromDateStr(next));
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label>Hall</label>
+              <input
+                type="text"
+                placeholder="e.g. AB-CMP-02-1"
+                value={hallFilter}
+                onChange={(e) => setHallFilter(e.target.value)}
+              />
             </div>
             <div className="form-group">
               <label>From</label>
@@ -475,6 +779,8 @@ export default function HallAvailability() {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="ha-filter-row">
             <div className="form-group">
               <label>Min Capacity</label>
               <input
@@ -485,8 +791,6 @@ export default function HallAvailability() {
                 min="0"
               />
             </div>
-          </div>
-          <div className="ha-filter-row">
             <div className="form-group">
               <label>Building</label>
               <select value={building} onChange={(e) => setBuilding(e.target.value)}>
@@ -506,9 +810,22 @@ export default function HallAvailability() {
               </select>
             </div>
             <div className="form-group ha-search-btn-wrap">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                <Search size={16} /> {loading ? 'Searching...' : 'Search'}
-              </button>
+              <div className="ha-form-actions">
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <Search size={16} /> {loading ? 'Searching...' : 'Search'}
+                </button>
+                {canBook && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={loading}
+                    onClick={handleQuickBook}
+                    title="Book the hall and time shown above"
+                  >
+                    <CalendarPlus size={16} /> Book
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </form>
@@ -618,7 +935,7 @@ export default function HallAvailability() {
                                 e.stopPropagation();
                                 const date = tab === 'now'
                                   ? toLocalDateString(new Date())
-                                  : getNextDateForDay(day);
+                                  : searchDate || getNextDateForDay(day);
                                 openBookModal(hall, fs, date);
                               }}
                               title="Book this slot"

@@ -1033,6 +1033,12 @@
   .ha-search-btn-wrap {
     @apply md:self-end;
   }
+  .ha-form-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .ha-form-actions .btn {
+    @apply inline-flex items-center gap-2;
+  }
 
   .ha-results {
     @apply space-y-3;

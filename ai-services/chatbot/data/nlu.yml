@@ -93,6 +93,22 @@ nlu:
       - Hall availability check
       - [Hall C](hall_name) free at [2pm](time)?
       - Any halls free [Friday](day)?
+      - Can i book [AB-CMP-02-1](hall_name) hall [tomorrow](day)
+      - Can I book [AB-CMP-02-1](hall_name) [tomorrow](day)?
+      - Is [AB-CMP-02-1](hall_name) available [tomorrow](day)?
+      - [AB-CMP-02-1](hall_name) available or not
+      - [tomorrow](day) available or not
+      - available or not [tomorrow](day)
+      - is it available [tomorrow](day)
+      - is that hall free [tomorrow](day)
+      - free time for [AB-CMP-02-1](hall_name) [tomorrow](day)
+      - what times is [AB-CMP-02-1](hall_name) free [tomorrow](day)
+      - book [AB-ELV-G-01](hall_name) hall [today](day)
+      - Is [AB-CMP-01-2](hall_name) free on [Monday](day)?
+      - can you book lecture hall [AB-CMP-02-4](hall_name) for 22/07/2026 at [10 am](time) to [11 am](time)
+      - book [AB-CMP-02-4](hall_name) on 22/07/2026 from [10am](time) to [11am](time)
+      - is [AB-CMP-02-4](hall_name) free on 07/22/2026 at [10 am](time)?
+      - check [AB-CMP-02-1](hall_name) availability for 2026-07-22
 
   - intent: ask_lecturer_availability
     examples: |
@@ -189,6 +205,19 @@ nlu:
       - Book [Dr. Dias](lecturer_name) [Monday](day) [3pm](time)
       - Schedule appointment [Dr. Rajapaksha](lecturer_name)
       - I want to book [Dr. Chandrasena](lecturer_name) [Thursday](day)
+      - Can i book lecturer [Chalani Amarasinghe](lecturer_name) [tomorrow](day)
+      - Can I book lecturer [Chalani Amarasinghe](lecturer_name) [tomorrow](day)?
+      - Book lecturer [Chalani Amarasinghe](lecturer_name) [today](day)
+      - I want to book lecturer [Chalani Amarasinghe](lecturer_name)
+      - Book appointment with lecturer [Chalani Amarasinghe](lecturer_name) [tomorrow](day)
+      - Can I meet [Chalani Amarasinghe](lecturer_name) [tomorrow](day)?
+      - Is lecturer [Chalani Amarasinghe](lecturer_name) free [tomorrow](day)?
+      - Book [Chalani Amarasinghe](lecturer_name) [tomorrow](day)
+      - Appointment with [Chalani Amarasinghe](lecturer_name) [Monday](day)
+      - can i book lecturer [Amila Fernando](lecturer_name) on 22/07/2026 at [6 pm](time)
+      - can I book lecturer [Amila Fernando](lecturer_name) on 22/07/2026 at [6pm](time)
+      - book appointment with [Amila Fernando](lecturer_name) on 22/07/2026 at [18:00](time)
+      - I want to meet [Amila Fernando](lecturer_name) tomorrow at [2pm](time)
 
   - intent: cancel_appointment
     examples: |
@@ -424,8 +453,11 @@ nlu:
       - Directions to [Main Hall](hall_name)
       - Walk me to [Hall A](hall_name)
       - I want to go to [ELV ROOM](hall_name) in [Administration Building](building)
-      - Guide me to [ELV ROOM](hall_name) on ground floor in the [Administration Building](building)
-      - How do I reach [Computer Lab](hall_name)?
+      - Guide me from ground floor administration building to floor 9 laboratory building
+      - I want to go from ground floor in the administration building to 9th floor of the laboratory building
+      - Take me from administration ground floor to laboratory building floor 9
+      - From ground floor administration to 9 th floor laboratory building guide me
+      - Go from admin ground to lab floor 9
       - Show me the way to [Hall C](hall_name)
       - Indoor directions to [Seminar Room](hall_name)
       - Navigate to [Lecture Theatre](hall_name)

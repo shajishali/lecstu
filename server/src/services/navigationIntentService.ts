@@ -22,6 +22,9 @@ const NAV_PATTERNS: Array<{ re: RegExp; weight: number }> = [
   { re: /\bnavigate\s+to\b/i, weight: 0.94 },
   { re: /\bshow\s+route\s+to\b/i, weight: 0.95 },
   { re: /\bwalk\s+me\s+to\b/i, weight: 0.93 },
+  { re: /\bfrom\b.+\bto\b/i, weight: 0.93 },
+  { re: /\b(?:want\s+to\s+)?go\s+from\b/i, weight: 0.94 },
+  { re: /\bguide\s+me\s+from\b/i, weight: 0.96 },
   { re: /\b(?:cafeteria|meeting\s+room|ELV\s+room|student\s+affairs)\b/i, weight: 0.78 },
 ];
 
@@ -61,13 +64,17 @@ export function detectNavigationIntentLocal(message: string): NavigationIntentRe
   }
 
   const fromTo = parseSourceDestinationQuery(text);
-  if (fromTo.sourceQuery && fromTo.destinationQuery) {
+  if (
+    (fromTo.sourceQuery && fromTo.destinationQuery) ||
+    fromTo.sourceHint?.buildingCode ||
+    fromTo.destinationHint?.buildingCode
+  ) {
     return {
       isNavigation: true,
       confidence: 0.9,
       intent: 'guide_to_room',
-      destinationQuery: fromTo.destinationQuery,
-      buildingHint: fromTo.buildingHint,
+      destinationQuery: fromTo.destinationQuery || fromTo.destinationHint?.label || null,
+      buildingHint: fromTo.buildingHint || fromTo.destinationHint?.buildingCode || null,
       source: 'local',
     };
   }

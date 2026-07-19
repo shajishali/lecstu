@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { showToast } from '@components/Toast';
 import api, { showApiErrorToast } from '@services/api';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
@@ -25,6 +25,7 @@ interface DayAvailability {
 
 const DAY_LABELS: Record<string, string> = {
   MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thu', FRIDAY: 'Fri',
+  SATURDAY: 'Sat', SUNDAY: 'Sun',
 };
 
 const SLOT_DURATION_MINUTES = 30;
@@ -48,6 +49,55 @@ function minutesToTime(m: number): string {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function dayNameFromDateStr(dateStr: string): string {
+  const map = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  return map[parseLocalDate(dateStr).getDay()] || 'MONDAY';
+}
+
+/** Parse chat-style dates; prefer DMY when ambiguous. */
+function parseLooseDateToIso(raw: string): string | null {
+  const s = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const dt = parseLocalDate(s);
+    if (
+      dt.getFullYear() === Number(s.slice(0, 4))
+      && dt.getMonth() + 1 === Number(s.slice(5, 7))
+      && dt.getDate() === Number(s.slice(8, 10))
+    ) {
+      return s;
+    }
+    return null;
+  }
+  const m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+  if (!m) return null;
+  let a = parseInt(m[1], 10);
+  let b = parseInt(m[2], 10);
+  let y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  const valid = (mo: number, day: number) => {
+    const dt = new Date(y, mo - 1, day);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === day;
+  };
+  const dmyOk = b >= 1 && b <= 12 && a >= 1 && a <= 31 && valid(b, a);
+  const mdyOk = a >= 1 && a <= 12 && b >= 1 && b <= 31 && valid(a, b);
+  if (dmyOk && !mdyOk) return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+  if (mdyOk && !dmyOk) return `${y}-${String(a).padStart(2, '0')}-${String(b).padStart(2, '0')}`;
+  if (dmyOk && mdyOk) return `${y}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+  return null;
+}
+
 /** Split contiguous free slots into bookable 30-min sub-slots */
 function splitIntoBookableSlots(freeSlots: FreeSlot[]): FreeSlot[] {
   const result: FreeSlot[] = [];
@@ -67,7 +117,8 @@ function splitIntoBookableSlots(freeSlots: FreeSlot[]): FreeSlot[] {
 function getNextWeekdays(): { date: Date; dateStr: string; dayName: string }[] {
   const result: { date: Date; dateStr: string; dayName: string }[] = [];
   const today = new Date();
-  for (let i = 1; i <= 14; i++) {
+  today.setHours(0, 0, 0, 0);
+  for (let i = 0; i <= 21; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
     const dayNum = d.getDay();
@@ -75,7 +126,7 @@ function getNextWeekdays(): { date: Date; dateStr: string; dayName: string }[] {
       const dayName = ['', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'][dayNum];
       result.push({
         date: d,
-        dateStr: d.toISOString().split('T')[0],
+        dateStr: toLocalDateString(d),
         dayName,
       });
     }
@@ -83,19 +134,36 @@ function getNextWeekdays(): { date: Date; dateStr: string; dayName: string }[] {
   return result;
 }
 
+function ensureDateOption(
+  options: { date: Date; dateStr: string; dayName: string }[],
+  dateStr: string
+): { date: Date; dateStr: string; dayName: string }[] {
+  if (options.some((o) => o.dateStr === dateStr)) return options;
+  const date = parseLocalDate(dateStr);
+  return [
+    ...options,
+    { date, dateStr, dayName: dayNameFromDateStr(dateStr) },
+  ].sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
 export default function BookAppointment() {
   const { lecturerId } = useParams<{ lecturerId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const lastDeepLinkKey = useRef('');
+
   const [step, setStep] = useState(1);
   const [lecturer, setLecturer] = useState<LecturerInfo | null>(null);
-  const [dateOptions, setDateOptions] = useState<{ date: Date; dateStr: string; dayName: string }[]>([]);
+  const [dateOptions, setDateOptions] = useState(getNextWeekdays);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [availability, setAvailability] = useState<DayAvailability | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
+  const [pendingStartTime, setPendingStartTime] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [fromChatbot, setFromChatbot] = useState(false);
 
   const fetchLecturer = useCallback(async () => {
     if (!lecturerId) return;
@@ -122,7 +190,35 @@ export default function BookAppointment() {
   }, [lecturerId, navigate]);
 
   useEffect(() => { fetchLecturer(); }, [fetchLecturer]);
-  useEffect(() => { setDateOptions(getNextWeekdays()); }, []);
+
+  // Deep link from chatbot: prefill date/time whenever URL query changes
+  useEffect(() => {
+    let qDate = searchParams.get('date');
+    const qFrom = searchParams.get('startTime') || searchParams.get('time') || searchParams.get('from');
+    const qTo = searchParams.get('endTime') || searchParams.get('to');
+    if (!qDate && !qFrom && !qTo) return;
+
+    const linkKey = `${lecturerId || ''}?${searchParams.toString()}`;
+    if (linkKey === lastDeepLinkKey.current) return;
+    lastDeepLinkKey.current = linkKey;
+
+    if (qDate && !/^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+      qDate = parseLooseDateToIso(qDate);
+    }
+
+    setFromChatbot(true);
+    setStep(1);
+    setSelectedSlot(null);
+
+    if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+      setDateOptions((prev) => ensureDateOption(prev.length ? prev : getNextWeekdays(), qDate!));
+      setSelectedDate(qDate);
+    } else {
+      setSelectedDate(null);
+    }
+
+    setPendingStartTime(qFrom || null);
+  }, [searchParams, lecturerId]);
 
   const fetchAvailability = useCallback(async (dateStr: string) => {
     if (!lecturerId) return;
@@ -139,12 +235,26 @@ export default function BookAppointment() {
     else setAvailability(null);
   }, [selectedDate, fetchAvailability]);
 
+  // After free slots load, auto-select the chatbot time if it matches a bookable slot
+  useEffect(() => {
+    if (!availability || !pendingStartTime) return;
+    const slots = splitIntoBookableSlots(availability.freeSlots || []);
+    const want = pendingStartTime.slice(0, 5);
+    const match =
+      slots.find((s) => s.startTime === want)
+      || slots.find((s) => timeToMinutes(s.startTime) === timeToMinutes(want));
+    if (match) {
+      setSelectedSlot(match);
+    }
+    setPendingStartTime(null);
+  }, [availability, pendingStartTime]);
+
   const handleSubmit = async () => {
     if (!lecturerId || !selectedDate || !selectedSlot) return;
     setSubmitting(true);
     try {
       const [h, m] = selectedSlot.startTime.split(':').map(Number);
-      const dateTime = new Date(selectedDate);
+      const dateTime = parseLocalDate(selectedDate);
       dateTime.setHours(h, m, 0, 0);
 
       const duration = (() => {
@@ -198,6 +308,11 @@ export default function BookAppointment() {
           with {lecturer.firstName} {lecturer.lastName}
           {lecturer.department && ` - ${lecturer.department.name}`}
         </p>
+        {fromChatbot && (
+          <p className="mt-2 text-sm text-slate-600">
+            Filled in from chat. Check the date and time, then book.
+          </p>
+        )}
       </div>
 
       <div className="mb-6 flex gap-6 text-sm text-slate-500">
@@ -214,10 +329,11 @@ export default function BookAppointment() {
             {dateOptions.map((d) => (
               <button
                 key={d.dateStr}
+                type="button"
                 className={selectedDate === d.dateStr ? btnOutlineActive : btnOutline}
                 onClick={() => { setSelectedDate(d.dateStr); setSelectedSlot(null); }}
               >
-                {DAY_LABELS[d.dayName]}, {d.date.getDate()}/{d.date.getMonth() + 1}
+                {DAY_LABELS[d.dayName] || d.dayName}, {d.date.getDate()}/{d.date.getMonth() + 1}
               </button>
             ))}
           </div>
@@ -234,6 +350,7 @@ export default function BookAppointment() {
                   splitIntoBookableSlots(availability.freeSlots).map((slot, i) => (
                     <button
                       key={i}
+                      type="button"
                       className={selectedSlot?.startTime === slot.startTime && selectedSlot?.endTime === slot.endTime ? btnOutlineActive : btnOutline}
                       onClick={() => setSelectedSlot(slot)}
                     >

@@ -169,10 +169,12 @@ function AdminApprovalsView() {
   const [actioning, setActioning] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<HallBooking | null>(null);
   const [doorPassword, setDoorPassword] = useState('');
+  const [historyFilter, setHistoryFilter] = useState<'ALL' | 'APPROVED' | 'REJECTED' | 'CANCELLED'>('ALL');
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await api.get('/halls/bookings', { params: { status: 'PENDING' } });
+      // Admin: load all statuses so decided requests remain visible as history
+      const res = await api.get('/halls/bookings', { params: { limit: 100 } });
       setHallBookings(res.data.data || []);
     } catch (err) {
       showApiErrorToast(err, 'Failed to load pending approvals');
@@ -232,53 +234,111 @@ function AdminApprovalsView() {
     );
   }
 
+  const pending = hallBookings
+    .filter((b) => b.status === 'PENDING')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const history = hallBookings
+    .filter((b) => ['APPROVED', 'REJECTED', 'CANCELLED'].includes(b.status))
+    .filter((b) => historyFilter === 'ALL' || b.status === historyFilter)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   if (hallBookings.length === 0) {
     return (
       <EmptyState
-        title="No pending approvals"
-        description="Hall booking requests from students will appear here for your review."
+        title="No hall booking requests yet"
+        description="Pending and past hall booking decisions will appear here."
       />
     );
   }
 
+  const filterBtn = (id: typeof historyFilter, label: string) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => setHistoryFilter(id)}
+      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+        historyFilter === id
+          ? 'bg-[var(--color-primary)] text-white'
+          : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <section className="space-y-3">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800">
-        <Building size={20} />
-        Hall booking requests ({hallBookings.length})
-      </h2>
-      {hallBookings.map((b) => (
-        <HallBookingCard
-          key={b.id}
-          booking={b}
-          showStudent
-          actions={
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setApproveModal(b);
-                  setDoorPassword('');
-                }}
-                disabled={!!actioning}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-              >
-                <Check size={16} />
-                Approve
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRejectHall(b.id)}
-                disabled={!!actioning}
-                className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-              >
-                {actioning === `hall-reject-${b.id}` ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
-                Reject
-              </button>
-            </>
-          }
-        />
-      ))}
+    <div className="space-y-10">
+      <section className="space-y-3">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800">
+          <Building size={20} />
+          Pending hall booking requests ({pending.length})
+        </h2>
+        {pending.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+            No requests awaiting approval right now.
+          </div>
+        ) : (
+          pending.map((b) => (
+            <HallBookingCard
+              key={b.id}
+              booking={b}
+              showStudent
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setApproveModal(b);
+                      setDoorPassword('');
+                    }}
+                    disabled={!!actioning}
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    <Check size={16} />
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRejectHall(b.id)}
+                    disabled={!!actioning}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {actioning === `hall-reject-${b.id}` ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+                    Reject
+                  </button>
+                </>
+              }
+            />
+          ))
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+            <Clock size={20} />
+            Approval history ({history.length})
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {filterBtn('ALL', 'All')}
+            {filterBtn('APPROVED', 'Approved')}
+            {filterBtn('REJECTED', 'Rejected')}
+            {filterBtn('CANCELLED', 'Cancelled')}
+          </div>
+        </div>
+        <p className="text-sm text-slate-500">
+          Approved, rejected, and cancelled hall bookings stay here for your records.
+        </p>
+        {history.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+            No decided requests in this filter yet.
+          </div>
+        ) : (
+          history.map((b) => (
+            <HallBookingCard key={b.id} booking={b} showStudent />
+          ))
+        )}
+      </section>
 
       {approveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setApproveModal(null)}>
@@ -321,7 +381,7 @@ function AdminApprovalsView() {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -490,6 +550,10 @@ function LecturerApprovalsView() {
 
   const pending = appointments.filter((a) => a.status === 'PENDING' || a.status === 'PENDING_ADMIN');
   const cancellationRequests = appointments.filter((a) => a.status === 'CANCELLATION_REQUESTED');
+  const appointmentHistory = appointments
+    .filter((a) => ['ACCEPTED', 'SCHEDULED', 'REJECTED', 'CANCELLED', 'COMPLETED'].includes(a.status))
+    .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
+    .slice(0, 40);
 
   const handleAccept = async (a: Appointment) => {
     try {
@@ -575,11 +639,11 @@ function LecturerApprovalsView() {
     );
   }
 
-  if (pending.length === 0 && cancellationRequests.length === 0) {
+  if (pending.length === 0 && cancellationRequests.length === 0 && appointmentHistory.length === 0) {
     return (
       <EmptyState
-        title="No pending approvals"
-        description="Student appointment requests and cancellation requests will appear here for your review."
+        title="No approvals yet"
+        description="Student appointment requests, cancellations, and past decisions will appear here."
       />
     );
   }
@@ -632,6 +696,12 @@ function LecturerApprovalsView() {
         </section>
       )}
 
+      {pending.length === 0 && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+          No appointment requests awaiting your review.
+        </div>
+      )}
+
       {cancellationRequests.length > 0 && (
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-800">
@@ -662,6 +732,36 @@ function LecturerApprovalsView() {
                   <button type="button" className={btnDanger} onClick={() => handleRejectCancellation(a)}>
                     <X size={14} /> Keep appointment
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {appointmentHistory.length > 0 && (
+        <section>
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-slate-800">
+            <Clock size={20} />
+            Decision history ({appointmentHistory.length})
+          </h2>
+          <p className="mb-4 text-sm text-slate-500">
+            Recently accepted, rejected, or completed appointments for your records.
+          </p>
+          <div className="space-y-3">
+            {appointmentHistory.map((a) => (
+              <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {a.student?.firstName} {a.student?.lastName}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      <Clock size={14} className="inline" /> {formatDateTime(a.dateTime)} ({a.duration} min)
+                    </p>
+                    {a.reason && <p className="mt-2 text-sm text-slate-600">Reason: {a.reason}</p>}
+                  </div>
+                  {statusBadge(a.status)}
                 </div>
               </div>
             ))}
@@ -712,9 +812,9 @@ function LecturerApprovalsView() {
 }
 
 const roleCopy: Record<string, { subtitle: string }> = {
-  ADMIN: { subtitle: 'Review and approve or reject hall booking requests from students.' },
+  ADMIN: { subtitle: 'Review pending hall booking requests and browse past approval decisions.' },
   STUDENT: { subtitle: 'Track hall booking and appointment requests awaiting approval.' },
-  LECTURER: { subtitle: 'Review student appointment and cancellation requests.' },
+  LECTURER: { subtitle: 'Review student appointment requests and see your decision history.' },
 };
 
 export default function Approvals() {

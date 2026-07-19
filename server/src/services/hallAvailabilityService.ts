@@ -292,6 +292,7 @@ export async function listActiveHalls(): Promise<HallSchedule['hall'][]> {
 
 interface AvailableQuery {
   day: string;
+  date?: string;
   startTime?: string;
   endTime?: string;
   minCapacity?: number;
@@ -347,9 +348,10 @@ export async function findAvailableHalls(query: AvailableQuery): Promise<Availab
     occupancyMap.get(e.hallId)!.push({ startTime: e.startTime, endTime: e.endTime });
   }
 
-  const targetDate = getNextDateForDay(query.day);
-  const targetDateStart = new Date(targetDate);
-  targetDateStart.setHours(0, 0, 0, 0);
+  const targetDate = query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date)
+    ? query.date
+    : getNextDateForDay(query.day);
+  const targetDateStart = parseDateOnly(targetDate);
   const targetDateEnd = new Date(targetDateStart);
   targetDateEnd.setDate(targetDateEnd.getDate() + 1);
   const hallBookings = await prisma.hallBooking.findMany({

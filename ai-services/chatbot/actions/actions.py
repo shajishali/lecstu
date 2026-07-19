@@ -8,6 +8,7 @@ import re
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Text, Dict, List, Optional
+from urllib.parse import quote
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet, FollowupAction
@@ -108,6 +109,97 @@ def _resolve_day(day_raw: Optional[str]) -> Optional[str]:
     return None
 
 
+def _next_date_for_day(day_name: str) -> str:
+    """YYYY-MM-DD for today if it matches day_name, else the next occurrence."""
+    weekday_map = {
+        "MONDAY": 0,
+        "TUESDAY": 1,
+        "WEDNESDAY": 2,
+        "THURSDAY": 3,
+        "FRIDAY": 4,
+        "SATURDAY": 5,
+        "SUNDAY": 6,
+    }
+    target = weekday_map.get((day_name or "").upper())
+    if target is None:
+        return datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now().date()
+    delta = (target - today.weekday()) % 7
+    return (today + timedelta(days=delta)).strftime("%Y-%m-%d")
+
+
+def _hall_availability_page_url(
+    day: Optional[str] = None,
+    date: Optional[str] = None,
+    hall: Optional[str] = None,
+    hall_id: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+) -> str:
+    """Deep link that prefills Hall Availability; user reviews then clicks Search."""
+    params: List[str] = []
+    if day:
+        params.append(f"day={quote(day)}")
+    if date:
+        params.append(f"date={quote(date)}")
+    if hall:
+        params.append(f"hall={quote(hall)}")
+    if hall_id:
+        params.append(f"hallId={quote(hall_id)}")
+    if start_time:
+        params.append(f"startTime={quote(start_time)}")
+    if end_time:
+        params.append(f"endTime={quote(end_time)}")
+    if not params:
+        return "/halls/availability"
+    return "/halls/availability?" + "&".join(params)
+
+
+def _appointment_book_page_url(
+    lecturer_id: str,
+    date: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+) -> str:
+    """Deep link that prefills Book Appointment date/time for review."""
+    params: List[str] = []
+    if date:
+        params.append(f"date={quote(date)}")
+    if start_time:
+        params.append(f"startTime={quote(start_time)}")
+    if end_time:
+        params.append(f"endTime={quote(end_time)}")
+    base = f"/appointments/book/{lecturer_id}"
+    if not params:
+        return base
+    return base + "?" + "&".join(params)
+
+
+def _resolve_booking_date_and_time(
+    tracker: Tracker,
+    text: str,
+    day_slot: Optional[str] = None,
+    time_slot: Optional[str] = None,
+) -> tuple:
+    """
+    Resolve (date_str YYYY-MM-DD | None, start HH:MM | None, end HH:MM | None)
+    from calendar dates, today/tomorrow/weekday, and time ranges in the message.
+    """
+    parsed_date = _parse_calendar_date(text)
+    start_from_text, end_from_text = _time_range_from_text(text)
+    start_time = start_from_text or (_resolve_time(time_slot) if time_slot else None)
+    end_time = end_from_text
+
+    if parsed_date:
+        return parsed_date, start_time, end_time
+
+    day_raw = day_slot or _raw_day_preference(tracker)
+    day = _resolve_day(day_raw) if day_raw else _day_from_message_text(text)
+    if day:
+        return _next_date_for_day(day), start_time, end_time
+    return None, start_time, end_time
+
+
 def _day_from_message_text(text: str) -> Optional[str]:
     """Extract weekday from free text (handles 'the friday', 'tomorrows', etc.)."""
     t = (text or "").lower()
@@ -121,6 +213,386 @@ def _day_from_message_text(text: str) -> Optional[str]:
         if re.search(rf"\b(?:the\s+)?{re.escape(token)}\b", t):
             return alias
     return None
+
+
+def _raw_day_preference(tracker: Tracker) -> Optional[str]:
+    """Prefer NLU day slot, else today/tomorrow/weekday from the latest message."""
+    day_slot = tracker.get_slot("day")
+    if day_slot and str(day_slot).strip():
+        return str(day_slot).strip()
+    text = ((tracker.latest_message or {}).get("text") or "").lower()
+    if re.search(r"\btomorrow", text):
+        return "tomorrow"
+    if re.search(r"\btoday", text):
+        return "today"
+    for token, alias in DAY_ALIASES.items():
+        if not alias or len(token) < 3:
+            continue
+        if re.search(rf"\b(?:the\s+)?{re.escape(token)}\b", text):
+            return token
+    return None
+
+
+def _day_label(day_raw: Optional[str], day_resolved: str, date_str: Optional[str] = None) -> str:
+    """Human label so 'tomorrow' is not confused with a bare weekday name."""
+    pretty = day_resolved.capitalize()
+    if date_str:
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d")
+            pretty = f"{pretty} ({d.strftime('%d/%m/%Y')})"
+        except ValueError:
+            pretty = f"{pretty} ({date_str})"
+    raw = (day_raw or "").strip().lower()
+    if raw.startswith("tomorrow"):
+        return f"tomorrow ({pretty})" if not date_str else f"tomorrow ({pretty})"
+    if raw.startswith("today"):
+        return f"today ({pretty})" if not date_str else f"today ({pretty})"
+    return pretty
+
+
+def _looks_like_date_token(s: str) -> bool:
+    """True when a slot/value is a calendar date, not a hall name."""
+    t = (s or "").strip()
+    if not t:
+        return False
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", t):
+        return True
+    if re.fullmatch(r"\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}", t):
+        return True
+    return False
+
+
+_MONTH_NAME_TO_NUM = {
+    "jan": 1,
+    "january": 1,
+    "feb": 2,
+    "february": 2,
+    "mar": 3,
+    "march": 3,
+    "apr": 4,
+    "april": 4,
+    "may": 5,
+    "jun": 6,
+    "june": 6,
+    "jul": 7,
+    "july": 7,
+    "aug": 8,
+    "august": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "oct": 10,
+    "october": 10,
+    "nov": 11,
+    "november": 11,
+    "dec": 12,
+    "december": 12,
+}
+_MONTH_NAME_ALT = "|".join(sorted(_MONTH_NAME_TO_NUM.keys(), key=len, reverse=True))
+
+
+def _parse_calendar_date(text: str, prefer_dmy: bool = True) -> Optional[str]:
+    """
+    Extract a calendar date as YYYY-MM-DD.
+    Supports ISO (2026-07-22), DD/MM or MM/DD, and month names
+    (e.g. "26th july 2026", "26 th july 2026", "july 26, 2026").
+    Ambiguous numeric dates (e.g. 05/06/2026) prefer DMY (Sri Lanka) by default.
+    """
+    if not text:
+        return None
+    t = text.strip()
+
+    m_iso = re.search(r"\b(\d{4})-(\d{2})-(\d{2})\b", t)
+    if m_iso:
+        y, mo, d = int(m_iso.group(1)), int(m_iso.group(2)), int(m_iso.group(3))
+        try:
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Day + optional ordinal + month name + year: "26th july 2026", "26 th july 2026"
+    m_dmy_name = re.search(
+        rf"\b(\d{{1,2}})\s*(?:st|nd|rd|th)?\s+({_MONTH_NAME_ALT})\.?\s*,?\s*(\d{{4}})\b",
+        t,
+        re.I,
+    )
+    if m_dmy_name:
+        d = int(m_dmy_name.group(1))
+        mo = _MONTH_NAME_TO_NUM[m_dmy_name.group(2).lower()]
+        y = int(m_dmy_name.group(3))
+        try:
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Month name + day + year: "july 26, 2026", "july 26th 2026"
+    m_mdy_name = re.search(
+        rf"\b({_MONTH_NAME_ALT})\.?\s+(\d{{1,2}})\s*(?:st|nd|rd|th)?\s*,?\s*(\d{{4}})\b",
+        t,
+        re.I,
+    )
+    if m_mdy_name:
+        mo = _MONTH_NAME_TO_NUM[m_mdy_name.group(1).lower()]
+        d = int(m_mdy_name.group(2))
+        y = int(m_mdy_name.group(3))
+        try:
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Day + month name without year → assume current/next occurrence this year or next
+    m_dm_no_year = re.search(
+        rf"\b(\d{{1,2}})\s*(?:st|nd|rd|th)?\s+({_MONTH_NAME_ALT})\.?\b(?!\s*\d{{4}})",
+        t,
+        re.I,
+    )
+    if m_dm_no_year:
+        d = int(m_dm_no_year.group(1))
+        mo = _MONTH_NAME_TO_NUM[m_dm_no_year.group(2).lower()]
+        today = datetime.now().date()
+        for y in (today.year, today.year + 1):
+            try:
+                candidate = datetime(y, mo, d).date()
+                if candidate >= today:
+                    return candidate.strftime("%Y-%m-%d")
+            except ValueError:
+                pass
+
+    for m in re.finditer(r"\b(\d{1,2})([./\-])(\d{1,2})\2(\d{2,4})\b", t):
+        a, b, y_raw = int(m.group(1)), int(m.group(3)), int(m.group(4))
+        y = y_raw if y_raw >= 100 else 2000 + y_raw
+        dmy_ok = mdy_ok = False
+        if 1 <= b <= 12 and 1 <= a <= 31:
+            try:
+                datetime(y, b, a)
+                dmy_ok = True
+            except ValueError:
+                pass
+        if 1 <= a <= 12 and 1 <= b <= 31:
+            try:
+                datetime(y, a, b)
+                mdy_ok = True
+            except ValueError:
+                pass
+        if dmy_ok and not mdy_ok:
+            return f"{y:04d}-{b:02d}-{a:02d}"
+        if mdy_ok and not dmy_ok:
+            return f"{y:04d}-{a:02d}-{b:02d}"
+        if dmy_ok and mdy_ok:
+            if prefer_dmy:
+                return f"{y:04d}-{b:02d}-{a:02d}"
+            return f"{y:04d}-{a:02d}-{b:02d}"
+    return None
+
+
+def _weekday_from_date_str(date_str: str) -> Optional[str]:
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%A").upper()
+    except ValueError:
+        return None
+
+
+def _time_range_from_text(text: str) -> tuple:
+    """Parse '10 am to 11 am' / '10:00-11:00' → (start HH:MM, end HH:MM)."""
+    if not text:
+        return None, None
+    m = re.search(
+        r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–|until)\s*"
+        r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)",
+        text,
+        re.I,
+    )
+    if m:
+        return _resolve_time(m.group(1)), _resolve_time(m.group(2))
+    m2 = re.search(r"\bat\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b", text, re.I)
+    if m2:
+        return _resolve_time(m2.group(1)), None
+    return None, None
+
+
+_HALL_CODE_RE = re.compile(
+    r"\b([A-Za-z]{1,5}-[A-Za-z]{2,8}-[A-Za-z0-9]{1,2}-\d{1,2})\b"
+)
+_HALL_NAMED_RE = re.compile(
+    r"\b(?:lecture\s+)?hall\s+([A-Za-z0-9][A-Za-z0-9\- ]{0,40}?)"
+    r"(?=\s+(?:tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
+    r"available|free|book|at|on|for|\d{1,2}[./\-]\d)"
+    r"\b|[?.!,]|$)",
+    re.I,
+)
+
+_HALL_VOCAB = frozenset(
+    {
+        "hall",
+        "room",
+        "lab",
+        "lecture",
+        "theatre",
+        "theater",
+        "seminar",
+        "ground",
+        "floor",
+        "block",
+        "wing",
+        "auditorium",
+        "main",
+        "cmp",
+        "lch",
+        "elv",
+    }
+)
+
+
+def _looks_like_person_name(value: str) -> bool:
+    """True for names like 'Amila Fernando' — not hall codes / room labels."""
+    s = (value or "").strip()
+    if not s or _HALL_CODE_RE.search(s):
+        return False
+    if re.search(r"\d", s):
+        return False
+    # Drop trailing connector words mistakenly pulled in from "… on 22/07"
+    s = re.sub(r"\s+(on|at|for|from|to|with)$", "", s, flags=re.I).strip()
+    parts = [p for p in re.split(r"\s+", s) if p]
+    stop = {"on", "at", "for", "the", "and", "with", "from", "to", "by"}
+    if any(p.lower() in stop for p in parts):
+        return False
+    if len(parts) < 2 or len(parts) > 4:
+        return False
+    if any(p.lower().rstrip(".") in _HALL_VOCAB for p in parts):
+        return False
+    for p in parts:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z\-']+", p):
+            return False
+    return True
+
+
+def _is_real_hall_reference(text: str) -> bool:
+    """True only when the user clearly means a room/hall code or non-person hall name."""
+    if not text:
+        return False
+    if _HALL_CODE_RE.search(text):
+        return True
+    m2 = _HALL_NAMED_RE.search(text)
+    if not m2:
+        return False
+    name = m2.group(1).strip(" .,")
+    name = re.sub(r"\s+(on|at|for|from|to)$", "", name, flags=re.I).strip()
+    return bool(name) and not _looks_like_person_name(name)
+
+
+def _hall_from_message_text(text: str) -> Optional[str]:
+    if not text:
+        return None
+    m = _HALL_CODE_RE.search(text)
+    if m:
+        return m.group(1).upper()
+    m2 = _HALL_NAMED_RE.search(text)
+    if m2:
+        name = m2.group(1).strip(" .,")
+        name = re.sub(r"\s+(on|at|for|from|to)$", "", name, flags=re.I).strip()
+        if (
+            name
+            and name.lower() not in ("available", "free", "booking", "status")
+            and not _looks_like_date_token(name)
+            and not _looks_like_person_name(name)
+        ):
+            return name
+    return None
+
+
+def _resolve_hall_name(tracker: Tracker, text: str) -> Optional[str]:
+    """Prefer hall codes/names from the message; never treat person names as halls."""
+    from_text = _hall_from_message_text(text)
+    if from_text:
+        return from_text
+
+    # "book the lecture hall Amila Fernando" → not a hall
+    if not _is_real_hall_reference(text):
+        if _looks_like_lecturer_query(text, tracker) or _extract_person_after_hall_words(text):
+            return None
+
+    t = (text or "").lower().strip()
+    # Only reuse slot for short hall follow-ups ("tomorrow available?", "is it free?")
+    if len(t.split()) > 8 and not re.search(r"\bhall\b", t):
+        return None
+    slot = (tracker.get_slot("hall_name") or "").strip()
+    if slot and (_looks_like_date_token(slot) or _looks_like_person_name(slot)):
+        return None
+    if slot:
+        return slot
+    return None
+
+
+def _extract_person_after_hall_words(text: str) -> Optional[str]:
+    """Catch misphrased 'lecture hall Amila Fernando' as a person name."""
+    if not text:
+        return None
+    m = re.search(
+        r"\b(?:lecture\s+)?hall\s+"
+        r"((?:(?!(?:on|at|for|from|to|tomorrow|today)\b)[A-Za-z][A-Za-z\-']+\s+){1,3}"
+        r"(?!(?:on|at|for|from|to|tomorrow|today)\b)[A-Za-z][A-Za-z\-']+)",
+        text,
+        re.I,
+    )
+    if not m:
+        return None
+    name = m.group(1).strip(" .,")
+    name = re.sub(r"\s+(on|at|for|from|to)$", "", name, flags=re.I).strip()
+    if _looks_like_person_name(name):
+        return name
+    return None
+
+
+def _message_mentions_lecturer_context(text: str) -> bool:
+    """True when the user is clearly talking about a person/lecturer, not a hall."""
+    t = (text or "").lower()
+    if not t:
+        return False
+    if re.search(
+        r"\b(lecturer|sir|madam|prof\.?|dr\.?|appointment|meeting|meet\s+with|see\s+with)\b",
+        t,
+    ):
+        return True
+    if _extract_person_after_hall_words(text):
+        return True
+    if _extract_lecturer_name_from_text(text):
+        return True
+    return False
+
+
+def _looks_like_lecturer_query(text: str, tracker: Tracker) -> bool:
+    """Detect lecturer availability / appointment booking, even if NLU mislabels as hall."""
+    if _message_mentions_lecturer_context(text):
+        return True
+    if _get_lecturer_name_from_tracker(tracker):
+        # Person named, and not talking about a hall code/word
+        if not _hall_from_message_text(text) and not re.search(r"\bhall\b", (text or "").lower()):
+            return True
+    return False
+
+
+def _looks_like_hall_query(text: str, tracker: Tracker) -> bool:
+    """Follow-ups like 'tomorrow available or not' after a hall was discussed."""
+    t = (text or "").lower().strip()
+    if not t:
+        return False
+    # Never steal lecturer/appointment turns
+    if _looks_like_lecturer_query(text, tracker):
+        return False
+    has_hall_slot = bool(tracker.get_slot("hall_name"))
+    has_hall_word = bool(re.search(r"\bhall\b", t) or _hall_from_message_text(text))
+    asks_avail = bool(
+        re.search(r"\b(available|availability|free|book)\b", t)
+        or re.search(r"available\s+or\s+not", t)
+    )
+    if has_hall_word and asks_avail:
+        return True
+    # Stale hall slot + short follow-up only
+    if has_hall_slot and asks_avail and len(t.split()) <= 8:
+        return True
+    if has_hall_slot and re.search(r"\b(tomorrow|today)\b", t) and len(t.split()) <= 6:
+        return True
+    return False
 
 
 def _requested_timetable_day(tracker: Tracker) -> Optional[str]:
@@ -245,7 +717,7 @@ def _dispatch_timetable_query(
             return []
 
         if requested_day:
-            msg = f"Here's your timetable for {requested_day.title()}:\n\n" + "\n".join(lines)
+            msg = f"Your timetable for {requested_day.title()}:\n\n" + "\n".join(lines)
         else:
             msg = "Here's your timetable:\n\n" + "\n".join(lines[:15])
             if len(lines) > 15:
@@ -433,6 +905,8 @@ def _lookup_lecturer(user_id: str, name: str) -> Optional[Dict]:
         .replace("prof", "")
         .replace("madam", "")
         .replace("sir", "")
+        .replace("lecturer", "")
+        .replace("teacher", "")
         .strip()
     )
     search_terms = [name.strip()]
@@ -468,43 +942,140 @@ def _lookup_lecturer(user_id: str, name: str) -> Optional[Dict]:
     return None
 
 
+_LECTURER_TITLE_TOKENS = frozenset(
+    {
+        "sir",
+        "madam",
+        "dr",
+        "dr.",
+        "prof",
+        "prof.",
+        "professor",
+        "lecturer",
+        "teacher",
+        "mr",
+        "mr.",
+        "mrs",
+        "mrs.",
+        "ms",
+        "ms.",
+    }
+)
+
+
+def _clean_lecturer_name(raw: Optional[str]) -> Optional[str]:
+    """Strip titles and reject title-only values like 'lecturer'."""
+    if not raw:
+        return None
+    v = str(raw).strip()
+    if not v:
+        return None
+    # Remove leading titles: "lecturer Chalani Amarasinghe" / "Dr. Dias"
+    v = re.sub(
+        r"^(?:lecturer|teacher|professor|prof\.?|dr\.?|mr\.?|mrs\.?|ms\.?)\s+",
+        "",
+        v,
+        flags=re.I,
+    ).strip()
+    # Remove trailing titles: "Chalani madam"
+    v = re.sub(r"\s+(?:sir|madam|lecturer|teacher)$", "", v, flags=re.I).strip(" .,")
+    if not v or v.lower() in _LECTURER_TITLE_TOKENS:
+        return None
+    # Drop if every token is a title word
+    parts = [p for p in re.split(r"\s+", v) if p]
+    if parts and all(p.lower().rstrip(".") in _LECTURER_TITLE_TOKENS for p in parts):
+        return None
+    return v
+
+
+def _extract_lecturer_name_from_text(text: str) -> Optional[str]:
+    """Regex fallback when NLU entity is missing or is only a title word."""
+    if not text or not text.strip():
+        return None
+
+    _blocked = (
+        r"tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
+        r"available|free|or|at|on|for|is|hall|book|lecturer|teacher|appointment|"
+        r"with|meet|see|can|i|want|to|the|a|an|please"
+    )
+    _word = rf"(?!(?:{_blocked})\b)[A-Za-z][A-Za-z\.]+"
+    _person = rf"({_word}(?:\s+{_word})+)"
+    _titled_one_or_more = (
+        rf"(?:prof\.?|dr\.?|professor)\s+({_word}(?:\s+{_word})*)"
+    )
+    _name_title = (
+        r"([A-Za-z\u0B80-\u0BFF\u0D80-\u0DFF][A-Za-z\u0B80-\u0BFF\u0D80-\u0DFF\.\-]*)"
+        r"\s+(?:sir|madam)"
+    )
+
+    patterns = [
+        r"\bbook\s+(?:the\s+)?(?:lecture\s+)?hall\s+" + _person,
+        r"\bbook\s+(?:an?\s+)?(?:appointment\s+with\s+)?"
+        r"(?:lecturer|teacher|professor|prof\.?|dr\.?)?\s*" + _person,
+        r"\bbook\s+(?:lecturer|teacher)\s+" + _person,
+        r"\bbook\s+(?:the\s+)?" + _person,
+        r"\bbook\s+" + _titled_one_or_more,
+        r"(?:meet|see)\s+(?:lecturer|teacher|professor|prof\.?|dr\.?)?\s*" + _person,
+        r"(?:with)\s+(?:lecturer|teacher|professor|prof\.?|dr\.?)\s*" + _person,
+        r"(?:with)\s+" + _titled_one_or_more,
+        r"(?:lecturer|teacher)\s+" + _person,
+        _titled_one_or_more,
+        r"(?:today|tomorrow)\s+(?:is\s+)?" + _name_title,
+        _name_title + r"\s+(?:is\s+)?(?:available|free|or)",
+        _name_title,
+        r"\b" + _person + r"\s+(?:tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, text, re.I)
+        if m:
+            cleaned = _clean_lecturer_name(m.group(1))
+            if cleaned and not _HALL_CODE_RE.search(cleaned):
+                return cleaned
+    # Last resort: person-shaped tokens after mistaken "hall"
+    mistaken = _extract_person_after_hall_words(text)
+    if mistaken:
+        return mistaken
+    return None
+
+
 def _get_lecturer_name_from_tracker(tracker: Tracker) -> Optional[str]:
     """Prefer lecturer_name from the CURRENT user message to avoid stale slot from previous turn."""
     latest = tracker.latest_message or {}
     text = (latest.get("text") or "").strip()
     entities = latest.get("entities") or []
+
+    from_entity: Optional[str] = None
     for e in entities:
-        if e.get("entity") == "lecturer_name":
-            val = e.get("value")
-            if val:
-                v = str(val).strip()
-                # Ignore title-only extractions (e.g. "sir", "madam") — try regex fallback instead
-                if v.lower() in ("sir", "madam", "dr", "prof"):
-                    break
-                return v
-    # Fallback: extract from raw text (e.g. "prof. Dhammika weerasinghe is available")
-    # Also handle "X sir"/"X madam" — supports English and Tamil/Sinhala (e.g. "கேசவன் sir", "Kesavan sir")
-    # Tamil: \u0B80-\u0BFF, Sinhala: \u0D80-\u0DFF
-    _name = r"([A-Za-z\u0B80-\u0BFF\u0D80-\u0DFF][A-Za-z\s\.\-\u0B80-\u0BFF\u0D80-\u0DFF]*?)\s+(?:sir|madam)"
-    if text:
-        for pattern in [
-            r"(?:today|tomorrow)\s+(?:dr\.?|prof\.?)\s+([A-Za-z][A-Za-z\s\.\-]+?)\s+(?:is\s+)?(?:available|free|\?|or)",
-            r"(?:today|tomorrow)\s+(?:is\s+)?" + _name + r"\s+(?:is\s+)?(?:available|free|or)",
-            _name + r"\s+(?:is\s+)?(?:available|free|or)",
-            _name + r"\s+(?:is\s+)?(?:available|free)",
-            _name,  # Last resort: any "X sir" or "X madam" in text
-            r"(?:prof\.?|dr\.?)\s+([A-Za-z][A-Za-z\s\.\-]+?)\s+(?:is\s+)?(?:available|free)",
-            r"(?:today|tomorrow)\s+(?:is\s+)?(?:prof\.?|dr\.?)\s+([A-Za-z][A-Za-z\s\.\-]+?)\s+(?:available|free|\?|or)",
-            r"(?:prof\.?|dr\.?)\s+([A-Za-z][A-Za-z\s\.\-]+?)\s+or\s+not",
-        ]:
-            m = re.search(pattern, text, re.I)
-            if m:
-                return m.group(1).strip()
+        if e.get("entity") != "lecturer_name":
+            continue
+        cleaned = _clean_lecturer_name(e.get("value"))
+        if cleaned:
+            from_entity = cleaned
+            break
+        # Entity was title-only (e.g. "lecturer") — keep looking / use text fallback
+        break
+
+    from_text = _extract_lecturer_name_from_text(text)
+
+    # NLU often tags only the first name ("Amila"); prefer fuller text extract
+    if from_text and from_entity:
+        fe, ft = from_entity.lower(), from_text.lower()
+        if fe == ft:
+            return from_text
+        if fe in ft.split() or ft.startswith(fe + " ") or fe in ft:
+            if len(from_text) >= len(from_entity):
+                return from_text
+        # Multi-word text vs single-token entity → trust text
+        if len(from_text.split()) > len(from_entity.split()):
+            return from_text
+        return from_entity
+    if from_text:
+        return from_text
+    if from_entity:
+        return from_entity
+
     slot_val = tracker.get_slot("lecturer_name")
-    # Don't use slot if it's just a title (sir, madam) — would cause "could not find sir"
-    if slot_val and str(slot_val).strip().lower() not in ("sir", "madam"):
-        return str(slot_val).strip()
-    return None
+    return _clean_lecturer_name(slot_val)
 
 
 def _timetable_lines_from_grid(grid: Dict[str, Any], requested_day: Optional[str]) -> List[str]:
@@ -550,8 +1121,8 @@ def _timetable_lines_from_grid(grid: Dict[str, Any], requested_day: Optional[str
                 raw = (cell.get("rawText") or "").strip()
                 if raw:
                     parts = [ln.strip() for ln in raw.splitlines() if ln.strip()]
-            summary = " · ".join(parts) if parts else "Class"
-            lines.append(f"• {day_label} {start}-{end}: {summary}")
+            summary = ", ".join(parts) if parts else "Class"
+            lines.append(f"- {day_label} {start}-{end}: {summary}")
     return lines
 
 
@@ -571,7 +1142,7 @@ def _timetable_lines_from_weekly(weekly: Dict[str, Any], requested_day: Optional
             lec = s.get("lecturer", {})
             lec_name = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
             lines.append(
-                f"• {day_label} {s.get('startTime', '')}-{s.get('endTime', '')}: "
+                f"- {day_label} {s.get('startTime', '')}-{s.get('endTime', '')}: "
                 f"{course.get('name', '')} at {hall.get('name', '')} ({lec_name})"
             )
     return lines
@@ -603,14 +1174,22 @@ class ActionRecoverOrFallback(Action):
             )
             return []
 
+        if _looks_like_hall_query(text, tracker):
+            return await ActionCheckHallAvailability().run(dispatcher, tracker, domain)
+
+        if _looks_like_lecturer_query(text, tracker):
+            if re.search(r"\b(book|appointment|meet|schedule)\b", text, re.I):
+                return await ActionBookAppointment().run(dispatcher, tracker, domain)
+            return await ActionCheckLecturerAvailability().run(dispatcher, tracker, domain)
+
         intent = ((tracker.latest_message or {}).get("intent") or {}).get("name")
         if intent == "fallback":
             dispatcher.utter_message(
-                text="I'm not sure I understood. Could you rephrase that? I can help with timetables, hall availability, appointments, and campus directions."
+                text="Sorry, I didn't get that. Try asking about your timetable, a hall, an appointment, or directions."
             )
         else:
             dispatcher.utter_message(
-                text="I'm focused on academic help—timetables, halls, appointments, and campus info. Is there something in that area I can help with?"
+                text="I only cover timetables, halls, appointments, and campus info. What do you need?"
             )
         return []
 
@@ -649,7 +1228,7 @@ class ActionQueryTimetable(Action):
 
 
 class ActionCheckHallAvailability(Action):
-    """Call GET /api/halls/available or /available-now."""
+    """Call GET /api/halls/available or /available-now. Keep hall/day context for follow-ups."""
 
     def name(self) -> Text:
         return "action_check_hall_availability"
@@ -667,15 +1246,61 @@ class ActionCheckHallAvailability(Action):
             )
             return []
 
-        hall = tracker.get_slot("hall_name")
-        time_slot = tracker.get_slot("time")
-        day_slot = tracker.get_slot("day")
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
 
-        day = _resolve_day(day_slot)
-        start_time = _resolve_time(time_slot) if time_slot else None
+        # Person names (even after mistaken "lecture hall …") go to appointment booking
+        mistyped_person = _extract_person_after_hall_words(text)
+        wants_lecturer = (
+            (_looks_like_lecturer_query(text, tracker) and not _is_real_hall_reference(text))
+            or bool(mistyped_person)
+        )
+        if wants_lecturer:
+            clear_hall = [SlotSet("hall_name", None)]
+            person = (
+                mistyped_person
+                or _get_lecturer_name_from_tracker(tracker)
+                or _extract_lecturer_name_from_text(text)
+            )
+            if person:
+                clear_hall.append(SlotSet("lecturer_name", person))
+            if re.search(r"\b(book|appointment|meet|schedule)\b", text, re.I):
+                more = await ActionBookAppointment().run(dispatcher, tracker, domain)
+            else:
+                more = await ActionCheckLecturerAvailability().run(dispatcher, tracker, domain)
+            return clear_hall + (more or [])
+
+        hall = _resolve_hall_name(tracker, text)
+        # Safety: never treat a person-shaped token as a hall
+        if hall and _looks_like_person_name(hall):
+            clear_hall = [SlotSet("hall_name", None), SlotSet("lecturer_name", hall)]
+            more = await ActionBookAppointment().run(dispatcher, tracker, domain)
+            return clear_hall + (more or [])
+        time_slot = tracker.get_slot("time")
+        parsed_date = _parse_calendar_date(text)
+        start_from_text, end_from_text = _time_range_from_text(text)
+        start_time = start_from_text or (_resolve_time(time_slot) if time_slot else None)
+        end_time = end_from_text
+        events: List[Dict[Text, Any]] = []
+
+        if parsed_date:
+            day = _weekday_from_date_str(parsed_date) or datetime.now().strftime("%A").upper()
+            day_raw = day
+            date_str = parsed_date
+        else:
+            day_raw = _raw_day_preference(tracker)
+            day = _resolve_day(day_raw) if day_raw else _day_from_message_text(text)
+            date_str = None
+
+        if hall:
+            events.append(SlotSet("hall_name", hall))
+        if day_raw and not parsed_date:
+            events.append(SlotSet("day", day_raw))
+        elif parsed_date and day:
+            events.append(SlotSet("day", day))
 
         try:
-            if not day and not hall and not time_slot:
+            # No day/hall/time: show halls free right now
+            if not day and not hall and not time_slot and not start_time and not parsed_date:
                 r = requests.get(
                     f"{PLATFORM_API_URL}/halls/available-now",
                     headers=_api_headers(user_id),
@@ -685,7 +1310,7 @@ class ActionCheckHallAvailability(Action):
                 data = r.json()
                 if not data.get("success"):
                     dispatcher.utter_message(text="Could not check hall availability.")
-                    return []
+                    return events
                 halls = data.get("data", [])
                 if not halls:
                     dispatcher.utter_message(text="No halls are currently available.")
@@ -694,19 +1319,24 @@ class ActionCheckHallAvailability(Action):
                     msg = "Halls available right now: " + ", ".join(names)
                     if len(halls) > 10:
                         msg += f" (and {len(halls) - 10} more)."
+                    msg += "\n\n/halls/availability"
                     dispatcher.utter_message(text=msg)
-                return []
+                return events
 
             day = day or datetime.now().strftime("%A").upper()
-            params = {"day": day}
+            date_str = date_str or _next_date_for_day(day)
+            day_label = _day_label(day_raw, day, date_str)
+            params = {"day": day, "date": date_str}
             if start_time:
                 params["startTime"] = start_time
-                end_h, end_m = map(int, start_time.split(":"))
-                end_m += 60
-                if end_m >= 60:
-                    end_h += 1
-                    end_m -= 60
-                params["endTime"] = f"{end_h:02d}:{end_m:02d}"
+                if not end_time:
+                    end_h, end_m = map(int, start_time.split(":"))
+                    end_m += 60
+                    if end_m >= 60:
+                        end_h += 1
+                        end_m -= 60
+                    end_time = f"{end_h:02d}:{end_m:02d}"
+                params["endTime"] = end_time
 
             r = requests.get(
                 f"{PLATFORM_API_URL}/halls/available",
@@ -718,34 +1348,125 @@ class ActionCheckHallAvailability(Action):
             data = r.json()
             if not data.get("success"):
                 dispatcher.utter_message(text="Could not check hall availability.")
-                return []
+                return events
 
             results = data.get("data", [])
+            matched = None
             if hall:
                 hall_lower = hall.lower()
-                results = [h for h in results if hall_lower in (h.get("hall", {}).get("name", "") or "").lower()]
+                for h in results:
+                    name = (h.get("hall", {}).get("name", "") or "").lower()
+                    if hall_lower == name or hall_lower in name or name in hall_lower:
+                        matched = h
+                        break
+                # Hall may be fully booked that day (filtered out of available list)
+                if not matched:
+                    if _looks_like_person_name(hall):
+                        clear = [SlotSet("hall_name", None), SlotSet("lecturer_name", hall)]
+                        more = await ActionBookAppointment().run(dispatcher, tracker, domain)
+                        return events + clear + (more or [])
+                    book_url = _hall_availability_page_url(
+                        day=day,
+                        date=date_str,
+                        hall=hall,
+                        start_time=start_time,
+                        end_time=end_time,
+                    )
+                    dispatcher.utter_message(
+                        text=(
+                            f"**{hall}** is not free on {day_label}"
+                            + (f" at {start_time}" if start_time else "")
+                            + ". It may be fully booked that day.\n\n"
+                            f"{book_url}"
+                        )
+                    )
+                    return events
 
+            if hall and matched:
+                free = matched.get("matchingFreeSlots") or []
+                day_free = matched.get("freeSlots") or []
+                # Prefer requested-window slots; fall back to day free ranges for display
+                display_slots = free if free else day_free
+                hall_info = matched.get("hall", {})
+                hall_name = hall_info.get("name", hall)
+                hall_id = hall_info.get("id", "")
+                if not display_slots:
+                    dispatcher.utter_message(
+                        text=f"**{hall_name}** has no free slots on {day_label}."
+                    )
+                    return events
+
+                slot_parts = []
+                for s in display_slots[:8]:
+                    st = s.get("startTime", "")
+                    et = s.get("endTime", "")
+                    if st and et:
+                        slot_parts.append(f"{_format_ampm(st)}-{_format_ampm(et)}")
+                slots_str = ", ".join(slot_parts) if slot_parts else "several times"
+                book_url = _hall_availability_page_url(
+                    day=day,
+                    date=date_str,
+                    hall=hall_name,
+                    hall_id=hall_id or None,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
+                if start_time and free:
+                    msg = (
+                        f"**{hall_name}** is free on {day_label} "
+                        f"for {_format_ampm(start_time)}"
+                        + (f"-{_format_ampm(end_time)}" if end_time else "")
+                        + ".\n"
+                        f"Free times that day: {slots_str}.\n\n"
+                        f"{book_url}"
+                    )
+                else:
+                    msg = (
+                        f"**{hall_name}** is available on {day_label}.\n"
+                        f"Free time ranges: {slots_str}.\n\n"
+                        f"{book_url}"
+                    )
+                dispatcher.utter_message(text=msg)
+                return events
+
+            # General list (no specific hall)
             if not results:
-                qual = f" matching '{hall}'" if hall else ""
                 dispatcher.utter_message(
-                    text=f"No halls are available{qual} for {day}"
+                    text=f"No halls are available for {day_label}"
                     + (f" at {start_time}" if start_time else "") + "."
                 )
             else:
-                names = [h.get("hall", {}).get("name", "?") for h in results[:8]]
-                msg = f"Halls available for {day}"
-                if start_time:
-                    msg += f" at {start_time}"
-                msg += ": " + ", ".join(names)
-                if len(results) > 8:
-                    msg += f" (and {len(results) - 8} more)."
-                dispatcher.utter_message(text=msg)
+                lines = [f"Halls available on {day_label}" + (f" at {start_time}" if start_time else "") + ":"]
+                for h in results[:6]:
+                    name = h.get("hall", {}).get("name", "?")
+                    free = h.get("matchingFreeSlots") or h.get("freeSlots") or []
+                    slot_bits = []
+                    for s in free[:3]:
+                        st, et = s.get("startTime", ""), s.get("endTime", "")
+                        if st and et:
+                            slot_bits.append(f"{_format_ampm(st)}-{_format_ampm(et)}")
+                    if slot_bits:
+                        lines.append(f"- **{name}**: {', '.join(slot_bits)}")
+                    else:
+                        lines.append(f"- **{name}**")
+                if len(results) > 6:
+                    lines.append(f"(and {len(results) - 6} more)")
+                lines.append(
+                    "\n"
+                    + _hall_availability_page_url(
+                        day=day,
+                        date=date_str,
+                        start_time=start_time,
+                        end_time=end_time,
+                    )
+                )
+                dispatcher.utter_message(text="\n".join(lines))
         except requests.RequestException:
             logger.exception("Hall availability API error")
             dispatcher.utter_message(
                 text="I couldn't reach the hall service. Please try the Hall Availability page."
             )
-        return []
+        return events
 
 
 class ActionCheckLecturerAvailability(Action):
@@ -760,6 +1481,11 @@ class ActionCheckLecturerAvailability(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
+        # Keep hall context: "tomorrow available or not" after a hall question
+        if _looks_like_hall_query(text, tracker) and not _get_lecturer_name_from_tracker(tracker):
+            return await ActionCheckHallAvailability().run(dispatcher, tracker, domain)
+
         user_id = _get_user_id(tracker)
         if not user_id:
             dispatcher.utter_message(
@@ -769,6 +1495,7 @@ class ActionCheckLecturerAvailability(Action):
 
         lecturer_name = _get_lecturer_name_from_tracker(tracker)
         day_slot = _resolve_day_from_tracker(tracker, tracker.get_slot("day"))
+        time_slot = tracker.get_slot("time")
 
         if not lecturer_name:
             dispatcher.utter_message(
@@ -791,23 +1518,12 @@ class ActionCheckLecturerAvailability(Action):
             lec_id = lec.get("id")
             lec_full = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
 
-            day = _resolve_day(day_slot)
-            if day:
-                target = datetime.now()
-                days_list = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
-                if day_slot and "tomorrow" in (day_slot or "").lower():
-                    target += timedelta(days=1)
-                else:
-                    try:
-                        idx = days_list.index(day)
-                        today_idx = target.weekday()
-                        diff = (idx - today_idx) % 7
-                        if diff == 0 and day_slot and "today" not in (day_slot or "").lower():
-                            diff = 7
-                        target += timedelta(days=diff)
-                    except ValueError:
-                        pass
-                date_str = target.strftime("%Y-%m-%d")
+            date_str, start_time, end_time = _resolve_booking_date_and_time(
+                tracker, text, day_slot=day_slot, time_slot=time_slot
+            )
+            day = _weekday_from_date_str(date_str) if date_str else _resolve_day(day_slot)
+
+            if date_str:
                 r2 = requests.get(
                     f"{PLATFORM_API_URL}/lecturers/{lec_id}/availability",
                     params={"date": date_str},
@@ -839,29 +1555,55 @@ class ActionCheckLecturerAvailability(Action):
                         day_name = item.get("day", "")
                         for slot in item.get("freeSlots", []):
                             free.append({**slot, "_day": day_name})
-            if free:
-                def _short_day(d):
-                    if not d:
-                        return ""
-                    return d[:3].capitalize() if len(d) >= 3 else d  # MONDAY -> Mon
 
+            book_url = _appointment_book_page_url(
+                lec_id,
+                date=date_str,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            if free:
                 def _slot_text(s):
                     st = s.get("startTime") or s.get("start", "")
                     et = s.get("endTime") or s.get("end", "")
                     if st and et:
-                        day = _short_day(s.get("_day", ""))
-                        return f"{day} {st}-{et}".strip() if day else f"{st}-{et}"
+                        return f"{_format_ampm(st)}-{_format_ampm(et)}"
                     return ""
+
                 parts = [_slot_text(s) for s in free[:8] if _slot_text(s)]
                 slots_str = ", ".join(parts) if parts else "various times"
-                day_qual = f" on {_short_day(day_label) or day_label}" if day_label else ""
+                resolved = (day_label or day or "")
+                resolved_u = str(resolved).upper() if resolved else ""
+                if date_str and resolved_u in _VALID_WEEKDAYS:
+                    day_qual = f" on {_day_label(day_slot, resolved_u, date_str)}"
+                elif resolved_u in _VALID_WEEKDAYS:
+                    day_qual = f" on {_day_label(day_slot, resolved_u)}"
+                elif resolved:
+                    day_qual = f" on {str(resolved).capitalize()}"
+                else:
+                    day_qual = ""
                 dispatcher.utter_message(
-                    text=f"{lec_full} has free slots{day_qual}: {slots_str}. Visit Book Appointment to schedule."
+                    text=(
+                        f"**{lec_full}** has free slots{day_qual}: {slots_str}.\n"
+                        "Use this link to pick a slot. If you already said a date or time, those are filled in.\n\n"
+                        f"{book_url}"
+                    )
                 )
             else:
-                qual = f" on {day or 'this week'}" if day else ""
+                if date_str and day and day in _VALID_WEEKDAYS:
+                    qual = f" on {_day_label(day_slot, day, date_str)}"
+                elif day and day in _VALID_WEEKDAYS:
+                    qual = f" on {_day_label(day_slot, day)}"
+                elif day:
+                    qual = f" on {day}"
+                else:
+                    qual = ""
                 dispatcher.utter_message(
-                    text=f"{lec_full} doesn't have free slots{qual}. Try another day or check the Lecturers page."
+                    text=(
+                        f"**{lec_full}** doesn't have free slots{qual}. "
+                        f"Try another day, or open the booking page.\n\n{book_url}"
+                    )
                 )
         except requests.RequestException:
             logger.exception("Lecturer availability API error")
@@ -890,6 +1632,11 @@ class ActionBookAppointment(Action):
             )
             return []
 
+        text = ((tracker.latest_message or {}).get("text") or "").strip()
+        # "Can I book AB-CMP-02-1 hall tomorrow" is hall booking, not lecturer appointment
+        if _looks_like_hall_query(text, tracker) and not _get_lecturer_name_from_tracker(tracker):
+            return await ActionCheckHallAvailability().run(dispatcher, tracker, domain)
+
         lecturer_name = _get_lecturer_name_from_tracker(tracker)
         day_slot = tracker.get_slot("day")
         time_slot = tracker.get_slot("time")
@@ -911,56 +1658,44 @@ class ActionBookAppointment(Action):
                 )
                 return []
 
-            day = _resolve_day(day_slot)
-            start_time = _resolve_time(time_slot)
+            lec_id = lec.get("id")
+            lec_full = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
+            date_str, start_time, end_time = _resolve_booking_date_and_time(
+                tracker, text, day_slot=day_slot, time_slot=time_slot
+            )
+            book_url = _appointment_book_page_url(
+                lec_id,
+                date=date_str,
+                start_time=start_time,
+                end_time=end_time,
+            )
 
-            if not day or not start_time:
+            # Prefer booking page with prefilled date/time (user reviews, then confirms)
+            if date_str and start_time:
+                day_name = _weekday_from_date_str(date_str) or ""
+                day_qual = _day_label(day_slot, day_name, date_str) if day_name else date_str
+                time_qual = _format_ampm(start_time)
+                if end_time:
+                    time_qual += f"-{_format_ampm(end_time)}"
                 dispatcher.utter_message(
-                    text=f"To book with {lec.get('firstName', '')} {lec.get('lastName', '')}, please specify a day and time. "
-                    "For example: 'Book with Dr. Dias on Monday at 2pm'. Or use the Book Appointment page for the full form."
+                    text=(
+                        f"Book with **{lec_full}** on {day_qual} at {time_qual}.\n"
+                        "Use this link. Date and time are set already - check them, then book.\n\n"
+                        f"{book_url}"
+                    )
                 )
                 return []
 
-            days_list = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
-            target = datetime.now()
-            try:
-                idx = days_list.index(day)
-                today_idx = target.weekday()
-                diff = (idx - today_idx) % 7
-                if diff == 0 and day_slot and "today" not in (day_slot or "").lower():
-                    diff = 7
-                target += timedelta(days=diff)
-            except ValueError:
-                pass
+            if date_str or day_slot:
+                return await ActionCheckLecturerAvailability().run(dispatcher, tracker, domain)
 
-            h, m = map(int, start_time.split(":"))
-            target = target.replace(hour=h, minute=m, second=0, microsecond=0)
-            date_time = target.isoformat()
-
-            r2 = requests.post(
-                f"{PLATFORM_API_URL}/appointments",
-                headers=_api_headers(user_id),
-                json={
-                    "lecturerId": lec.get("id"),
-                    "dateTime": date_time,
-                    "duration": 30,
-                    "reason": "Booked via LECSTU Assistant",
-                },
-                timeout=10,
+            dispatcher.utter_message(
+                text=(
+                    f"To book with **{lec_full}**, open this page and pick a free slot.\n\n"
+                    f"{book_url}"
+                )
             )
-
-            if r2.status_code == 201:
-                appt = r2.json().get("data", {})
-                lec_name = f"{lec.get('firstName', '')} {lec.get('lastName', '')}".strip()
-                dispatcher.utter_message(
-                    text=f"Appointment requested with {lec_name} on {target.strftime('%A, %B %d')} at {start_time}. "
-                    "The lecturer will confirm. Check your Notifications."
-                )
-            else:
-                err = r2.json().get("message", "Booking failed")
-                dispatcher.utter_message(
-                    text=f"Could not book: {err}. Please try the Book Appointment page."
-                )
+            return []
         except requests.RequestException:
             logger.exception("Book appointment API error")
             dispatcher.utter_message(
@@ -1193,9 +1928,18 @@ def _pick_map_room_result(results: List[Dict[str, Any]], query: str = "") -> Opt
 def _format_indoor_route_message(route: Dict[str, Any], label: str, sublabel: str = "") -> str:
     if not route.get("found"):
         msg = route.get("message") or "Walking paths are not connected yet."
+        deep = route.get("deepLink")
+        if deep:
+            return f"{msg}\n\n{deep}"
         return f"I found **{label}**" + (f" ({sublabel})" if sublabel else "") + f", but {msg}"
 
+    # Building/floor guide with map deep link (no step list yet)
+    deep = route.get("deepLink")
+    msg = route.get("message")
     steps = route.get("steps") or []
+    if msg and deep and not steps:
+        return f"{msg}\n\n{deep}"
+
     dest = route.get("destinationLabel") or label
     bname = (route.get("building") or {}).get("name", "")
     lines = [f"Walking directions to **{dest}**" + (f" ({bname})" if bname else "") + ":"]
@@ -1204,9 +1948,8 @@ def _format_indoor_route_message(route: Dict[str, Any], label: str, sublabel: st
         lines.append(f"{i}. {instr}")
     if len(steps) > 10:
         lines.append(f"... and {len(steps) - 10} more steps.")
-    deep = route.get("deepLink")
     if deep:
-        lines.append(f"**View directions:** {deep}")
+        lines.append(f"\n{deep}")
     return "\n".join(lines)
 
 
@@ -1234,11 +1977,18 @@ def _fetch_and_reply_indoor_route(
                     label = payload.get("destinationLabel") or payload.get("roomLabel") or user_text
                     bname = (payload.get("building") or {}).get("name", "")
                     sublabel = bname
-                    dispatcher.utter_message(text=_format_indoor_route_message(payload, label, sublabel))
+                    # Prefer explicit start/end message when API provides one
+                    if payload.get("message") and payload.get("deepLink"):
+                        dispatcher.utter_message(
+                            text=f"{payload.get('message')}\n\n{payload.get('deepLink')}"
+                        )
+                    else:
+                        dispatcher.utter_message(text=_format_indoor_route_message(payload, label, sublabel))
                     return True
                 if payload.get("routed") and not payload.get("found"):
-                    msg = payload.get("message") or f'Could not find **{user_text}** on the indoor map.'
-                    dispatcher.utter_message(text=msg)
+                    msg = payload.get("message") or f'Could not find a match on the indoor map.'
+                    deep = payload.get("deepLink")
+                    dispatcher.utter_message(text=f"{msg}\n\n{deep}" if deep else msg)
                     return True
         except requests.RequestException:
             logger.info("Navigation engine query unavailable; falling back to map search")
@@ -1384,16 +2134,16 @@ class ActionTodayOnCampus(Action):
                 )
 
             for s in slots:
-                now_tag = " — **NOW**" if s.get("isNow") else ""
+                now_tag = " (happening now)" if s.get("isNow") else ""
                 hall = s.get("hall", {})
                 bname = s.get("mapBuildingName") or hall.get("building", "")
                 floor = s.get("floor", 0)
                 fl = "Ground" if floor == 0 else f"Floor {floor}"
                 lines.append(
-                    f"• {_format_ampm(s['startTime'])}–{_format_ampm(s['endTime'])}: "
+                    f"- {_format_ampm(s['startTime'])} to {_format_ampm(s['endTime'])}: "
                     f"**{s['course']['name']}** with {s.get('lecturerName', 'TBD')}{now_tag}"
                 )
-                lines.append(f"  Room: **{hall.get('name', 'TBD')}** — {bname}, {fl}")
+                lines.append(f"  Room: **{hall.get('name', 'TBD')}** ({bname}, {fl})")
                 if s.get("mapBuildingId"):
                     params = f"buildingId={s['mapBuildingId']}&floor={floor}&hallId={hall.get('id')}&destination={hall.get('name')}"
                     if s.get("markerId"):

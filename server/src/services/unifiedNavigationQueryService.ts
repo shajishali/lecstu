@@ -1,4 +1,5 @@
 import { AppError } from '../middleware/errorHandler';
+import prisma from '../config/database';
 import { detectNavigationIntent, type NavigationIntentResult } from './navigationIntentService';
 import {
   parseSourceDestinationQuery,
@@ -153,6 +154,21 @@ async function routeToResolvedRoom(
   const parsed = parseSourceDestinationQuery(message);
   const destQuery = parsed.destinationQuery || intent.destinationQuery || message;
   const sourceQ = parsed.sourceQuery;
+  const sourceHint = parsed.sourceHint;
+  const destHint = parsed.destinationHint;
+
+  const buildings = await prisma.mapBuilding.findMany({
+    where: { code: { in: ['ADMIN', 'ACAD', 'LAB'] } },
+    select: { id: true, name: true, code: true },
+  });
+  const byCode = new Map(buildings.map((b) => [b.code.toUpperCase(), b]));
+
+  const fromBuilding = sourceHint?.buildingCode
+    ? byCode.get(sourceHint.buildingCode)
+    : undefined;
+  const toBuilding = destHint?.buildingCode
+    ? byCode.get(destHint.buildingCode)
+    : undefined;
 
   const searchResults = await searchMapEntities(destQuery);
   let room = pickBestMapSearchResult(destQuery, searchResults);
@@ -165,15 +181,53 @@ async function routeToResolvedRoom(
     room = pickBestMapSearchResult(destQuery, broadResults);
   }
 
+  // Building + floor guide (no specific room name) → open Find My Way with fields filled
+  if (!room?.buildingId && (toBuilding || fromBuilding)) {
+    const toId = toBuilding?.id || fromBuilding?.id;
+    const fromId = fromBuilding?.id || toId;
+    const fromFloor = sourceHint?.floor ?? 0;
+    const toFloor = destHint?.floor ?? 0;
+    const params = new URLSearchParams();
+    if (fromId) params.set('fromBuildingId', fromId);
+    if (toId) params.set('toBuildingId', toId);
+    params.set('fromFloor', String(fromFloor));
+    params.set('floor', String(toFloor));
+    params.set('auto', '1');
+    // Prefer an entrance / floor landmark search on the destination floor
+    params.set('q', toFloor === 0 ? 'entrance' : `floor ${toFloor}`);
+    if (sourceQ) params.set('fromQuery', sourceHint?.label || sourceQ);
+
+    const startLabel = sourceHint?.label || 'your start point';
+    const endLabel = destHint?.label || destQuery;
+    return {
+      routed: true,
+      intent,
+      found: true,
+      message:
+        `Starting point: **${startLabel}**.\n` +
+        `Destination: **${endLabel}**.\n\n` +
+        `Open Find My Way to see the route on the map.`,
+      steps: [],
+      segments: [],
+      deepLink: `/navigate?${params.toString()}`,
+      sourceQuery: sourceQ,
+      destinationQuery: destQuery,
+      destinationLabel: endLabel,
+      confidence: intent.confidence,
+      suggestedBuildingId: toId,
+      suggestedBuildingName: toBuilding?.name || fromBuilding?.name,
+    };
+  }
+
   if (!room?.buildingId) {
     return {
       routed: true,
       intent,
       found: false,
-      message: `Could not find "${destQuery}" on the indoor map. Try a more specific room name from the floor plan.`,
+      message: `Could not find "${destQuery}" on the indoor map. Try a room name (for example ELV ROOM), or say from which building/floor to which building/floor.`,
       steps: [],
       segments: [],
-      deepLink: null,
+      deepLink: '/navigate',
       sourceQuery: sourceQ,
       destinationQuery: destQuery,
       confidence: intent.confidence,

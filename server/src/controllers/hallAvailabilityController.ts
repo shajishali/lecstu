@@ -11,7 +11,7 @@ import { AppError } from '../middleware/errorHandler';
 
 export async function getAvailableHalls(req: Request, res: Response, next: NextFunction) {
   try {
-    const { day, startTime, endTime, minCapacity, building, equipment } = req.query;
+    const { day, date, startTime, endTime, minCapacity, building, equipment } = req.query;
 
     if (!day || typeof day !== 'string') {
       throw new AppError('Query parameter "day" is required (e.g. MONDAY)', 400);
@@ -19,6 +19,7 @@ export async function getAvailableHalls(req: Request, res: Response, next: NextF
 
     const results = await findAvailableHalls({
       day: (day as string).toUpperCase(),
+      date: typeof date === 'string' ? date : undefined,
       startTime: startTime as string | undefined,
       endTime: endTime as string | undefined,
       minCapacity: minCapacity ? parseInt(minCapacity as string) : undefined,
@@ -29,7 +30,7 @@ export async function getAvailableHalls(req: Request, res: Response, next: NextF
     res.json({
       success: true,
       data: results,
-      meta: { day, totalResults: results.length },
+      meta: { day, date: date || null, totalResults: results.length },
     });
   } catch (err) {
     next(err);

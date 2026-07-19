@@ -74,33 +74,33 @@ slots:
 
 responses:
   utter_greeting:
-    - text: "Hello! I can help with timetables, today's classes on campus, indoor walking directions to lecture rooms, hall availability, and appointments."
+    - text: "Hi. Ask me about timetables, halls, appointments, or campus directions."
   utter_goodbye:
-    - text: "Goodbye! Have a great day."
+    - text: "Bye."
   utter_fallback:
-    - text: "I'm not sure I understood. Could you rephrase that? I can help with timetables, hall availability, appointments, and campus directions."
+    - text: "Sorry, I didn't get that. Try asking about your timetable, a hall, an appointment, or directions."
   utter_out_of_scope:
-    - text: "I'm focused on academic help—timetables, halls, appointments, and campus info. Is there something in that area I can help with?"
+    - text: "I only cover timetables, halls, appointments, and campus info. What do you need?"
   utter_ask_timetable:
-    - text: "Let me check your timetable for you."
+    - text: "Checking your timetable."
   utter_ask_hall_availability:
-    - text: "Checking hall availability for you."
+    - text: "Checking hall availability."
   utter_ask_lecturer_availability:
     - text: "Checking lecturer availability."
   utter_book_appointment:
-    - text: "I'll help you book an appointment."
+    - text: "Opening booking."
   utter_cancel_appointment:
-    - text: "I'll help you cancel that appointment."
+    - text: "Looking up that appointment to cancel."
   utter_ask_directions:
-    - text: "Finding directions for you."
+    - text: "Finding directions."
   utter_ask_todays_classes:
-    - text: "Checking your classes for today."
+    - text: "Checking today's classes."
   utter_guide_to_room:
-    - text: "Finding the walking route to that room."
+    - text: "Finding the route to that room."
   utter_guide_to_next_class:
-    - text: "Finding your next class and how to get there."
+    - text: "Finding your next class and the route."
   utter_ask_office_location:
-    - text: "Looking up the office location."
+    - text: "Looking up the office."
 
 actions:
   - action_recover_or_fallback

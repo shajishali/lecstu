@@ -4,7 +4,7 @@
  * Supports text and voice input.
  * English: Web Speech API (instant, built-in). Tamil/Sinhala: ASR (Whisper tiny).
  */
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { MessageSquare, X, Minimize2, Send, Mic, Square, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@store/authStore';
 import type { UiLanguage } from '@store/languageStore';
@@ -16,6 +16,81 @@ const RASA_WEBHOOK =
   import.meta.env.VITE_RASA_WEBHOOK || '/rasa/webhooks/rest/webhook';
 
 const MIN_RECORDING_MS = 500; // Avoid sending empty/short clips
+const MD_BREAKPOINT = 768;
+const SIZE_STORAGE_KEY = 'lecstu-chat-widget-size';
+const MIN_CHAT_W = 280;
+const MIN_CHAT_H = 300;
+const FAB_CLEARANCE = 88; // space above floating open/close button
+const EDGE_GAP = 12;
+/** Match Layout.tsx: sidebar w-[250px], header h-14 */
+const SIDEBAR_WIDTH = 250;
+const TOP_NAV_HEIGHT = 56;
+const CONTENT_INSET = 8; // small gap from sidebar / top nav
+
+type ChatSize = { width: number; height: number };
+
+function isMobileViewport() {
+  return typeof window !== 'undefined' && window.innerWidth < MD_BREAKPOINT;
+}
+
+/** Max size so the panel stays inside the main content square (not over sidebar or top nav). */
+function getChatMaxSize(): ChatSize {
+  if (typeof window === 'undefined') return { width: 360, height: 560 };
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const leftReserve = vw >= MD_BREAKPOINT ? SIDEBAR_WIDTH + CONTENT_INSET : EDGE_GAP;
+  const topReserve = TOP_NAV_HEIGHT + CONTENT_INSET;
+  return {
+    width: Math.max(MIN_CHAT_W, vw - EDGE_GAP - leftReserve),
+    height: Math.max(MIN_CHAT_H, vh - FAB_CLEARANCE - topReserve),
+  };
+}
+
+/** Standard starting size: near full-width on phones, fixed panel on desktop. */
+function getDefaultChatSize(): ChatSize {
+  if (typeof window === 'undefined') return { width: 360, height: 560 };
+  const max = getChatMaxSize();
+  if (window.innerWidth < MD_BREAKPOINT) {
+    return {
+      width: max.width,
+      height: Math.min(Math.round(window.innerHeight * 0.52), max.height),
+    };
+  }
+  return clampChatSize(360, 560);
+}
+
+function clampChatSize(width: number, height: number): ChatSize {
+  const max = getChatMaxSize();
+  return {
+    width: Math.min(Math.max(width, MIN_CHAT_W), max.width),
+    height: Math.min(Math.max(height, MIN_CHAT_H), max.height),
+  };
+}
+
+function loadStoredChatSize(): ChatSize | null {
+  try {
+    const raw = localStorage.getItem(SIZE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { mobile?: ChatSize; desktop?: ChatSize };
+    const key = isMobileViewport() ? 'mobile' : 'desktop';
+    const saved = parsed[key];
+    if (!saved || typeof saved.width !== 'number' || typeof saved.height !== 'number') return null;
+    return clampChatSize(saved.width, saved.height);
+  } catch {
+    return null;
+  }
+}
+
+function persistChatSize(size: ChatSize) {
+  try {
+    const raw = localStorage.getItem(SIZE_STORAGE_KEY);
+    const prev = raw ? (JSON.parse(raw) as { mobile?: ChatSize; desktop?: ChatSize }) : {};
+    const key = isMobileViewport() ? 'mobile' : 'desktop';
+    localStorage.setItem(SIZE_STORAGE_KEY, JSON.stringify({ ...prev, [key]: size }));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 /** Rewrite messy timetable phrasing so NLU matches trained examples (works before model retrain). */
 function normalizeTimetableMessage(text: string): string {
@@ -46,6 +121,9 @@ const CHAT_LANG_LABELS: Record<ChatLanguage, string> = {
   ta: 'Tamil',
   si: 'Sinhala',
 };
+
+/** Tamil/Sinhala chat still has quality issues; shown but not selectable. */
+const CHAT_LANG_FUTURE_WORK: ReadonlySet<ChatLanguage> = new Set(['ta', 'si']);
 
 const CHAT_PLACEHOLDERS: Record<ChatLanguage, string> = {
   en: 'Type in English or tap the mic…',
@@ -79,7 +157,8 @@ export default function ChatWidget() {
   const [isRecording, setIsRecording] = useState(false);
   const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
   const [chatLanguage, setChatLanguage] = useState<ChatLanguage>('en');
-  const [asrAvailable, setAsrAvailable] = useState<boolean | null>(null);
+  const [chatSize, setChatSize] = useState<ChatSize>(() => loadStoredChatSize() ?? getDefaultChatSize());
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -87,6 +166,7 @@ export default function ChatWidget() {
   const recognitionRef = useRef<{ start: () => void; stop: () => void } | null>(null);
   const transcriptRef = useRef<string>('');
   const recordingStartRef = useRef<number>(0);
+  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
@@ -100,13 +180,84 @@ export default function ChatWidget() {
     }
   }, [isOpen, isMinimized]);
 
+  // Keep cursor in the input after each bot reply (input is disabled while waiting)
   useEffect(() => {
-    if (!isOpen || !user) return;
-    api
-      .get<{ success: boolean; data?: { available?: boolean } }>('/ai/asr/status')
-      .then((r) => setAsrAvailable(r.data.data?.available ?? false))
-      .catch(() => setAsrAvailable(false));
-  }, [isOpen, user]);
+    if (!isOpen || isMinimized || isTyping || isVoiceProcessing || isRecording) return;
+    inputRef.current?.focus();
+  }, [isOpen, isMinimized, isTyping, isVoiceProcessing, isRecording]);
+
+  // Keep panel inside the viewport on rotate / resize; restore saved size when crossing mobile/desktop
+  useEffect(() => {
+    let wasMobile = isMobileViewport();
+    const onViewportChange = () => {
+      const nowMobile = isMobileViewport();
+      if (nowMobile !== wasMobile) {
+        wasMobile = nowMobile;
+        setChatSize(loadStoredChatSize() ?? getDefaultChatSize());
+        return;
+      }
+      setChatSize((prev) => clampChatSize(prev.width, prev.height));
+    };
+    window.addEventListener('resize', onViewportChange);
+    return () => window.removeEventListener('resize', onViewportChange);
+  }, []);
+
+  const beginResize = useCallback(
+    (clientX: number, clientY: number) => {
+      resizeStartRef.current = {
+        x: clientX,
+        y: clientY,
+        width: chatSize.width,
+        height: chatSize.height,
+      };
+      setIsResizing(true);
+    },
+    [chatSize.width, chatSize.height]
+  );
+
+  const onResizePointerDown = useCallback(
+    (e: ReactPointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      beginResize(e.clientX, e.clientY);
+    },
+    [beginResize]
+  );
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const onMove = (e: PointerEvent) => {
+      const start = resizeStartRef.current;
+      if (!start) return;
+      // Panel is anchored bottom-right: drag left/up to grow
+      const next = clampChatSize(
+        start.width + (start.x - e.clientX),
+        start.height + (start.y - e.clientY)
+      );
+      setChatSize(next);
+    };
+
+    const onUp = () => {
+      setIsResizing(false);
+      resizeStartRef.current = null;
+      setChatSize((current) => {
+        const clamped = clampChatSize(current.width, current.height);
+        persistChatSize(clamped);
+        return clamped;
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [isResizing]);
 
   const senderId = user?.id ?? `guest_${Date.now()}`;
 
@@ -275,6 +426,7 @@ export default function ChatWidget() {
 
   const selectChatLanguage = useCallback(
     (lang: ChatLanguage) => {
+      if (CHAT_LANG_FUTURE_WORK.has(lang)) return;
       if (lang === chatLanguage) return;
       if (isRecording) {
         if (useWebSpeech && recognitionRef.current) {
@@ -390,6 +542,24 @@ export default function ChatWidget() {
 
   if (!user) return null;
 
+  const chatMax = getChatMaxSize();
+  const panelStyle: CSSProperties = isMinimized
+    ? {
+        width: Math.min(chatSize.width, 288),
+        height: 48,
+        right: EDGE_GAP,
+        bottom: FAB_CLEARANCE,
+        maxWidth: chatMax.width,
+      }
+    : {
+        width: Math.min(chatSize.width, chatMax.width),
+        height: Math.min(chatSize.height, chatMax.height),
+        right: EDGE_GAP,
+        bottom: FAB_CLEARANCE,
+        maxWidth: chatMax.width,
+        maxHeight: chatMax.height,
+      };
+
   return (
     <>
       {/* Floating bubble */}
@@ -405,21 +575,42 @@ export default function ChatWidget() {
         {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>
 
-      {/* Chat window: taller, narrower; smaller on mobile to avoid overlapping dashboard */}
+      {/* Chat window: viewport-safe defaults; drag top-left corner to resize */}
       {isOpen && (
         <div
-          className={`fixed right-3 bottom-20 z-40 flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl transition-all md:right-6 ${
-            isMinimized
-              ? 'h-12 w-72'
-              : 'h-[340px] w-[300px] md:h-[560px] md:w-[320px]'
+          className={`fixed z-40 flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ${
+            isResizing ? '' : 'transition-[width,height]'
           }`}
+          style={panelStyle}
         >
-          <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full text-white [background-color:var(--color-primary)]">
+          <header
+            className={`relative flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 py-3 pr-4 ${
+              isMinimized ? 'pl-4' : 'pl-11'
+            }`}
+          >
+            {!isMinimized && (
+              <button
+                type="button"
+                onPointerDown={onResizePointerDown}
+                className="absolute left-0 top-0 z-10 flex h-full w-9 cursor-nwse-resize items-center justify-center border-r border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 touch-none"
+                aria-label="Drag to resize chat"
+                title="Drag to resize"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" className="rotate-90">
+                  <circle cx="3" cy="11" r="1.5" fill="currentColor" />
+                  <circle cx="7" cy="11" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="11" r="1.5" fill="currentColor" />
+                  <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="7" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="3" r="1.5" fill="currentColor" />
+                </svg>
+              </button>
+            )}
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white [background-color:var(--color-primary)]">
                 <MessageSquare size={16} />
               </div>
-              <span className="font-semibold text-slate-800">LECSTU Assistant</span>
+              <span className="truncate font-semibold text-slate-800">LECSTU Assistant</span>
             </div>
             <button
               type="button"
@@ -433,12 +624,11 @@ export default function ChatWidget() {
 
           {!isMinimized && (
             <>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 && (
                   <p className="text-center text-sm text-slate-500">
-                    Choose <strong>English</strong>, <strong>Tamil</strong>, or <strong>Sinhala</strong> below, then type
-                    or use the microphone. Ask about today&apos;s classes, room directions, timetables, halls, or
-                    appointments.
+                    Chat in <strong>English</strong>. Type or use the microphone. Ask about today&apos;s classes,
+                    room directions, timetables, halls, or appointments. Tamil and Sinhala are coming soon.
                   </p>
                 )}
                 {messages.map((m) => (
@@ -447,13 +637,21 @@ export default function ChatWidget() {
                     className={`flex ${m.isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
+                      className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm break-words ${
                         m.isUser
                           ? 'text-white [background-color:var(--color-primary)]'
                           : 'bg-slate-100 text-slate-800'
                       }`}
                     >
-                      {m.isUser ? m.text : <ChatBotMessage text={m.text} />}
+                      {m.isUser ? m.text : (
+                        <ChatBotMessage
+                          text={m.text}
+                          onNavigateAway={() => {
+                            setIsOpen(false);
+                            setIsMinimized(false);
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -470,36 +668,44 @@ export default function ChatWidget() {
               </div>
 
               <div className="shrink-0 border-t border-slate-200 p-3">
-                <div className="mb-2">
-                  <p className="mb-1.5 text-xs font-medium text-slate-600">Chat language</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(['en', 'ta', 'si'] as const).map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => selectChatLanguage(lang)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                          chatLanguage === lang
-                            ? 'bg-[var(--color-primary)] text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {CHAT_LANG_LABELS[lang]}
-                      </button>
-                    ))}
+                <div className="mb-1.5">
+                  <p className="mb-1 text-[10px] font-medium text-slate-600">Chat language</p>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['en', 'ta', 'si'] as const).map((lang) => {
+                      const isFuture = CHAT_LANG_FUTURE_WORK.has(lang);
+                      const isSelected = chatLanguage === lang && !isFuture;
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => selectChatLanguage(lang)}
+                          disabled={isFuture}
+                          title={isFuture ? 'Tamil and Sinhala chat coming soon' : undefined}
+                          aria-disabled={isFuture}
+                          className={`flex flex-col items-center justify-center rounded-md px-1 py-1 text-center transition-colors ${
+                            isFuture
+                              ? 'cursor-not-allowed bg-slate-50 text-slate-400 ring-1 ring-slate-200'
+                              : isSelected
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          <span className="text-[10px] font-medium leading-tight">{CHAT_LANG_LABELS[lang]}</span>
+                          {isFuture && (
+                            <span className="mt-px text-[8px] font-medium leading-tight text-amber-600">
+                              Coming soon
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    {chatLanguage === 'en' && SpeechRecognitionClass
-                      ? 'English: type or instant voice (browser).'
-                      : chatLanguage === 'en'
-                        ? 'English: type or voice via Whisper.'
-                        : `${CHAT_LANG_LABELS[chatLanguage]}: type or record voice${
-                            asrAvailable === false ? ' (ASR service required for voice)' : ''
-                          }.`}
+                  <p className="mt-0.5 text-[9px] leading-tight text-slate-400">
+                    English available now. Tamil and Sinhala coming soon.
                   </p>
                 </div>
                 {error && (
-                  <p className="mb-2 text-xs text-red-500">{error}</p>
+                  <p className="mb-2 text-xs text-red-500 break-words">{error}</p>
                 )}
                 {(isRecording || isVoiceProcessing) && (
                   <p className="mb-2 text-xs text-slate-500">
@@ -510,7 +716,7 @@ export default function ChatWidget() {
                       : `Transcribing (${CHAT_LANG_LABELS[chatLanguage]})…`}
                   </p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex min-w-0 gap-2">
                   <input
                     ref={inputRef}
                     type="text"
@@ -521,14 +727,14 @@ export default function ChatWidget() {
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder={CHAT_PLACEHOLDERS[chatLanguage]}
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
                     disabled={isTyping || isVoiceProcessing}
                   />
                   <button
                     type="button"
                     onClick={handleVoiceToggle}
                     disabled={isTyping}
-                    className={`flex items-center justify-center rounded-lg px-3 py-2 transition-colors ${
+                    className={`flex shrink-0 items-center justify-center rounded-lg px-3 py-2 transition-colors ${
                       isRecording
                         ? 'bg-red-500 text-white hover:bg-red-600'
                         : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
@@ -547,7 +753,7 @@ export default function ChatWidget() {
                     type="button"
                     onClick={() => sendMessage()}
                     disabled={!input.trim() || isTyping}
-                    className="flex items-center justify-center rounded-lg px-4 py-2 text-white transition-colors disabled:opacity-50 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
+                    className="flex shrink-0 items-center justify-center rounded-lg px-3 py-2 text-white transition-colors disabled:opacity-50 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)] sm:px-4"
                   >
                     <Send size={18} />
                   </button>

@@ -17,6 +17,20 @@ stories:
       - intent: ask_hall_availability
       - action: action_check_hall_availability
 
+  - story: hall follow-up same hall next day
+    steps:
+      - intent: ask_hall_availability
+        entities:
+          - hall_name: "AB-CMP-02-1"
+          - day: "tomorrow"
+      - action: action_check_hall_availability
+      - slot_was_set:
+          - hall_name: "AB-CMP-02-1"
+      - intent: ask_hall_availability
+        entities:
+          - day: "tomorrow"
+      - action: action_check_hall_availability
+
   - story: ask lecturer availability
     steps:
       - intent: ask_lecturer_availability

@@ -34,6 +34,12 @@ export function parseNavigationQuery(raw: string): {
   for (const p of GUIDE_PREFIXES) {
     text = text.replace(p, '');
   }
+  text = text
+    .replace(/\bguide\s+me\b/gi, ' ')
+    .replace(/\bplease\b/gi, ' ')
+    .replace(/\bnow\s+i\s+want\s+to\s+go\b/gi, ' ')
+    .replace(/\bi\s+want\s+to\s+go\b/gi, ' ')
+    .trim();
 
   const inBuildingMatches = [...text.matchAll(/\bin\s+(?:the\s+)?(.+?)\s+building\b/gi)];
   if (inBuildingMatches.length > 0) {
@@ -61,6 +67,7 @@ export function parseNavigationQuery(raw: string): {
   }
 
   text = text.replace(/\b(?:on\s+)?ground\s+floor\b/gi, ' ').trim();
+  text = text.replace(/\b\d+\s*(?:st|nd|rd|th)?\s*floor\b/gi, ' ').trim();
   text = text.replace(/\bfloor\s+\d+\b/gi, ' ').trim();
   text = text.replace(/\s+/g, ' ').trim();
 
@@ -93,43 +100,129 @@ export function parseNavigationQuery(raw: string): {
   return { roomTerms, buildingHint };
 }
 
+export type BuildingFloorHint = {
+  buildingCode: 'ADMIN' | 'ACAD' | 'LAB' | null;
+  floor: number | null;
+  label: string;
+};
+
+/** Map free text to faculty building code + floor index (0 = ground). */
+export function parseBuildingFloorHint(raw: string): BuildingFloorHint {
+  const text = (raw || '')
+    .replace(/\bguide\s+me\b/gi, ' ')
+    .replace(/\bplease\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  let buildingCode: BuildingFloorHint['buildingCode'] = null;
+  if (/\b(administration|admin)\b/i.test(text)) buildingCode = 'ADMIN';
+  else if (/\b(laboratory|lab)\b/i.test(text)) buildingCode = 'LAB';
+  else if (/\b(academic|acad)\b/i.test(text)) buildingCode = 'ACAD';
+
+  let floor: number | null = null;
+  if (/\bground\s+floor\b|\bfloor\s*g\b|\bg\.?\s*floor\b/i.test(text)) {
+    floor = 0;
+  } else {
+    const m =
+      text.match(/\b(\d{1,2})\s*(?:st|nd|rd|th)?\s*floor\b/i) ||
+      text.match(/\bfloor\s*(\d{1,2})\b/i);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!Number.isNaN(n) && n >= 0 && n <= 20) floor = n;
+    }
+  }
+
+  const buildingName =
+    buildingCode === 'ADMIN'
+      ? 'Administration Building'
+      : buildingCode === 'LAB'
+        ? 'Laboratory Building'
+        : buildingCode === 'ACAD'
+          ? 'Academic Building'
+          : '';
+  const floorLabel =
+    floor === 0 ? 'Ground floor' : floor != null ? `Floor ${floor}` : '';
+  const label = [buildingName || text, floorLabel].filter(Boolean).join(', ');
+
+  return { buildingCode, floor, label: label || text };
+}
+
 /** Parse "from X to Y" / "guide me from reception to cafeteria" style queries. */
 export function parseSourceDestinationQuery(raw: string): {
   sourceQuery: string | null;
   destinationQuery: string | null;
   buildingHint: string | null;
+  sourceHint: BuildingFloorHint | null;
+  destinationHint: BuildingFloorHint | null;
 } {
-  let text = raw.trim();
-  let buildingHint: string | null = null;
+  let text = raw
+    .trim()
+    .replace(/\bguide\s+me\s*$/i, '')
+    .replace(/\bplease\s*$/i, '')
+    .trim();
 
   const fromTo = text.match(
-    /\b(?:from|starting\s+(?:at|from))\s+(.+?)\s+(?:to|towards|until|into)\s+(.+?)(?:[?.!]|$)/i
+    /\b(?:from|starting\s+(?:at|from))\s+(.+?)\s+(?:to|towards|until|into)\s+(.+?)$/i
   );
   if (fromTo) {
-    const parsed = parseNavigationQuery(raw);
-    buildingHint = parsed.buildingHint;
+    const sourceRaw = fromTo[1].replace(/[?.!]+$/, '').trim();
+    const destRaw = fromTo[2]
+      .replace(/\bguide\s+me\b/gi, ' ')
+      .replace(/[?.!]+$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const parsed = parseNavigationQuery(destRaw);
     return {
-      sourceQuery: fromTo[1].replace(/[?.!]+$/, '').trim() || null,
-      destinationQuery: fromTo[2].replace(/[?.!]+$/, '').trim() || null,
-      buildingHint,
+      sourceQuery: sourceRaw || null,
+      destinationQuery: parsed.roomTerms[0] || destRaw || null,
+      buildingHint: parsed.buildingHint,
+      sourceHint: parseBuildingFloorHint(sourceRaw),
+      destinationHint: parseBuildingFloorHint(destRaw),
     };
   }
 
-  const guideFrom = text.match(/\bguide\s+me\s+from\s+(.+?)\s+to\s+(.+?)(?:[?.!]|$)/i);
-  if (guideFrom) {
-    const parsed = parseNavigationQuery(raw);
+  const goFrom = text.match(
+    /\b(?:go|want\s+to\s+go|i\s+want\s+to\s+go)\s+from\s+(.+?)\s+to\s+(.+?)$/i
+  );
+  if (goFrom) {
+    const sourceRaw = goFrom[1].replace(/[?.!]+$/, '').trim();
+    const destRaw = goFrom[2]
+      .replace(/\bguide\s+me\b/gi, ' ')
+      .replace(/[?.!]+$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const parsed = parseNavigationQuery(destRaw);
     return {
-      sourceQuery: guideFrom[1].trim() || null,
-      destinationQuery: guideFrom[2].trim() || null,
+      sourceQuery: sourceRaw || null,
+      destinationQuery: parsed.roomTerms[0] || destRaw || null,
       buildingHint: parsed.buildingHint,
+      sourceHint: parseBuildingFloorHint(sourceRaw),
+      destinationHint: parseBuildingFloorHint(destRaw),
+    };
+  }
+
+  const guideFrom = text.match(/\bguide\s+me\s+from\s+(.+?)\s+to\s+(.+?)$/i);
+  if (guideFrom) {
+    const sourceRaw = guideFrom[1].trim();
+    const destRaw = guideFrom[2].replace(/\bguide\s+me\b/gi, ' ').trim();
+    const parsed = parseNavigationQuery(destRaw);
+    return {
+      sourceQuery: sourceRaw || null,
+      destinationQuery: parsed.roomTerms[0] || destRaw || null,
+      buildingHint: parsed.buildingHint,
+      sourceHint: parseBuildingFloorHint(sourceRaw),
+      destinationHint: parseBuildingFloorHint(destRaw),
     };
   }
 
   const parsed = parseNavigationQuery(text);
+  const destHint = parseBuildingFloorHint(text);
   return {
     sourceQuery: null,
     destinationQuery: parsed.roomTerms[0] || null,
     buildingHint: parsed.buildingHint,
+    sourceHint: null,
+    destinationHint: destHint.buildingCode || destHint.floor != null ? destHint : null,
   };
 }
 

@@ -109,6 +109,7 @@ export default function SimpleIndoorGuide() {
           searchParams.get('q') ||
           searchParams.get('destination') ||
           searchParams.get('guide');
+        const urlFromQuery = searchParams.get('fromQuery');
         const urlFromFloor = searchParams.get('fromFloor');
         const urlFloor = searchParams.get('floor');
         const auto = searchParams.get('auto') === '1';
@@ -129,6 +130,7 @@ export default function SimpleIndoorGuide() {
         setFromBuildingId(resolvedFromId);
         setToBuildingId(resolvedToId);
         if (urlQ) setToQuery(urlQ);
+        if (urlFromQuery) setFromQuery(urlFromQuery);
         if (urlFromFloor) {
           const f = parseInt(urlFromFloor, 10);
           if (!Number.isNaN(f)) setFromFloor(f);
@@ -165,18 +167,26 @@ export default function SimpleIndoorGuide() {
 
   useEffect(() => {
     void refreshFromPlaces();
-    setFromPlaceId('');
-    setFromQuery('');
-  }, [fromBuildingId, refreshFromPlaces]);
+    // Keep deep-link fromQuery; only clear place when building changes interactively
+    if (!searchParams.get('fromQuery') && !searchParams.get('auto')) {
+      setFromPlaceId('');
+      setFromQuery('');
+    } else {
+      setFromPlaceId('');
+    }
+  }, [fromBuildingId, refreshFromPlaces, searchParams]);
 
   useEffect(() => {
     void refreshToPlaces();
     if (prevToBuildingIdRef.current !== null && prevToBuildingIdRef.current !== toBuildingId) {
       setToPlaceId('');
-      setToQuery('');
+      // Do not wipe chatbot deep-link destination query
+      if (!searchParams.get('q') && !searchParams.get('auto')) {
+        setToQuery('');
+      }
     }
     prevToBuildingIdRef.current = toBuildingId;
-  }, [toBuildingId, refreshToPlaces]);
+  }, [toBuildingId, refreshToPlaces, searchParams]);
 
   const fromBuilding = buildings.find((b) => b.id === fromBuildingId);
   const toBuilding = buildings.find((b) => b.id === toBuildingId);
@@ -555,13 +565,43 @@ export default function SimpleIndoorGuide() {
       '';
     const auto = searchParams.get('auto') === '1';
     if (!auto && !hallId && !markerId && !q) return;
+
+    // Chatbot deep link: pick a place on the destination floor, then route
+    if (auto && !hallId && !markerId && toAllPlaces.length > 0) {
+      const onFloor = toAllPlaces.filter((p) => p.floor === toFloor);
+      const prefer =
+        onFloor.find((p) => /entrance|lobby|lift|elevator|stairs/i.test(p.name)) ||
+        onFloor[0] ||
+        toAllPlaces.find((p) => /entrance/i.test(p.name)) ||
+        toAllPlaces[0];
+      if (prefer) {
+        autoRouteDone.current = true;
+        setToPlaceId(prefer.id);
+        setToQuery(prefer.name);
+        void fetchRoute({
+          placeOverride: prefer,
+          silent: true,
+        });
+        return;
+      }
+    }
+
     autoRouteDone.current = true;
     void fetchRoute({
       toHallId: hallId || undefined,
       toMarkerId: markerId || undefined,
       silent: auto,
     });
-  }, [buildings.length, toBuildingId, fromBuildingId, isTodayMode, searchParams, fetchRoute]);
+  }, [
+    buildings.length,
+    toBuildingId,
+    fromBuildingId,
+    toFloor,
+    toAllPlaces,
+    isTodayMode,
+    searchParams,
+    fetchRoute,
+  ]);
 
   const handleGuide = useCallback(
     async (placeOverride?: SelectablePlace) => fetchRoute({ placeOverride }),

@@ -14,10 +14,20 @@ rules:
       - intent: deny
       - action: action_recover_or_fallback
 
-  - rule: Ask timetable
+  - rule: Ask hall availability
     steps:
-      - intent: ask_timetable
-      - action: action_query_timetable
+      - intent: ask_hall_availability
+      - action: action_check_hall_availability
+
+  - rule: Ask lecturer availability
+    steps:
+      - intent: ask_lecturer_availability
+      - action: action_check_lecturer_availability
+
+  - rule: Book appointment
+    steps:
+      - intent: book_appointment
+      - action: action_book_appointment
 
   - rule: Say greeting
     steps:
