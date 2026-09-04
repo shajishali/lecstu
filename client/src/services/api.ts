@@ -27,6 +27,7 @@ const SKIP_REFRESH = [
   '/auth/forgot-password',
   '/auth/verify-reset-code',
   '/auth/reset-password',
+  '/settings/public',
 ];
 
 let last403Toast = 0;

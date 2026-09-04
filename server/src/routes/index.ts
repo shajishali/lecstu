@@ -24,6 +24,7 @@ import navigationRoutes from './navigation';
 import indoorNavRoutes from '../modules/indoor-navigation/routes/indoorNavRoutes';
 import courseCatalogRoutes from './courseCatalog';
 import navigationAdminRoutes from './navigationAdmin';
+import settingsRoutes from './settings';
 
 const router = Router();
 
@@ -36,6 +37,7 @@ router.get('/health', (_req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/settings', settingsRoutes);
 router.use('/profile', profileRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin/users', adminUserRoutes);

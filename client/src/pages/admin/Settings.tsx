@@ -9,6 +9,7 @@ import {
   Building2,
   CheckCircle2,
   Globe,
+  Image,
   KeyRound,
   Mail,
   MapPin,
@@ -17,6 +18,7 @@ import {
   Server,
   Shield,
   Sparkles,
+  Trash2,
   XCircle,
 } from 'lucide-react';
 
@@ -43,6 +45,21 @@ interface EmailVerificationStatus extends ServiceStatus {
 }
 
 interface AdminSettings {
+  appearance: {
+    loginBackgroundUrl: string;
+    loginBackgroundFit: 'cover' | 'contain' | 'fill';
+    loginBackgroundPositionX: number;
+    loginBackgroundPositionY: number;
+    loginBackgroundScale: number;
+    loginBackgroundDesktopFit: 'cover' | 'contain' | 'fill';
+    loginBackgroundDesktopPositionX: number;
+    loginBackgroundDesktopPositionY: number;
+    loginBackgroundDesktopScale: number;
+    loginBackgroundMobileFit: 'cover' | 'contain' | 'fill';
+    loginBackgroundMobilePositionX: number;
+    loginBackgroundMobilePositionY: number;
+    loginBackgroundMobileScale: number;
+  };
   platform: {
     name: string;
     subtitle: string;
@@ -85,6 +102,15 @@ const LANGUAGE_OPTIONS: { value: UiLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'ta', label: 'தமிழ் (Tamil)' },
   { value: 'si', label: 'සිංහල (Sinhala)' },
+];
+
+const BACKGROUND_FIT_OPTIONS: Array<{
+  value: AdminSettings['appearance']['loginBackgroundFit'];
+  label: string;
+}> = [
+  { value: 'contain', label: 'Show full photo' },
+  { value: 'cover', label: 'Cover screen' },
+  { value: 'fill', label: 'Stretch to screen' },
 ];
 
 function StatusBadge({ ok, label }: { ok: boolean; label?: string }) {
@@ -150,6 +176,26 @@ export default function Settings() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [savingEmailSettings, setSavingEmailSettings] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [savingBackgroundDisplay, setSavingBackgroundDisplay] = useState(false);
+  const [deletingBackground, setDeletingBackground] = useState(false);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<string | null>(null);
+  const [backgroundForm, setBackgroundForm] = useState<AdminSettings['appearance']>({
+    loginBackgroundUrl: '/home-bg.png',
+    loginBackgroundFit: 'contain',
+    loginBackgroundPositionX: 50,
+    loginBackgroundPositionY: 50,
+    loginBackgroundScale: 100,
+    loginBackgroundDesktopFit: 'contain',
+    loginBackgroundDesktopPositionX: 50,
+    loginBackgroundDesktopPositionY: 50,
+    loginBackgroundDesktopScale: 100,
+    loginBackgroundMobileFit: 'contain',
+    loginBackgroundMobilePositionX: 50,
+    loginBackgroundMobilePositionY: 50,
+    loginBackgroundMobileScale: 100,
+  });
   const [emailForm, setEmailForm] = useState({
     smtpHost: 'smtp.gmail.com',
     smtpPort: '587',
@@ -189,6 +235,21 @@ export default function Settings() {
       smtpDisabled: email.smtpDisabled ?? false,
     });
   }, [settings?.services.email]);
+
+  useEffect(() => {
+    if (!backgroundFile) {
+      setBackgroundPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(backgroundFile);
+    setBackgroundPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [backgroundFile]);
+
+  useEffect(() => {
+    if (!settings?.appearance) return;
+    setBackgroundForm(settings.appearance);
+  }, [settings?.appearance]);
 
   const handleSeedFaculty = async () => {
     setSeeding(true);
@@ -247,6 +308,132 @@ export default function Settings() {
     }
   };
 
+  const handleUploadBackground = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!backgroundFile) {
+      showToast('error', 'Choose a background image first');
+      return;
+    }
+    setUploadingBackground(true);
+    try {
+      const formData = new FormData();
+      formData.append('background', backgroundFile);
+      const res = await api.post<{
+        success: boolean;
+        message: string;
+        data: { appearance: AdminSettings['appearance'] };
+      }>('/admin/settings/login-background', formData);
+      const nextAppearance = {
+        ...res.data.data.appearance,
+        loginBackgroundFit: 'contain' as const,
+        loginBackgroundPositionX: 50,
+        loginBackgroundPositionY: 50,
+        loginBackgroundScale: 100,
+        loginBackgroundDesktopFit: 'contain' as const,
+        loginBackgroundDesktopPositionX: 50,
+        loginBackgroundDesktopPositionY: 50,
+        loginBackgroundDesktopScale: 100,
+        loginBackgroundMobileFit: 'contain' as const,
+        loginBackgroundMobilePositionX: 50,
+        loginBackgroundMobilePositionY: 50,
+        loginBackgroundMobileScale: 100,
+      };
+      await api.patch('/admin/settings/login-background/appearance', {
+        loginBackgroundDesktopFit: nextAppearance.loginBackgroundDesktopFit,
+        loginBackgroundDesktopPositionX: nextAppearance.loginBackgroundDesktopPositionX,
+        loginBackgroundDesktopPositionY: nextAppearance.loginBackgroundDesktopPositionY,
+        loginBackgroundDesktopScale: nextAppearance.loginBackgroundDesktopScale,
+        loginBackgroundMobileFit: nextAppearance.loginBackgroundMobileFit,
+        loginBackgroundMobilePositionX: nextAppearance.loginBackgroundMobilePositionX,
+        loginBackgroundMobilePositionY: nextAppearance.loginBackgroundMobilePositionY,
+        loginBackgroundMobileScale: nextAppearance.loginBackgroundMobileScale,
+      });
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              appearance: nextAppearance,
+            }
+          : prev,
+      );
+      setBackgroundFile(null);
+      showToast('success', res.data.message || 'Login background updated');
+    } catch (err) {
+      showApiErrorToast(err, 'Failed to update login background');
+    } finally {
+      setUploadingBackground(false);
+    }
+  };
+
+  const handleSaveBackgroundDisplay = async () => {
+    setSavingBackgroundDisplay(true);
+    try {
+      // A selected file is only a browser preview until it is uploaded.  Save it
+      // here as well so one action always updates the public sign-in screens.
+      if (backgroundFile) {
+        const formData = new FormData();
+        formData.append('background', backgroundFile);
+        await api.post('/admin/settings/login-background', formData);
+      }
+
+      const res = await api.patch<{
+        success: boolean;
+        message: string;
+        data: { appearance: AdminSettings['appearance'] };
+      }>('/admin/settings/login-background/appearance', {
+        loginBackgroundDesktopFit: backgroundForm.loginBackgroundDesktopFit,
+        loginBackgroundDesktopPositionX: backgroundForm.loginBackgroundDesktopPositionX,
+        loginBackgroundDesktopPositionY: backgroundForm.loginBackgroundDesktopPositionY,
+        loginBackgroundDesktopScale: backgroundForm.loginBackgroundDesktopScale,
+        loginBackgroundMobileFit: backgroundForm.loginBackgroundMobileFit,
+        loginBackgroundMobilePositionX: backgroundForm.loginBackgroundMobilePositionX,
+        loginBackgroundMobilePositionY: backgroundForm.loginBackgroundMobilePositionY,
+        loginBackgroundMobileScale: backgroundForm.loginBackgroundMobileScale,
+      });
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              appearance: res.data.data.appearance,
+            }
+          : prev,
+      );
+      setBackgroundFile(null);
+      showToast('success', backgroundFile ? 'Login background and display saved' : res.data.message || 'Login background display saved');
+    } catch (err) {
+      showApiErrorToast(err, 'Failed to save login background display');
+    } finally {
+      setSavingBackgroundDisplay(false);
+    }
+  };
+
+  const handleDeleteBackground = async () => {
+    if (!window.confirm('Remove this login background and restore the default image?')) return;
+
+    setDeletingBackground(true);
+    try {
+      const res = await api.delete<{
+        success: boolean;
+        message: string;
+        data: { appearance: AdminSettings['appearance'] };
+      }>('/admin/settings/login-background');
+      setSettings((prev) =>
+        prev
+          ? {
+              ...prev,
+              appearance: res.data.data.appearance,
+            }
+          : prev,
+      );
+      setBackgroundFile(null);
+      showToast('success', res.data.message || 'Login background reset');
+    } catch (err) {
+      showApiErrorToast(err, 'Failed to reset login background');
+    } finally {
+      setDeletingBackground(false);
+    }
+  };
+
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -288,6 +475,7 @@ export default function Settings() {
     : [];
 
   const emailVerification = settings?.services.email;
+  const previewUrl = backgroundPreviewUrl || backgroundForm.loginBackgroundUrl;
 
   const emailModeLabel: Record<EmailVerificationStatus['mode'], string> = {
     smtp: 'SMTP (live send)',
@@ -421,6 +609,276 @@ export default function Settings() {
           </Link>
         </SectionCard>
       </div>
+
+      {settings && (
+        <SectionCard
+          title="Login background"
+          description="Image shown behind the sign-in, registration, and password reset screens"
+          icon={<Image size={20} />}
+        >
+          <div className="space-y-4">
+            {backgroundFile && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                The selected photo is a preview. Click <strong>Save background changes</strong> to make it visible on the sign-in page.
+              </div>
+            )}
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+              <div>
+                <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Desktop preview</p>
+                <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
+                  <img
+                    src={previewUrl}
+                    alt="Desktop login background preview"
+                    className="absolute inset-0 h-full w-full"
+                    style={{
+                      objectFit: backgroundForm.loginBackgroundDesktopFit,
+                      objectPosition: `${backgroundForm.loginBackgroundDesktopPositionX}% ${backgroundForm.loginBackgroundDesktopPositionY}%`,
+                      transform: `scale(${backgroundForm.loginBackgroundDesktopScale / 100})`,
+                      transformOrigin: `${backgroundForm.loginBackgroundDesktopPositionX}% ${backgroundForm.loginBackgroundDesktopPositionY}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Mobile preview</p>
+                <div className="relative aspect-[9/16] overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
+                  <img
+                    src={previewUrl}
+                    alt="Mobile login background preview"
+                    className="absolute inset-0 h-full w-full"
+                    style={{
+                      objectFit: backgroundForm.loginBackgroundMobileFit,
+                      objectPosition: `${backgroundForm.loginBackgroundMobilePositionX}% ${backgroundForm.loginBackgroundMobilePositionY}%`,
+                      transform: `scale(${backgroundForm.loginBackgroundMobileScale / 100})`,
+                      transformOrigin: `${backgroundForm.loginBackgroundMobilePositionX}% ${backgroundForm.loginBackgroundMobilePositionY}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label htmlFor="desktopBackgroundFit" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Desktop fit
+                </label>
+                <select
+                  id="desktopBackgroundFit"
+                  value={backgroundForm.loginBackgroundDesktopFit}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundDesktopFit: e.target.value as AdminSettings['appearance']['loginBackgroundDesktopFit'],
+                    }))
+                  }
+                  className={inputCls}
+                >
+                  {BACKGROUND_FIT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="desktopBackgroundScale" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Desktop size ({backgroundForm.loginBackgroundDesktopScale}%)
+                </label>
+                <input
+                  id="desktopBackgroundScale"
+                  type="range"
+                  min={50}
+                  max={200}
+                  value={backgroundForm.loginBackgroundDesktopScale}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundDesktopScale: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="desktopBackgroundPositionX" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Desktop left/right ({backgroundForm.loginBackgroundDesktopPositionX}%)
+                </label>
+                <input
+                  id="desktopBackgroundPositionX"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={backgroundForm.loginBackgroundDesktopPositionX}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundDesktopPositionX: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="desktopBackgroundPositionY" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Desktop up/down ({backgroundForm.loginBackgroundDesktopPositionY}%)
+                </label>
+                <input
+                  id="desktopBackgroundPositionY"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={backgroundForm.loginBackgroundDesktopPositionY}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundDesktopPositionY: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="mobileBackgroundFit" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Mobile fit
+                </label>
+                <select
+                  id="mobileBackgroundFit"
+                  value={backgroundForm.loginBackgroundMobileFit}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundMobileFit: e.target.value as AdminSettings['appearance']['loginBackgroundMobileFit'],
+                    }))
+                  }
+                  className={inputCls}
+                >
+                  {BACKGROUND_FIT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mobileBackgroundScale" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Mobile size ({backgroundForm.loginBackgroundMobileScale}%)
+                </label>
+                <input
+                  id="mobileBackgroundScale"
+                  type="range"
+                  min={50}
+                  max={200}
+                  value={backgroundForm.loginBackgroundMobileScale}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundMobileScale: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="mobileBackgroundPositionX" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Mobile left/right ({backgroundForm.loginBackgroundMobilePositionX}%)
+                </label>
+                <input
+                  id="mobileBackgroundPositionX"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={backgroundForm.loginBackgroundMobilePositionX}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundMobilePositionX: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="mobileBackgroundPositionY" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Mobile up/down ({backgroundForm.loginBackgroundMobilePositionY}%)
+                </label>
+                <input
+                  id="mobileBackgroundPositionY"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={backgroundForm.loginBackgroundMobilePositionY}
+                  onChange={(e) =>
+                    setBackgroundForm((p) => ({
+                      ...p,
+                      loginBackgroundMobilePositionY: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="loginBackground" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Background image
+                </label>
+                <input
+                  id="loginBackground"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setBackgroundFile(e.target.files?.[0] ?? null)}
+                  className="block w-full cursor-pointer rounded-lg border border-slate-300 bg-white text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  JPEG, PNG, or WebP up to {settings.platform.uploadMaxMb} MB. Use Show full photo if important details are being cropped.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void handleSaveBackgroundDisplay()}
+                disabled={savingBackgroundDisplay}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 [background-color:var(--color-primary)] hover:[background-color:var(--color-primary-hover)]"
+              >
+                {savingBackgroundDisplay ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <Save size={16} />
+                )}
+                Save background changes
+              </button>
+              <form onSubmit={handleUploadBackground}>
+                <button
+                  type="submit"
+                  disabled={uploadingBackground || !backgroundFile}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {uploadingBackground ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                  ) : (
+                    <Image size={16} />
+                  )}
+                  Upload photo only
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => void handleDeleteBackground()}
+                disabled={deletingBackground || backgroundForm.loginBackgroundUrl === '/home-bg.png'}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                title="Remove the uploaded photo and restore the default background"
+              >
+                {deletingBackground ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-700" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                Remove photo
+              </button>
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       {emailVerification && (
         <SectionCard

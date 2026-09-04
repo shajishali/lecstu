@@ -36,7 +36,7 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-[420px] rounded-xl border border-white/40 bg-white/15 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+      <div className="w-full max-w-[420px] rounded-xl border border-white/40 bg-white/30 p-8 shadow-2xl sm:p-10">
         <div className="mb-8 text-center">
           <img src="/logo.png" alt="LECSTU" className="mx-auto h-12 w-auto" />
           <p className="mt-1 font-medium text-slate-900 drop-shadow-sm">Sign in to your account</p>

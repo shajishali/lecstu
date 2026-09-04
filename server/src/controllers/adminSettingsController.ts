@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 import { config } from '../config';
 import prisma from '../config/database';
 import { getFacultySetupStatus } from '../services/facultyBuildingSeed';
@@ -7,6 +9,11 @@ import { isNavigationEngineHealthy } from '../services/floorNavigationEngineServ
 import { isVisionServiceHealthy } from '../services/floorPlanVisionService';
 import { getEmailServiceStatus, sendTestEmail, saveEmailAdminSettings } from '../services/emailService';
 import { AppError } from '../middleware/errorHandler';
+import {
+  getPublicSiteSettings,
+  resetPublicSiteSettings,
+  updatePublicSiteSettings,
+} from '../services/siteSettingsStore';
 
 const APPOINTMENT_MIN_NOTICE_HOURS = 24;
 
@@ -32,10 +39,12 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
     ]);
 
     const emailStatus = getEmailServiceStatus();
+    const appearance = getPublicSiteSettings();
 
     res.json({
       success: true,
       data: {
+        appearance,
         platform: {
           name: 'LECSTU',
           subtitle: 'Academic Platform',
@@ -91,6 +100,104 @@ export async function getAdminSettings(_req: Request, res: Response, next: NextF
           })),
         },
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getPublicSettings(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({
+      success: true,
+      data: {
+        appearance: getPublicSiteSettings(),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateLoginBackground(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) throw new AppError('No background image provided', 400);
+
+    const previous = getPublicSiteSettings().loginBackgroundUrl;
+    const imageUrl = `/uploads/auth-backgrounds/${req.file.filename}`;
+    const appearance = updatePublicSiteSettings({ loginBackgroundUrl: imageUrl });
+
+    if (previous.startsWith('/uploads/auth-backgrounds/') && previous !== imageUrl) {
+      const oldPath = path.join(config.upload.uploadDir, previous.replace(/^\/uploads\/?/i, ''));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    res.json({
+      success: true,
+      message: 'Login background image updated',
+      data: { appearance },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateLoginBackgroundAppearance(req: Request, res: Response, next: NextFunction) {
+  try {
+    const {
+      loginBackgroundFit,
+      loginBackgroundPositionX,
+      loginBackgroundPositionY,
+      loginBackgroundScale,
+      loginBackgroundDesktopFit,
+      loginBackgroundDesktopPositionX,
+      loginBackgroundDesktopPositionY,
+      loginBackgroundDesktopScale,
+      loginBackgroundMobileFit,
+      loginBackgroundMobilePositionX,
+      loginBackgroundMobilePositionY,
+      loginBackgroundMobileScale,
+    } = req.body;
+
+    const appearance = updatePublicSiteSettings({
+      loginBackgroundFit,
+      loginBackgroundPositionX,
+      loginBackgroundPositionY,
+      loginBackgroundScale,
+      loginBackgroundDesktopFit,
+      loginBackgroundDesktopPositionX,
+      loginBackgroundDesktopPositionY,
+      loginBackgroundDesktopScale,
+      loginBackgroundMobileFit,
+      loginBackgroundMobilePositionX,
+      loginBackgroundMobilePositionY,
+      loginBackgroundMobileScale,
+    });
+
+    res.json({
+      success: true,
+      message: 'Login background display saved',
+      data: { appearance },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteLoginBackground(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const previous = getPublicSiteSettings().loginBackgroundUrl;
+    const appearance = resetPublicSiteSettings();
+
+    if (previous.startsWith('/uploads/auth-backgrounds/')) {
+      const oldPath = path.join(config.upload.uploadDir, previous.replace(/^\/uploads\/?/i, ''));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    res.json({
+      success: true,
+      message: 'Login background reset to default',
+      data: { appearance },
     });
   } catch (err) {
     next(err);

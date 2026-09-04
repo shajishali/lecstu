@@ -311,7 +311,7 @@ export default function Register() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-[520px] rounded-xl border border-white/40 bg-white/15 p-6 shadow-2xl backdrop-blur-xl sm:p-7">
+      <div className="w-full max-w-[520px] rounded-xl border border-white/40 bg-white/30 p-6 shadow-2xl sm:p-7">
         <div className="mb-1 text-center">
           <img src="/logo.png" alt="LECSTU" className="mx-auto h-10 w-auto" />
           <p className="mt-0.5 text-[15px] font-medium text-slate-900 drop-shadow-sm">

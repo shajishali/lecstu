@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
+import fs from 'fs';
 import { config } from '../config';
 import { AppError } from './errorHandler';
 
@@ -32,6 +33,23 @@ export const uploadAvatar = multer({
   fileFilter,
   limits: { fileSize: config.upload.maxFileSize },
 }).single('avatar');
+
+export const uploadLoginBackground = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = path.join(config.upload.uploadDir, 'auth-backgrounds');
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const unique = crypto.randomBytes(8).toString('hex');
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `login-${Date.now()}-${unique}${ext}`);
+    },
+  }),
+  fileFilter,
+  limits: { fileSize: config.upload.maxFileSize },
+}).single('background');
 
 export const uploadCsv = multer({
   storage: multer.memoryStorage(),
